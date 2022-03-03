@@ -9,7 +9,7 @@ import { DataBinder } from "@fluid-experimental/property-binder";
 
 import { SharedPropertyTree } from "@fluid-experimental/property-dds";
 
-import { Workspace, initializeBoundWorkspace, registerSchema } from "@dstanesc/fluid-util";
+import { Workspace, BoundWorkspace, initializeBoundWorkspace, registerSchema } from "@dstanesc/fluid-util";
 
 import diceSchema from "./dice-1.0.0";
 
@@ -39,11 +39,15 @@ export default function App() {
     async function initWorkspace() {
 
       // Initialize the workspace
-      const [myWorkspace, dataBinder] = await initializeBoundWorkspace(containerId);
+      const boundWorkspace: BoundWorkspace = await initializeBoundWorkspace(containerId);
+
+      const myWorkspace: Workspace = boundWorkspace.workspace;
 
       // Update location
       if (myWorkspace.containerId)
         window.location.hash = myWorkspace.containerId;
+
+      const dataBinder: DataBinder = boundWorkspace.dataBinder;
 
       // Configure binding
       configureBinding(dataBinder, myWorkspace, setDiceValue);
