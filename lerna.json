@@ -1,0 +1,5 @@
+{
+    "packages": ["libs/*", "apps/*"],
+    "version": "0.1.0",
+    "useWorkspaces": true
+}
