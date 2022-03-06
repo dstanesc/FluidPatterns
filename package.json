@@ -41,7 +41,9 @@
         "tinylicious": "0.4.45136",
         "typescript": "^4.5.5",
         "underscore": "^1.13.2",
-        "watch": "^1.0.2"
+        "watch": "^1.0.2",
+        "fastest-json-copy": "^1.0.1",
+        "lodash": "^4.17.21"
     },
     "scripts": {
         "dependencies": "lerna-dependency-graph",

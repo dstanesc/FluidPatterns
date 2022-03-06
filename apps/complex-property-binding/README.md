@@ -1,6 +1,8 @@
-# FluidFramework - Fluid Patterns
+# More Complex Property Data Binding 
 
-Main focus is investigating the experimental Property DDS and related FluidFramework software patterns
+__WIP - work in progress ...__
+
+Investigates the binding API with a slightly more complex scenario. See [simple binding app](../simple-property-binding) for a simpler scenario.
 
 
 # Getting Started
@@ -14,20 +16,41 @@ $ npm --version
 8.1.2
 ```
 
+Using NVM for node version management
+```sh
+nvm use v16.13.1
 ```
+## Build
+
+```sh
+cd FluidPatterns
 npm run clean
 npm install --legacy-peer-deps
 npm run build
 ```
 
-# Apps
 
-## Data Binding Patterns
+## Run
 
-- [Simple Property Binding](./apps/simple-property-binding/) 
-- [Complex Property Binding](./apps/complex-property-binding/) 
+Terminal 1
 
-## Schema Patterns
+```sh
+npx tinylicious
+```
+
+Terminal 2
+
+```sh
+cd FluidPatterns/apps/complex-property-binding
+npm install -g serve
+serve -s build
+```
+or
+
+```sh
+cd FluidPatterns
+npm run complex-binding
+```
 
 ## Disclaimer
 
