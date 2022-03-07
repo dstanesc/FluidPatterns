@@ -1,6 +1,6 @@
 # More Complex Property Data Binding 
 
-Investigates the binding API with a slightly more complex scenario. See [simple binding app](../simple-property-binding) for a simpler scenario.
+Investigates the Property DDS binding API with a slightly more complex scenario. See [simple binding app](../simple-property-binding) for a simpler scenario.
 
 
 # Getting Started
@@ -86,7 +86,12 @@ npm run complex-binding
 }
 ```
 
-## Application Layers
+## Design
+
+The source of truth is maintained in Fluid. The UI state is derived from the Fluid state. The data model changes are applied using a domain specific (Dice Array) API to the underlying Property DDS data model. Incremental model changes bubble up via the data binding mechanism as domain changes (Dice Array Change) and are applied to a generic (React agnostic) display. The proposed design ensures that the UI layer (React based, App.tsx at this stage) can be easily swapped with any other presentation technology.
+
+
+## App Layers
 
 ![Application Layers](./doc/img/app-layers.png)
 
@@ -95,7 +100,7 @@ npm run complex-binding
 ![Data Flow](./doc/img/data-flow.png)
 
 
-## Components
+## Relevant Components
 
 ```
 src/
