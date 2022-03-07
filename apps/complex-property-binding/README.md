@@ -1,7 +1,5 @@
 # More Complex Property Data Binding 
 
-__WIP - work in progress ...__
-
 Investigates the binding API with a slightly more complex scenario. See [simple binding app](../simple-property-binding) for a simpler scenario.
 
 
@@ -53,6 +51,63 @@ or
 cd FluidPatterns
 npm run complex-binding
 ```
+
+## Technology Stack
+
+- React
+  - Hooks for UI state and state change side effects
+- Fluid Framework
+- Property DDS
+  - Data Binding to listen on data model changes
+
+## Schema
+
+### Dice
+
+```json
+{
+    typeid: "hex:dice-1.0.0",
+    inherits: "NamedProperty",
+    properties: [
+        { id: "diceValue", typeid: "Int32" }
+    ],
+}
+```
+
+### DiceArray 
+
+```json
+{
+    typeid: "hex:diceArray-1.0.0",
+    inherits: "NamedNodeProperty",
+    properties: [
+        { id: "dices", typeid: "hex:dice-1.0.0", context: "array" },
+    ],
+}
+```
+
+## Application Layers
+
+![Application Layers](./doc/img/app-layers.png)
+
+## Data Flow
+
+![Data Flow](./doc/img/data-flow.png)
+
+
+## Components
+
+```
+src/
+├── dice-1.0.0.ts            -> Dice Template (Schema)
+├── diceArray-1.0.0.ts       -> Dice Array Template (Schema)
+├── diceArrayApi.ts          -> Dice Array API 
+├── diceArrayBinding.ts      -> The DataBinding impl. for the Dice Array
+├── diceArrayChange.ts       -> Encapsulation for a Dice Array incremental change
+├── diceArrayController.ts   -> Dispatches incremental changes to the rendering component
+└── diceArrayDisplay.ts      -> Technology agnostic conceptualization for rendering aspects
+```
+
 
 ## Disclaimer
 

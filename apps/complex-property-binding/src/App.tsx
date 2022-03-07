@@ -17,7 +17,7 @@ import diceSchema from "./dice-1.0.0";
 
 import diceArraySchema from "./diceArray-1.0.0";
 
-import { retrieveArrayProperty, retrieveValueProperty, createDiceProperty, initPropertyTree, configureBinding } from "./diceArrayUtil";
+import { retrieveArrayProperty, retrieveValueProperty, createDiceProperty, initPropertyTree, configureBinding } from "./diceArrayApi";
 
 
 /*

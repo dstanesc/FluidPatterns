@@ -2,7 +2,7 @@ import { Workspace } from "@dstanesc/fluid-util";
 import { PropertyFactory, NodeProperty, Int32Property, ArrayProperty, NamedProperty, NamedNodeProperty }
     from "@fluid-experimental/property-properties";
 import { DataBinder, UpgradeType } from "@fluid-experimental/property-binder";
-import { DiceArrayViewModel } from "./diceArrayViewModel";
+import { DiceArrayDisplay } from "./diceArrayDisplay";
 import { DiceArrayController } from "./diceArrayController";
 import { DiceArrayBinding } from "./diceArrayBinding";
 
@@ -45,7 +45,7 @@ export function createDiceArrayProperty(): NamedNodeProperty {
     return diceArrayProperty;
 }
 
-export function initPropertyTree(containerId: string | undefined, workspace: Workspace, diceArrayViewModel: DiceArrayViewModel) {
+export function initPropertyTree(containerId: string | undefined, workspace: Workspace, diceArrayViewModel: DiceArrayDisplay) {
     if (containerId === undefined) {
         const diceArray: NamedNodeProperty = createDiceArrayProperty();
         const rootProp: NodeProperty = workspace.rootProperty;
@@ -60,9 +60,9 @@ export function initPropertyTree(containerId: string | undefined, workspace: Wor
     }
 }
 
-export function configureBinding(dataBinder: DataBinder, workspace: Workspace, diceArrayRenderer: DiceArrayViewModel) {
+export function configureBinding(dataBinder: DataBinder, workspace: Workspace, diceArrayDisplay: DiceArrayDisplay) {
     dataBinder.defineRepresentation("view", "hex:diceArray-1.0.0", (property) => {
-        return new DiceArrayController(diceArrayRenderer);
+        return new DiceArrayController(diceArrayDisplay);
     });
     dataBinder.defineDataBinding("view", "hex:diceArray-1.0.0", DiceArrayBinding, {
         upgradeType: UpgradeType.MINOR
