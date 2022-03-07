@@ -56,6 +56,9 @@ export default function App() {
   // Workspace reference, pseudo-immutable
   const [workspace, setWorkspace] = useState<Workspace>();
 
+  // Dice rolling state
+  const [rollToggle, setRollToggle] = useState<boolean>(false);
+
   const containerId = window.location.hash.substring(1) || undefined;
 
 
@@ -78,7 +81,7 @@ export default function App() {
       configureBinding(dataBinder, myWorkspace, setDiceValues);
 
       //Initialize the property tree
-      initPropertyTree(containerId,  myWorkspace, setDiceValues);
+      initPropertyTree(containerId, myWorkspace, setDiceValues);
 
       // Make workspace available
       setWorkspace(myWorkspace);
@@ -91,8 +94,14 @@ export default function App() {
 
   }, []); // [] to be executed only once
 
+  useEffect(() => {
+    if (rollToggle) {
+      roll();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [diceValues, rollToggle]);
 
-  const addDice = () => {
+  const add = () => {
     const diceArrayProperty: ArrayProperty = retrieveArrayProperty(workspace);
     const diceProperty = createDiceProperty(0);
     diceArrayProperty?.push(diceProperty);
@@ -108,20 +117,30 @@ export default function App() {
     workspace.commit();
   }
 
+  const remove = (i: number) => {
+    const diceArrayProperty: ArrayProperty = retrieveArrayProperty(workspace);
+    diceArrayProperty.remove(i);
+    workspace.commit();
+  }
+
+  const toggleRolling = () => {
+    setRollToggle(!rollToggle);
+  }
+
   return (
     <div className="App">
 
       <div className="dices">
-        <Row cells={diceValues}></Row>
+        <Row cells={diceValues} onClick={(i: any) => remove(i)}></Row>
       </div>
 
-      <br/><br/>
+      <br /><br />
 
-      <span className="add" onClick={() => addDice()}>
+      <span className="add" onClick={() => add()}>
         Add
       </span>
 
-      <span className="add" onClick={() => roll()}>
+      <span className="add" onClick={() => toggleRolling()}>
         Roll
       </span>
 
