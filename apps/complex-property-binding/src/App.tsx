@@ -59,6 +59,9 @@ export default function App() {
   // Dice rolling state
   const [rollToggle, setRollToggle] = useState<boolean>(false);
 
+  // Add button state
+  const [addToggle, setAddToggle] = useState<boolean>(false);
+
   const containerId = window.location.hash.substring(1) || undefined;
 
 
@@ -127,6 +130,18 @@ export default function App() {
     setRollToggle(!rollToggle);
   }
 
+  const rollClass = () => {
+    return rollToggle ? "roll-active" : "roll-inactive";
+  }
+
+  const toggleAdd = () => {
+    setAddToggle(!addToggle);
+  }
+
+  const addClass = () => {
+    return addToggle ? "add-active" : "add-inactive";
+  }
+
   return (
     <div className="App">
 
@@ -136,11 +151,11 @@ export default function App() {
 
       <br /><br />
 
-      <span className="add" onClick={() => add()}>
+      <span className={addClass()} onClick={() => add()} onMouseDown={() => toggleAdd()} onMouseUp={() => toggleAdd()}>
         Add
       </span>
 
-      <span className="add" onClick={() => toggleRolling()}>
+      <span className={rollClass()} onClick={() => toggleRolling()}>
         Roll
       </span>
 
