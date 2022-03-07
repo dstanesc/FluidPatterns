@@ -64,7 +64,7 @@ npm run complex-binding
 
 ### Dice
 
-```json
+```js
 {
     typeid: "hex:dice-1.0.0",
     inherits: "NamedProperty",
@@ -76,7 +76,7 @@ npm run complex-binding
 
 ### DiceArray 
 
-```json
+```js
 {
     typeid: "hex:diceArray-1.0.0",
     inherits: "NamedNodeProperty",
