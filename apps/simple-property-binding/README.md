@@ -42,7 +42,9 @@ cd FluidPatterns/apps/simple-property-binding
 npm install -g serve
 serve -s build
 ```
-or
+or 
+
+>Warning: not working right now, fixing contribution appreciated!
 
 ```sh
 cd FluidPatterns
