@@ -44,7 +44,7 @@ serve -s build
 ```
 or 
 
->Warning: not working right now, fixing contribution appreciated!
+> Warning: not working right now, fixing contribution appreciated!
 
 ```sh
 cd FluidPatterns
