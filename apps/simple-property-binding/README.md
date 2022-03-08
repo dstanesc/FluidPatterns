@@ -44,8 +44,6 @@ serve -s build
 ```
 or 
 
-> Warning: not working right now, fixing contribution appreciated!
-
 ```sh
 cd FluidPatterns
 npm run simple-binding
