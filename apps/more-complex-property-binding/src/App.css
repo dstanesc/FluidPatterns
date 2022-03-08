@@ -1,0 +1,74 @@
+
+
+.dice {
+    min-height: 50%; 
+    font-size: 100px; 
+    color: red; 
+    text-align: center; 
+    cursor: pointer;
+    width: 10%;
+    min-width: 200px;
+    border-radius: 20px;
+    margin: 4px 4px;
+    /* cursor: url('/delete-icon.png'), auto; */
+}
+
+.add-inactive {
+    min-height: 50%; 
+    font-size: 100px; 
+    color: greenyellow; 
+    text-align: center; 
+    cursor: pointer; 
+    width: 10%;
+    min-width: 300px;
+    border-radius: 20px;
+    margin: 24px 24px;
+    border-width: 8px;
+    border-style: none;
+    border-color: greenyellow;
+}
+
+.add-active {
+    min-height: 50%; 
+    font-size: 100px; 
+    color: greenyellow; 
+    text-align: center; 
+    cursor: pointer; 
+    width: 10%;
+    min-width: 300px;
+    border-radius: 20px;
+    margin: 24px 24px;
+    border-width: 8px;
+    border-style: solid;
+    border-color: greenyellow;
+}
+
+.roll-active {
+    min-height: 50%; 
+    font-size: 100px; 
+    color: greenyellow; 
+    text-align: center; 
+    cursor: pointer; 
+    width: 10%;
+    min-width: 300px;
+    border-radius: 20px;
+    margin: 24px 24px;
+    border-width: 8px;
+    border-style: solid;
+    border-color: greenyellow;
+}
+
+.roll-inactive {
+    min-height: 50%; 
+    font-size: 100px; 
+    color: greenyellow; 
+    text-align: center; 
+    cursor: pointer; 
+    width: 10%;
+    min-width: 300px;
+    border-radius: 20px;
+    margin: 24px 24px;
+    border-width: 8px;
+    border-style: none;
+    border-color: greenyellow;
+}
