@@ -1,6 +1,6 @@
 {
-    "name": "@dstanesc/complex-property-binding",
-    "description": "Slightly more complex Property DDS binding demonstrator",
+    "name": "@dstanesc/array-slice-property-binding",
+    "description": "Even more complex Property DDS binding demonstrator",
     "homepage": "https://fluidframework.com",
     "repository": "https://github.com/microsoft/FluidFramework",
     "license": "MIT",

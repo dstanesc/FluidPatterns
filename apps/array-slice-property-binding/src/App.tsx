@@ -17,7 +17,7 @@ import diceSchema from "./dice-1.0.0";
 
 import diceArraySchema from "./diceArray-1.0.0";
 
-import { retrieveArrayProperty, retrieveValueProperty, createDiceProperty, initPropertyTree, configureBinding, registerSliceBinding } from "./diceArrayApi";
+import { retrieveArrayProperty, retrieveValueProperty, createDiceProperty, initPropertyTree, configureBinding, activateSliceBinding, activateViewBinding } from "./diceArrayApi";
 
 
 /*
@@ -111,7 +111,7 @@ export default function App() {
     if (rollToggle) {
       roll();
     }
- 
+
   }, [diceValues, rollToggle]);
 
   const add = () => {
@@ -144,17 +144,19 @@ export default function App() {
     const dataBinder: DataBinder = boundWorkspace.dataBinder;
     if (sliceToggle) {
       setSliceToggle(undefined);
-      dataBinder.unregisterDataBindings("slice", true, true);
-      dataBinder.activateDataBinding("view");
+      activateViewBinding(dataBinder);
     } else {
       setSliceToggle({ start, end });
-      dataBinder.unregisterDataBindings("view", true);
-      registerSliceBinding(dataBinder, start, end);
+      activateSliceBinding(dataBinder, start, end);
     }
   }
 
   const toggleRolling = () => {
     setRollToggle(!rollToggle);
+  }
+
+  const sliceClass = () => {
+    return sliceToggle ? "slice-active" : "slice-inactive";
   }
 
   const rollClass = () => {
@@ -186,8 +188,8 @@ export default function App() {
         Roll
       </span>
 
-      <span className={rollClass()} onClick={() => toggleSlicing(0, 3)}>
-        Slice
+      <span className={sliceClass()} onClick={() => toggleSlicing(0, 3)}>
+        1..3
       </span>
 
     </div>

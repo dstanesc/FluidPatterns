@@ -1,6 +1,9 @@
-# Even More Complex Property Data Binding 
+# Array Slice Property Data Binding 
 
-__WIP__ Work in progress
+This exercise investigates the capabilities of the PropertyDDS data binding API to extract data fragments only. 
+The emerging conclusion is that while the pattern remains a possibility however the usage seems to stretch the original design intentions.
+
+![Video](./doc/img/arraySliceBinding.gif)
 
 # Getting Started
 
@@ -38,14 +41,14 @@ npx tinylicious
 Terminal 2
 
 ```sh
-cd FluidPatterns/apps/more-complex-property-binding
+cd FluidPatterns/apps/array-slice-property-binding
 npm install -g serve
 serve -s build
 ```
 or
 
 ```sh
-cd FluidPatterns/apps/more-complex-property-binding
+cd FluidPatterns/apps/array-slice-property-binding
 npm start
 ```
 

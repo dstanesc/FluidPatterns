@@ -34,10 +34,13 @@ export class DiceArraySliceBinding extends DataBinding {
         }
     }
 
+    /*
+     * This is were we probably the experiment stretches the 
+     * design intent by registering dynamic paths the static way.
+     */
     static initialize(start: number, end: number) {
         const range: number[] = _.range(start, end, 1);
         const paths = range.map(pos => `dices[${pos}]`);
-        paths.forEach(path => console.log(`SliceBinding register path ${path}`));
         paths.forEach(path => this.registerOnPath(path, ["modify"], this.prototype.diceUpdate, { isDeferred: false }))
     }
 }

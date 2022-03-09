@@ -54,6 +54,6 @@
         "dev": "lerna run dev --parallel",
         "test": "cross-env CI=true lerna run test",
         "simple-binding": "npm start --prefix apps/simple-property-binding",
-        "complex-binding": "npm start --prefix apps/complex-property-binding"
+        "array-binding": "npm start --prefix apps/array-property-binding"
     }
 }

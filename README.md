@@ -25,7 +25,8 @@ npm run build
 ## Data Binding Patterns
 
 - [Simple Property Binding](./apps/simple-property-binding/) 
-- [Complex Property Binding](./apps/complex-property-binding/) 
+- [Array Property Binding](./apps/array-property-binding/)
+- [Array Slice Property Binding](./apps/array-slice-property-binding/) 
 
 ## Schema Patterns
 

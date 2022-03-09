@@ -65,22 +65,32 @@ export function configureBinding(dataBinder: DataBinder, workspace: Workspace, d
     dataBinder.defineRepresentation("view", "hex:diceArray-1.0.0", (property) => {
         return new DiceArrayController(diceArrayDisplay);
     });
-
     dataBinder.defineRepresentation("slice", "hex:diceArray-1.0.0", (property) => {
         return new DiceArrayController(diceArrayDisplay);
     });
-
     dataBinder.defineDataBinding("view", "hex:diceArray-1.0.0", DiceArrayBinding, {
         upgradeType: UpgradeType.MINOR
     });
     dataBinder.activateDataBinding("view");
 }
 
-export function registerSliceBinding(dataBinder: DataBinder, start: number, end: number){
-   
+/*
+ * This is were we probably the experiment stretches the 
+ * design intent by registering dynamic paths the static way.
+ * This DiceArraySliceBinding has to remain a singleton otherwise erroneous behavior emerges
+ */
+export function activateSliceBinding(dataBinder: DataBinder, start: number, end: number) {
+    dataBinder.unregisterDataBindings("view", true);
     DiceArraySliceBinding.initialize(start, end);
-
     dataBinder.defineDataBinding("slice", "hex:diceArray-1.0.0", DiceArraySliceBinding);
-
     dataBinder.activateDataBinding("slice");
+}
+
+export function unregisterViewBinding(dataBinder: DataBinder) {
+    dataBinder.unregisterDataBindings("view", true);
+}
+
+export function activateViewBinding(dataBinder: DataBinder) {
+    dataBinder.unregisterDataBindings("slice", true, true);
+    dataBinder.activateDataBinding("view");
 }

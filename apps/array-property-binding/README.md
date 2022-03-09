@@ -1,4 +1,4 @@
-# More Complex Property Data Binding 
+# Array Property Data Binding 
 
 Investigates the Property DDS binding API with a slightly more complex scenario. See [simple binding app](../simple-property-binding) for a simpler scenario.
 
@@ -39,7 +39,7 @@ npx tinylicious
 Terminal 2
 
 ```sh
-cd FluidPatterns/apps/complex-property-binding
+cd FluidPatterns/apps/array-property-binding
 npm install -g serve
 serve -s build
 ```
