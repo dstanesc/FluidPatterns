@@ -102,7 +102,7 @@ export default function App() {
       const myDiceArrayController = new DiceArrayController(setDiceValues);
 
       // Initialize the default view
-      activateView(dataBinder, myDiceArrayController);
+      setDiceArrayBinderHandle(activateView(dataBinder, myDiceArrayController));
 
       //Initialize the property tree
       initPropertyTree(containerId, myWorkspace, setDiceValues);

@@ -3,8 +3,9 @@
 __Work In Progress ...__
 
 This exercise investigates using the PropertyDDS DataBinder directly for dynamic path registration.
-The code complexity is comparable to the [DataBinding](../array-property-binding/) solution.
+The code complexity is comparable to the [Data Binding](../array-property-binding/) solution.
 
+> Note: While algorithms are similar, listener registration paths are absolute (compared to the relative paths in the Data Binding exercise)
 
 # Getting Started
 

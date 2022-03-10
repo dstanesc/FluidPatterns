@@ -19,7 +19,7 @@ export class DiceArrayChangeAdapter {
     public diceRemove(key: string, context: ModificationContext) {
         const operationType: Utils.OperationType = context.getOperationType()!;
         const relativePath = context.getRelativeTokenizedPath();
-        const diceIndex: number = parseInt(relativePath[1]);
+        const diceIndex: number = parseInt(relativePath[2]);
         const change: DiceArrayChange = new DiceArrayChange(operationType, diceIndex, 0);
         this._diceArrayController.updateValue(change);
     }
@@ -67,7 +67,7 @@ export class DiceArraySliceChangeAdapter {
             //     "typeid": "hex:dice-1.0.0"
             //   }
             const relativePath = context.getRelativeTokenizedPath();
-            const diceIndex: number = parseInt(relativePath[1]);
+            const diceIndex: number = parseInt(relativePath[2]);
             if (changeSet.Int32) {
                 const diceValue: number = changeSet.Int32.diceValue;
                 const change: DiceArrayChange = new DiceArrayChange("modify", diceIndex, diceValue);
