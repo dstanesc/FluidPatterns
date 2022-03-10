@@ -1,7 +1,17 @@
 # Array Slice Property Data Binding 
 
-This exercise investigates the capabilities of the PropertyDDS data binding API to extract data fragments only. 
-The emerging conclusion is that while the pattern remains a possibility however the usage seems to stretch the original design intentions.
+This exercise investigates the capabilities of the PropertyDDS `DataBinding` API to extract dynamic data fragments. 
+
+The emerging conclusion is that while the pattern remains a possibility, the usage seems to stretch the original design intentions in case of dynamic binding registration.
+
+The `type` association with the `DataBinding` seems however to play very well when the data definition & navigation is static in nature. The `DataBinding` promotes good modularity and consistency in behavior (ie data is extracted consistently from data of same category/type)
+
+
+# Layers
+
+![Data Flow](./doc/img/data-flow-ing-2.png)
+
+# Demo
 
 ![Video](./doc/img/arraySliceBinding.gif)
 

@@ -1,11 +1,22 @@
-# Array Slice Property Data Binding 
-
-__Work In Progress ...__
+# Array Slice Property Data Binder
 
 This exercise investigates using the PropertyDDS DataBinder directly for dynamic path registration.
-The code complexity is comparable to the [Data Binding](../array-property-binding/) solution.
+For the problem at hand the code complexity is comparable to the [Data Binding](../array-property-binding/) solution.
+Deserves noted that while algorithms are similar, listener registration paths are absolute (vs. the relative paths in the Data Binding exercise). 
 
-> Note: While algorithms are similar, listener registration paths are absolute (compared to the relative paths in the Data Binding exercise)
+The full set of the implications is still to be determined but few theoretical aspects emerge:
+- The full path registration strategy (ie the `DataBinder` approach) can lead to a proliferation of paths, which depending on the property tree complexity and binding requirements can impact the solution scalability. 
+- The implementation of a solution exclusively based on the `DataBinder` can easily grow also in complexity, for instance tracking whether an `insert` happens at a given location in the tree may easily turn into tracking for the entire parent path to the root for `insert`s & `modification`s
+- The competing solution based on the `DataBinding` approach (and relative paths), depending on the nature of the data model (eg having multiple occurrences of the  same data type in the property tree, large size), could be more efficient and implicitly scale better.
+
+
+# Data Flow
+
+![Data Flow](./doc/img/data-flow-er-2.png)
+
+# Demo
+
+![Video](./doc/img/arraySliceBinding.gif)
 
 # Getting Started
 

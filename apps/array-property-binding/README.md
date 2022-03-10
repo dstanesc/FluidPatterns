@@ -91,11 +91,11 @@ The source of truth is maintained in Fluid. The UI state is derived from the Flu
 
 ## App Layers
 
-![Application Layers](./doc/img/app-layers.png)
+![Application Layers](./doc/img/app-layers-ing-2.png)
 
 ## Data Flow
 
-![Data Flow](./doc/img/data-flow.png)
+![Data Flow](./doc/img/data-flow-ing-2.png)
 
 
 ## Relevant Components
