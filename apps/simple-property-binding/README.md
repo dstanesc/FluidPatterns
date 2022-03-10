@@ -43,7 +43,7 @@ The dice, inserted as __hex:dice-1.1.0__ instance, properly triggers the `DiceBi
 
 ```ts
 rootProp.insert("dice", PropertyFactory.create("hex:dice-1.1.0", undefined, { "diceValue": "0", "diceColor": "green" }));
-``
+```
 
 # Getting Started
 
