@@ -1,6 +1,9 @@
-# FluidFramework - Fluid Patterns
+# Array Slice Property Data Binding 
 
-Main focus is investigating the experimental Property DDS and related FluidFramework software patterns
+__Work In Progress ...__
+
+This exercise investigates using the PropertyDDS DataBinder directly for dynamic path registration.
+The code complexity is comparable to the [DataBinding](../array-property-binding/) solution.
 
 
 # Getting Started
@@ -14,22 +17,41 @@ $ npm --version
 8.1.2
 ```
 
+Using NVM for node version management
+```sh
+nvm use v16.13.1
 ```
+## Build
+
+```sh
+cd FluidPatterns
 npm run clean
 npm install --legacy-peer-deps
 npm run build
 ```
 
-# Apps
 
-## Data Binding Patterns
+## Run
 
-- [Simple Property Binding](./apps/simple-property-binding/) 
-- [Array Property Binding](./apps/array-property-binding/)
-- [Array Slice Property Binding](./apps/array-slice-property-binding/) 
-- [Array Slice Property Binder](./apps/array-slice-property-binder/) 
+Terminal 1
 
-## Schema Patterns
+```sh
+npx tinylicious
+```
+
+Terminal 2
+
+```sh
+cd FluidPatterns/apps/array-slice-property-binder
+npm install -g serve
+serve -s build
+```
+or
+
+```sh
+cd FluidPatterns/apps/array-slice-property-binder
+npm start
+```
 
 ## Disclaimer
 
