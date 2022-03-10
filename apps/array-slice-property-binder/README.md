@@ -7,7 +7,7 @@ Deserves noted that while algorithms are similar, listener registration paths ar
 The full set of the implications is still to be determined but few theoretical aspects emerge:
 - The full path registration strategy (ie the `DataBinder` approach) can lead to a proliferation of paths, which depending on the property tree complexity and binding requirements can impact the solution scalability. 
 - The implementation of a solution exclusively based on the `DataBinder` can easily grow also in complexity, for instance tracking whether an `insert` happens at a given location in the tree may easily turn into tracking for the entire parent path to the root for `insert`s & `modification`s
-- The competing solution based on the `DataBinding` approach (and relative paths), depending on the nature of the data model (eg having multiple occurrences of the  same data type in the property tree, large size), could be more efficient and implicitly scale better.
+- The competing solution based on the `DataBinding` approach (and inherently relative navigation paths), depending on the nature of the data model (eg having multiple occurrences of the  same data type in the property tree, large size), could be more efficient and implicitly scale better.
 
 
 # Data Flow
