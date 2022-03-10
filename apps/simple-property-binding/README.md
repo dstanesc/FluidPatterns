@@ -9,7 +9,7 @@ In addition current code investigates the upgrade capability exposed by the bind
 The app recognizes 2 dice schemas
 
 __hex:dice-1.0.0__
-```json
+```js
 {
     typeid: "hex:dice-1.0.0",
     inherits: "NamedProperty",
@@ -19,7 +19,7 @@ __hex:dice-1.0.0__
 }
 ```
 __hex:dice-1.1.0__ with minor version revised
-```json
+```js
 {
     typeid: "hex:dice-1.1.0",
     inherits: "NamedProperty",
