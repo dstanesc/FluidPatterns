@@ -7,7 +7,7 @@ The emerging conclusion is that while the pattern remains a possibility, the usa
 The `type` association with the `DataBinding` seems however to play very well when the data definition & navigation is static in nature. The `DataBinding` promotes good modularity and consistency in behavior (ie data is extracted consistently from data of same category/type)
 
 
-# Layers
+# Data Flow
 
 ![Data Flow](./doc/img/data-flow-ing-2.png)
 
