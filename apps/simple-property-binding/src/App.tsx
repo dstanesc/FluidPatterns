@@ -5,13 +5,15 @@ import './App.css';
 import { PropertyFactory, NodeProperty, Int32Property }
   from "@fluid-experimental/property-properties";
 
-import { DataBinder } from "@fluid-experimental/property-binder";
+import { DataBinder, UpgradeType } from "@fluid-experimental/property-binder";
 
 import { SharedPropertyTree } from "@fluid-experimental/property-dds";
 
 import { Workspace, BoundWorkspace, initializeBoundWorkspace, registerSchema } from "@dstanesc/fluid-util";
 
 import diceSchema from "./dice-1.0.0";
+
+import diceSchemaNext from "./dice-1.1.0";
 
 import { Dice } from "./dice";
 
@@ -30,13 +32,14 @@ export default function App() {
 
   const containerId = window.location.hash.substring(1) || undefined;
 
-  // Register the template which is used to instantiate properties.
-  registerSchema(diceSchema);
-
 
   useEffect(() => {
 
     async function initWorkspace() {
+
+      // Register the template which is used to instantiate properties.
+      registerSchema(diceSchema);
+      registerSchema(diceSchemaNext);
 
       // Initialize the workspace
       const boundWorkspace: BoundWorkspace = await initializeBoundWorkspace(containerId);
@@ -66,16 +69,9 @@ export default function App() {
   }, []);
 
 
-  useEffect(() => {
-    if (workspace) {
-      updateProperty(workspace, diceValue);
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [diceValue]);
-
   const roll = () => {
     const newValue = Math.floor(Math.random() * 1024) + 1;
-    setDiceValue(newValue);
+    updateProperty(workspace, newValue);
   }
 
   const updateProperty = (workspace: Workspace, value: number) => {
@@ -105,7 +101,7 @@ function initializeTree(containerId: string | undefined, rootProp: NodeProperty,
 
   if (containerId === undefined) {
 
-    rootProp.insert("dice", PropertyFactory.create("hex:dice-1.0.0", undefined, { "diceValue": "0" }));
+    rootProp.insert("dice", PropertyFactory.create("hex:dice-1.1.0", undefined, { "diceValue": "0", "diceColor": "green" }));
 
     workspace.commit();
   }
@@ -113,12 +109,19 @@ function initializeTree(containerId: string | undefined, rootProp: NodeProperty,
 
 function configureBinding(fluidBinder: DataBinder, workspace: Workspace, diceRenderer: DiceRenderer) {
 
-  // Configure the Dice factory
+  // Configure the Dice factories
   fluidBinder.defineRepresentation("view", "hex:dice-1.0.0", (property) => {
     return new Dice(0, diceRenderer);
   });
 
+  fluidBinder.defineRepresentation("view", "hex:dice-1.1.0", (property) => {
+    return new Dice(0, diceRenderer);
+  });
+
   // Define & Activate the DiceBinding
-  fluidBinder.defineDataBinding("view", "hex:dice-1.0.0", DiceBinding);
+  fluidBinder.defineDataBinding("view", "hex:dice-1.0.0", DiceBinding, {
+    upgradeType: UpgradeType.MINOR
+  });
+
   fluidBinder.activateDataBinding("view");
 }

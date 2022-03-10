@@ -2,6 +2,49 @@
 
 Investigates the binding API for a simple scenario
 
+# Binding Upgrade
+
+In addition current code investigates the upgrade capability exposed by the binding API. 
+
+The app recognizes 2 dice schemas
+
+__hex:dice-1.0.0__
+```json
+{
+    typeid: "hex:dice-1.0.0",
+    inherits: "NamedProperty",
+    properties: [
+        { id: "diceValue", typeid: "Int32" }
+    ],
+}
+```
+__hex:dice-1.1.0__ with minor version revised
+```json
+{
+    typeid: "hex:dice-1.1.0",
+    inherits: "NamedProperty",
+    properties: [
+        { id: "diceValue", typeid: "Int32" },
+        { id: "diceColor", typeid: "String" },
+    ],
+}
+```
+
+The data binding is associated with __hex:dice-1.0.0__, but with the `UpgradeType.MINOR` option
+
+```ts
+  // Define the DiceBinding
+  fluidBinder.defineDataBinding("view", "hex:dice-1.0.0", DiceBinding, {
+    upgradeType: UpgradeType.MINOR
+  });
+```
+
+The dice, inserted as __hex:dice-1.1.0__ instance, properly triggers the `DiceBinding` callbacks.
+
+```ts
+rootProp.insert("dice", PropertyFactory.create("hex:dice-1.1.0", undefined, { "diceValue": "0", "diceColor": "green" }));
+``
+
 # Getting Started
 
 Needed dependencies
