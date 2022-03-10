@@ -26,7 +26,7 @@ import { DiceRenderer } from "./diceRenderer";
 
 export default function App() {
 
-  const [diceValue, setDiceValue] = useState<number>(0);
+  const [diceValue, setDiceValue] = useState<number>(-1);
 
   const [workspace, setWorkspace] = useState<Workspace>();
 
