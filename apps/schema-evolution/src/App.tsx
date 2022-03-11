@@ -4,11 +4,14 @@ import './App.css';
 
 
 
-import { DataBinder } from "@fluid-experimental/property-binder";
+import { DataBinder, UpgradeType } from "@fluid-experimental/property-binder";
 
 import { Workspace, BoundWorkspace, initializeBoundWorkspace, registerSchema } from "@dstanesc/fluid-util";
 
-import evolvableSchema from "./evolvable-1.0.0";
+import evolvableSchema100 from "./evolvable-1.0.0";
+import evolvableSchema101 from "./evolvable-1.0.1";
+import evolvableSchema102 from "./evolvable-1.0.2";
+import evolvableSchema103 from "./evolvable-1.0.3";
 import { EvolvableRenderer } from './evolvableRenderer';
 import { Evolvable } from './evolvable';
 import { EvolvableBinding } from './evolvableBinding';
@@ -25,7 +28,10 @@ export default function App() {
   const containerId = window.location.hash.substring(1) || undefined;
 
   // Register the template which is used to instantiate properties.
-  registerSchema(evolvableSchema);
+  registerSchema(evolvableSchema100);
+  registerSchema(evolvableSchema101);
+  registerSchema(evolvableSchema102);
+  registerSchema(evolvableSchema103);
 
 
   useEffect(() => {
@@ -47,13 +53,6 @@ export default function App() {
       configureBinding(dataBinder, myWorkspace, setLocalMap);
 
 
-
-
-      const rootProp: NodeProperty = myWorkspace.rootProperty;
-
-
-      initializeTree(containerId, rootProp, myWorkspace);
-
       // save workspace to react state
       setWorkspace(myWorkspace);
     }
@@ -64,13 +63,12 @@ export default function App() {
 
 
   const roll = () => {
-    const newA = Math.floor(Math.random() * 1024) + 1;
-    const newB = (Math.floor(Math.random() * 10000000) + 1).toString();    
-   // const newC = (Math.floor(Math.random() * 10000000) + 1).toString();    
     const map = new Map<string, any>();
-    map.set("numA",newA);
-    map.set("strB",newB);
-  //  map.set("strC",newB);
+    map.set("numA",(Math.floor(Math.random() * 10000000) + 1).toString());
+    map.set("strB",(Math.floor(Math.random() * 10000000) + 1).toString());
+    map.set("strC",(Math.floor(Math.random() * 10000000) + 1).toString());
+    map.set("strD",(Math.floor(Math.random() * 10000000) + 1).toString());
+    map.set("strE",(Math.floor(Math.random() * 10000000) + 1).toString());
     updateProperty(workspace,map);
   }
 
@@ -92,14 +90,42 @@ export default function App() {
   return (
    
     <div className="App">
-      <button>Create V1.0.0</button>
+      <button onClick={() => {    
+        const rootProp: NodeProperty = workspace.rootProperty;
+        initialize100(containerId, rootProp, workspace);}}>Create V1.0.0</button>
+
+      <button onClick={() => {    
+        const rootProp: NodeProperty = workspace.rootProperty;
+        initialize101(containerId, rootProp, workspace);}}>Create V1.0.1</button>
+
+      <button onClick={() => {    
+        const rootProp: NodeProperty = workspace.rootProperty;
+        initialize102(containerId, rootProp, workspace);}}>Create V1.0.2</button>
+
+      <button onClick={() => {    
+        const rootProp: NodeProperty = workspace.rootProperty;
+        initialize103(containerId, rootProp, workspace);}}>Create V1.0.3</button>
+      <br></br><br></br>
+      <button onClick={() => {    
+        const rootProp: NodeProperty = workspace.rootProperty;
+        to100(containerId, rootProp, workspace);}}>To V1.0.0</button>
+      <button onClick={() => {    
+        const rootProp: NodeProperty = workspace.rootProperty;
+        to101(containerId, rootProp, workspace);}}>To V1.0.1</button>   
+      <button onClick={() => {    
+        const rootProp: NodeProperty = workspace.rootProperty;
+        to102(containerId, rootProp, workspace);}}>To V1.0.2</button>
+      <button onClick={() => {    
+        const rootProp: NodeProperty = workspace.rootProperty;
+        to103(containerId, rootProp, workspace);}}>To V1.0.3</button>       
       <br></br> <br></br>
       <div >
         {renderLocalMap(localMap)}
       </div>
-      <div className="commit" onClick={() => roll()}>
+      <br></br><br></br>
+      <button className="commit" onClick={() => roll()}>
         Roll
-      </div>
+      </button>
     </div>
   );
 }
@@ -111,6 +137,7 @@ function renderLocalMap(mymap: Map<string,any>){
   const reactElem: any[] = [];
   reactElem.push((
   <table className="evotable">
+     <th>{"Attribute"}</th><th>{"Value"}</th>
   {renderRoot(mymap)}
   </table>
   ));
@@ -119,38 +146,132 @@ function renderLocalMap(mymap: Map<string,any>){
 
 
 function renderRoot(mymap: Map<string,any>){
-  return Array.from(mymap.keys()).map((key)=>
-  (
-    <tr style={{borderWidth:"2px", borderColor:"#aaaaaa", borderStyle:"solid"}}>
-        <td>{key}</td><td>{mymap.get(key)}</td>
-     </tr>
-  ));
-}
-
-function renderProperty(property: any){
   const reactElem: any[] = [];
-  reactElem.push((
-    {property}
-  ));
+  reactElem.push(
+    Array.from(mymap.keys()).filter((key)=>key=="typeId").map((key)=>
+    (
+      <tr>
+          <td className="typecell">{key}</td><td className="typecell">{mymap.get(key)}</td>
+       </tr>
+    )));
+  reactElem.push(
+  Array.from(mymap.keys()).filter((key)=>key!=="typeId").sort().map((key)=>
+  (
+    <tr>
+        <td className="attrcell">{key}</td><td className="attrcell">{mymap.get(key)}</td>
+     </tr>
+  )));
   return reactElem;
 }
 
-
-function initializeTree(containerId: string | undefined, rootProp: NodeProperty, workspace: Workspace) {
-  if (containerId === undefined) {
-    rootProp.insert("evolvable", PropertyFactory.create("hex:evolvable-1.0.0", undefined, { "numA": "0", "strB": "ABC" }));
-    workspace.commit();
+function removeEvolvable(rootProp: NodeProperty){
+  if(rootProp.resolvePath("evolvable")){
+    rootProp.remove("evolvable");
   }
+}
+
+
+function to100(containerId: string | undefined, rootProp: NodeProperty, workspace: Workspace) {  
+  let numA = (rootProp.resolvePath("evolvable.numA") as ValueProperty)?.getValue();
+  if(!numA){
+      numA = -1;
+  }
+  let strB = (rootProp.resolvePath("evolvable.strB") as ValueProperty)?.getValue();
+  if(!strB){
+    strB = "STRB";
+  }
+  removeEvolvable(rootProp);
+  rootProp.insert("evolvable", PropertyFactory.create("hex:evolvable-1.0.0", undefined, { "numA": numA, "strB": strB }));
+  workspace.commit();  
+}
+
+function to101(containerId: string | undefined, rootProp: NodeProperty, workspace: Workspace) {  
+  let numA = (rootProp.resolvePath("evolvable.numA") as ValueProperty)?.getValue();
+  if(!numA){
+      numA = -1;
+  }
+  let strC = (rootProp.resolvePath("evolvable.strC") as ValueProperty)?.getValue();
+  if(!strC){
+    strC = "STRC";
+  }
+  let strB = (rootProp.resolvePath("evolvable.strB") as ValueProperty)?.getValue();
+  if(!strB){
+    strB = "STRB";
+  }
+  removeEvolvable(rootProp);
+  rootProp.insert("evolvable", PropertyFactory.create("hex:evolvable-1.0.1", undefined, 
+      { "numA": numA, "strB": strB, "strC": strC }));
+  workspace.commit();
+}
+
+function to102(containerId: string | undefined, rootProp: NodeProperty, workspace: Workspace) {  
+  let numA = (rootProp.resolvePath("evolvable.numA") as ValueProperty)?.getValue();
+  if(!numA){
+      numA = -1;
+  }
+  let strC = (rootProp.resolvePath("evolvable.strC") as ValueProperty)?.getValue();
+  if(!strC){
+    strC = "STRC";
+  }
+  let strD = (rootProp.resolvePath("evolvable.strD") as ValueProperty)?.getValue();
+  if(!strD){
+    strD = "STRD";
+  }
+  removeEvolvable(rootProp);
+   rootProp.insert("evolvable", PropertyFactory.create("hex:evolvable-1.0.2", undefined, 
+      { "numA": numA, "strD": strD, "strC": strC }));
+  workspace.commit();
+}
+
+
+function to103(containerId: string | undefined, rootProp: NodeProperty, workspace: Workspace) {  
+  let strE = (rootProp.resolvePath("evolvable.strE") as ValueProperty)?.getValue();
+  if(!strE){
+    strE = "STRE";
+  }
+  removeEvolvable(rootProp);
+   rootProp.insert("evolvable", PropertyFactory.create("hex:evolvable-1.0.3", undefined, 
+      {"strE": strE}));
+  workspace.commit();
+}
+
+function initialize100(containerId: string | undefined, rootProp: NodeProperty, workspace: Workspace) {
+    removeEvolvable(rootProp);
+    rootProp.insert("evolvable", PropertyFactory.create("hex:evolvable-1.0.0", undefined, { "numA": -1, "strB": "XYZ" }));
+    workspace.commit();
+}
+
+function initialize101(containerId: string | undefined, rootProp: NodeProperty, workspace: Workspace) {
+  removeEvolvable(rootProp);
+  rootProp.insert("evolvable", PropertyFactory.create("hex:evolvable-1.0.1", undefined, 
+      { "numA": -1, "strB": "STRB", "strC": "STRC" }));
+  workspace.commit();
+}
+
+
+function initialize102(containerId: string | undefined, rootProp: NodeProperty, workspace: Workspace) {
+  removeEvolvable(rootProp);
+  rootProp.insert("evolvable", PropertyFactory.create("hex:evolvable-1.0.2", undefined, 
+      { "numA": -1, "strD": "STRD", "strC": "STRC" }));
+  workspace.commit();
+}
+
+function initialize103(containerId: string | undefined, rootProp: NodeProperty, workspace: Workspace) {
+  removeEvolvable(rootProp);
+  rootProp.insert("evolvable", PropertyFactory.create("hex:evolvable-1.0.3", undefined, 
+      { "strE": "X" }));
+  workspace.commit();
 }
 
 function configureBinding(fluidBinder: DataBinder, workspace: Workspace, evolvableRenderer: EvolvableRenderer) {
 
 
   fluidBinder.defineRepresentation("view", "hex:evolvable-1.0.0", (property) => {
-    return new Evolvable(evolvableRenderer);
-  });
+    return new Evolvable(property.getTypeid(),evolvableRenderer);
+  },{upgradeType: UpgradeType.MINOR});
 
+  
 
-  fluidBinder.defineDataBinding("view", "hex:evolvable-1.0.0", EvolvableBinding);
+  fluidBinder.defineDataBinding("view", "hex:evolvable-1.0.0", EvolvableBinding,{upgradeType: UpgradeType.MINOR});
   fluidBinder.activateDataBinding("view");
 }

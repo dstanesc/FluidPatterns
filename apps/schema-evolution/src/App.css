@@ -8,27 +8,45 @@
     cursor: pointer; 
 }
 
-.evotable tbody tr {
-    border-bottom: 1px solid #dddddd;
-}
 
 .evotable{
     min-height: 100%; 
     min-width: 10%;
     font-size: 20px; 
-    color: blue; 
+    color: darkblue;     
     text-align: left; 
     cursor: pointer; 
+    border-color: black;
 }
 
 .commit {
     min-height: 50%; 
-    font-size: 100px; 
-    color: greenyellow; 
-    text-align: center; 
+    font-size: 50px; 
+    color: black;
+    text-align: left; 
     cursor: pointer; 
+    border: 1px solid;
 }
 
-th, td {
-    border: 1px solid;
+th, .attrcell, .typecell {    
+    border: 3px solid;
+    border-color: black;
+    min-width: 200px;
   }
+
+  .attrcell {
+    color: darkblue;   
+    text-align: left; 
+      
+  }  
+
+  .typecell {
+    color: red;   
+    text-align: left; 
+      
+  }  
+
+  th {    
+    color: darkcyan; 
+    text-align: center; 
+  }  
