@@ -1,4 +1,3 @@
-import { tokenToString } from "typescript";
 import { EvolvableRenderer } from "./evolvableRenderer";
 import { cloneMap } from "./propUtil";
 
@@ -38,6 +37,16 @@ export class Evolvable {
 
     public updateE(strE: string){
         this.myMap.set("strE", strE);
+        this.render();
+    }
+
+    public updateF(strF: string){
+        this.myMap.set("strF", strF);
+        this.render();
+    }
+
+    public updateG(strG: string){
+        this.myMap.set("strG", strG);
         this.render();
     }
 

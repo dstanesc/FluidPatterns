@@ -25,6 +25,16 @@ export class EvolvableBinding extends DataBinding {
         evolvable?.updateE(value);
     }
 
+    private updateF(value: string) {
+        const evolvable = this.getRepresentation<Evolvable>();
+        evolvable?.updateF(value);
+    }
+
+    private updateG(value: string) {
+        const evolvable = this.getRepresentation<Evolvable>();
+        evolvable?.updateG(value);
+    }
+
     static initialize() {
         this.registerOnValues("numA", ["modify"], this.prototype.updateA);
         this.registerOnValues("numA", ["insert"], this.prototype.updateA);
@@ -35,7 +45,11 @@ export class EvolvableBinding extends DataBinding {
         this.registerOnValues("strD", ["modify"], this.prototype.updateD);
         this.registerOnValues("strD", ["insert"], this.prototype.updateD);    
         this.registerOnValues("strE", ["modify"], this.prototype.updateE);
-        this.registerOnValues("strE", ["insert"], this.prototype.updateE);                
+        this.registerOnValues("strE", ["insert"], this.prototype.updateE);   
+        this.registerOnValues("strF", ["modify"], this.prototype.updateF);
+        this.registerOnValues("strF", ["insert"], this.prototype.updateF);    
+        this.registerOnValues("strG", ["modify"], this.prototype.updateG);
+        this.registerOnValues("strG", ["insert"], this.prototype.updateG);                         
     }
 }
 
