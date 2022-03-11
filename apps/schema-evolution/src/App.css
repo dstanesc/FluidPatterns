@@ -41,6 +41,8 @@ th, .attrcell, .typecell {
   }  
 
   .typecell {
+    font-size: 20px; 
+    font-weight: bold;
     color: red;   
     text-align: left; 
       
