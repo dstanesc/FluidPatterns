@@ -10,7 +10,6 @@ Based on the conclusions from [Array Slice Property Data Binder](../array-slice-
 # The Theory
 
 1. The `Type Binding` strategy is conceptually more I/O efficient. As the [Change Set](https://github.com/microsoft/FluidFramework/blob/main/experimental/PropertyDDS/packages/property-changeset/src/changeset.ts) operation structures (_insert, modify, remove, etc._) carry the `typeid` attribution, à la:
-
 ```json
 {
  "modify": {
@@ -26,9 +25,7 @@ Based on the conclusions from [Array Slice Property Data Binder](../array-slice-
  }
 }
 ```
-dispatching them to the callbacks is a relatively inexpensive operation even with instances of the `dice` (ie. `hex:dice-1.0.0`) stored at many locations (1000s ?) in the property tree.
-
-On the other hand the `Path Binding` uses _absolute_ paths for performing the same selection. For every incoming modification, the collection of `_AbsolutePathDataBinding._registeredPaths` would have to be scanned to trigger the appropriate callbacks. 
+dispatching them to the callbacks is a relatively inexpensive operation even with instances of the `dice` (ie. `hex:dice-1.0.0`) stored at many locations (1000s ?) in the property tree. On the other hand the `Path Binding` uses _absolute_ paths for performing the same selection. For every incoming modification, the collection of `_AbsolutePathDataBinding._registeredPaths` would have to be scanned to trigger the appropriate callbacks. 
 
 2. The `Type Binding` strategy is conceptually more modular and helps creating maintainable applications. The association between data templates (ie. typed structs, eg.  `hex:dice-1.0.0`) and stable binding rules (ie. immutable at runtime) represent in our view a design choice super relevant in promoting consistency for data usage. For instance multiple bindings can be defined for a given data template and data consumers have the ability to choose among this stable set. This is for instance analogous to view specifications enabling generic applications to use consistent view definitions (eg. same collection of attributes) when consuming/displaying objects of a particular type for properly categorized use cases. This pattern is used successfully in other frameworks, for instance [SimManager](https://www.mscsoftware.com/product/simmanager) portal platform.
 
