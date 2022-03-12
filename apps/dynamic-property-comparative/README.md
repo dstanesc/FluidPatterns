@@ -4,8 +4,8 @@ Based on the conclusions from [Array Slice Property Data Binder](../array-slice-
 
 # Vocabulary
 
-- Path Binding - refers to the ability to listen for _insert, modify, remove, etc._ Property DDS data changes __by registering absolute navigation paths__ via the [DataBinder](https://github.com/microsoft/FluidFramework/blob/main/experimental/PropertyDDS/packages/property-binder/src/data_binder/dataBinder.ts) interface.
-- Type Binding - refers to the ability to listen for _insert, modify, remove, etc._ Property DDS data changes __by registering type specific [Data Binding](https://github.com/microsoft/FluidFramework/blob/main/experimental/PropertyDDS/packages/property-binder/src/data_binder/dataBinding.ts) artifacts__
+- __Path Binding__ - refers to the ability to listen for _insert, modify, remove, etc._ Property DDS data changes __by registering absolute navigation paths__ via the [DataBinder](https://github.com/microsoft/FluidFramework/blob/main/experimental/PropertyDDS/packages/property-binder/src/data_binder/dataBinder.ts) interface.
+- __Type Binding__ - refers to the ability to listen for _insert, modify, remove, etc._ Property DDS data changes __by registering type specific [Data Binding](https://github.com/microsoft/FluidFramework/blob/main/experimental/PropertyDDS/packages/property-binder/src/data_binder/dataBinding.ts) artifacts__
 
 # The Theory
 
