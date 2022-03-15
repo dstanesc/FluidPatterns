@@ -107,35 +107,39 @@ describe("Dice Binding Benchmark", function () {
         expect(2 + 2).toBe(4);
     });
 
-    test("10 properties", () => {
+    // test("10 properties", () => {
 
-        return performInternal(10, 10).then(props => {
-            
-            runs.set(10, history);
-        });
-    });
 
-    test("100 properties", () => {
+    //         runs.set(10, history);
 
-        return performInternal(10, 100).then(props => {
-            
-            runs.set(100, history);
-        });
-    });
-
-    test("1000 properties", () => {
-
-        return performInternal(10, 1000).then(props => {
-
-            runs.set(1000, history);
-        });
-    });
-
-    // test("10000 properties", () => {
-
-    //     return performInternal(10, 10000).then(props => {
-
-    //         runs.set(10000, history);
+    //         operations.forEach(op => {
+    //             expect(op.latency).toBeLessThan(10);
+    //         });
     //     });
     // });
+
+    // test("100 properties", () => {
+
+    //     return performInternal(10, 100).then(props => {
+            
+    //         runs.set(100, history);
+    //     });
+    // });
+
+    // test("1000 properties", () => {
+
+    //     return performInternal(10, 1000).then(props => {
+
+    //         runs.set(1000, history);
+    //     });
+    // });
+
+    test("3000 properties", () => {
+
+        return performInternal(10, 3000).then(props => {
+
+            runs.set(3000, history);
+        });
+    });
+
 });

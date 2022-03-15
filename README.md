@@ -28,6 +28,7 @@ npm run build
 - [Array Property Binding](./apps/array-property-binding/)
 - [Array Slice Property Binding](./apps/array-slice-property-binding/) 
 - [Array Slice Property Binder](./apps/array-slice-property-binder/) 
+- [Comparative Binding Evaluation](./apps/dynamic-property-comparative/) 
 
 ## Schema Patterns
 
