@@ -67,6 +67,13 @@ We compare the performance of the 2 categories of binding. The strategy is to me
 ![3000 Dices](./doc/img/3000-dices.png)
 
 
+# Opportunities
+
+- __Observability__, embedded performance monitoring and APIs. This is invaluable to diagnose in real time productive systems and help developers to understand their own design limitations early. Can help substantially creating dynamic autoscaling rules.
+
+
+
+
 ## Disclaimer
 
 This project has adopted the [Microsoft Open Source Code of Conduct](https://opensource.microsoft.com/codeofconduct/).
