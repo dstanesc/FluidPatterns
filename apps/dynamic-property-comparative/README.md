@@ -1,11 +1,18 @@
-# Comparative Binding Evaluation 
+# Comparative Performance Binding Evaluation 
 
-Based on the conclusions from [Array Slice Property Data Binder](../array-slice-property-binder) and [Array Slice Property Data Binding](../array-slice-property-binding) investigation we believe is important to validate the scalability characteristics of the two categories of solutions. However this is NOT a exhaustive benchmark, but just an attempt to sketch the performance and scalability trend lines. Therefore the absolute value of the presented results is more or less irrelevant (as has to do a lot with the test heuristics). More meaningful is the ratio between the result values obtained in similar test conditions for `Path` and `Type Binding`
+Based on the conclusions from [Array Slice Property Data Binder](../array-slice-property-binder) and [Array Slice Property Data Binding](../array-slice-property-binding) investigation we believe is important to validate the scalability characteristics of the two categories of solutions. However this is NOT a exhaustive benchmark, but just an attempt to sketch the performance and scalability trend lines. The absolute value of the presented results is more or less irrelevant (as has to do a lot with the test heuristics). More meaningful to interpret is the ratio between the result values obtained in similar test conditions for `Path Binding` and `Type Binding`
+
 
 # Vocabulary
 
 - __Path Binding__ - refers to the ability to listen for _insert, modify, remove, etc._ Property DDS data changes __by registering absolute navigation paths__ via the [DataBinder](https://github.com/microsoft/FluidFramework/blob/main/experimental/PropertyDDS/packages/property-binder/src/data_binder/dataBinder.ts) interface.
 - __Type Binding__ - refers to the ability to listen for _insert, modify, remove, etc._ Property DDS data changes __by registering type specific [Data Binding](https://github.com/microsoft/FluidFramework/blob/main/experimental/PropertyDDS/packages/property-binder/src/data_binder/dataBinding.ts) artifacts__
+
+
+# TL;DR
+
+The data binding infrastructure is an impressive piece of software with outstanding performance characteristics in its both incarnations: `Type Binding` and `Path Binding`. Scalability is bound to the available memory. `Type Binding` is not impacted at all by the size of the _Property Tree_. `Path Binding` displays a slight deprecation as the _Property Tree_ gets bigger. Please read further for more details.
+
 
 # Theoretical considerations
 
