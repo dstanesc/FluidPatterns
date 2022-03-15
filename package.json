@@ -9,6 +9,7 @@
     },
     "devDependencies": {
         "@auth0/auth0-react": "^1.2.0",
+        "@babel/polyfill": "^7.12.1",
         "@fluid-experimental/get-container": "0.57.0",
         "@fluid-experimental/property-binder": "0.57.0",
         "@fluid-experimental/property-changeset": "0.57.0",

@@ -1,8 +1,8 @@
-import { Call } from "./diceController";
+import { Operation } from "./diceController";
 
 export type StatRenderer = {
 
-    (call: Call): void;
+    (call: Operation): void;
 }
 
 export type PropCountRenderer = {
