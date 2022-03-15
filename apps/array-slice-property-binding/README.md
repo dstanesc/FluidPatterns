@@ -4,6 +4,8 @@ This exercise investigates the capabilities of the PropertyDDS `DataBinding` API
 
 The emerging conclusion is that while the pattern remains a possibility, the usage seems to stretch the original design intentions in case of dynamic binding registration.
 
+The disputable solution is at the [static binding initialization](./src/diceArraySliceBinding.ts) which has to be parametrized dynamically with the data slice definition. This pattern works as long as the application logic/design is NOT repurposing the functionality of (maintains a single instance of) the `DiceArraySliceBinding`.
+
 The `type` association with the `DataBinding` seems however to play very well when the data definition & navigation is static in nature. The `DataBinding` promotes good modularity and consistency in behavior (ie data is extracted consistently from data of same category/type)
 
 
