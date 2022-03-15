@@ -1,7 +1,7 @@
 import { DataBinder, DataBinderHandle, UpgradeType } from "@fluid-experimental/property-binder";
 import { Workspace, BoundWorkspace, initializeBoundWorkspace, registerSchema } from "@dstanesc/fluid-util";
 import schema from "./dice-1.0.0";
-import { Operation, DEFAULT_CALL, DiceController } from "./diceController";
+import { Operation, DEFAULT_CALL, DiceBindingController } from "./diceController";
 import { DiceBinding } from "./diceBinding";
 import { PropCountRenderer, StatRenderer } from "./renderers";
 import { DiceAdapter, DiceArrayBinderHandle } from './diceAdapter';
@@ -97,7 +97,7 @@ describe("Dice Binding Benchmark", function () {
     // });
 
     afterEach(function () {
-        cleanUp();
+        //cleanUp();
     });
 
     test("empty suite", () =>{

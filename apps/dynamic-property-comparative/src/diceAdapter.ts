@@ -1,14 +1,17 @@
 import { DataBinderHandle } from "@fluid-experimental/property-binder";
 import { ModificationContext } from "@fluid-experimental/property-binder/dist/data_binder/modificationContext";
-import { DiceController } from "./diceController";
+import { DiceBindingController } from "./diceController";
 
 
 export class DiceAdapter {
 
-    _diceController: DiceController;
+    _diceController: DiceBindingController;
 
-    constructor(diceArrayController: DiceController) {
+    _rolls: Map<string, number>;
+
+    constructor(diceArrayController: DiceBindingController) {
         this._diceController = diceArrayController;
+        this._rolls = new Map();
     }
 
     public diceInsert(context: ModificationContext) {
@@ -21,8 +24,11 @@ export class DiceAdapter {
             if (changeSet.String) {
                 const publishedAt: number = parseInt(changeSet.String.publishedAt);
                 const receivedAt: number = Date.now();
-                this._diceController.insertValue(diceIndex, publishedAt, receivedAt);
+                this._diceController.insertValue(diceIndex, -1, publishedAt, receivedAt);
+                console.log(`DiceAdapter#updateValue ${receivedAt-publishedAt}`);
             }
+
+            
         }
     }
 
@@ -36,7 +42,14 @@ export class DiceAdapter {
             if (changeSet.String) {
                 const publishedAt: number = parseInt(changeSet.String.publishedAt);
                 const receivedAt: number = Date.now();
-                this._diceController.updateValue(diceIndex, publishedAt, receivedAt);
+                const rollIndex: number = this._rolls.get(diceIndex);
+                this._diceController.updateValue(diceIndex, rollIndex, publishedAt, receivedAt);
+            }
+
+            if(changeSet.Int32){
+                const rollIndex = changeSet.Int32.diceValue;
+                this._rolls.set(diceIndex, rollIndex)
+                this._diceController.updateValue(diceIndex, rollIndex, -1, -1);
             }
         }
     }

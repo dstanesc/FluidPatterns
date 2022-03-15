@@ -1,11 +1,12 @@
 import { DataBinder, DataBinderHandle, UpgradeType } from "@fluid-experimental/property-binder";
 import { Workspace, BoundWorkspace, initializeBoundWorkspace, registerSchema } from "@dstanesc/fluid-util";
 import schema from "./dice-1.0.0";
-import { Operation, DEFAULT_CALL, DiceController } from "./diceController";
+import { Operation, DEFAULT_CALL, DiceBindingController, DiceAdapterController } from "./diceController";
 import { DiceBinding } from "./diceBinding";
 import { PropCountRenderer, StatRenderer } from "./renderers";
 import { DiceAdapter, DiceArrayBinderHandle } from './diceAdapter';
-import { initWorkspace, configureTypeBinding, unregisterTypeBinding, configurePathBinding, createDiceProperty, rollSingle, rollAll, removeAll, sleep, createDiceProperties, rollManyTimes, initWorkspace2 } from './diceApi';
+import { initWorkspace, configureTypeBinding, unregisterTypeBinding, configurePathBinding, createDiceProperty, rollSingle, rollAll, removeAll, sleep, createDiceProperties, rollManyTimes, initWorkspace2, createDicePropertiesSynch } from './diceApi';
+import { NamedProperty } from "@fluid-experimental/property-properties";
 
 // @ts-ignore
 window.performance.mark = () => { };
@@ -26,6 +27,8 @@ describe("Dice Binding Benchmark", function () {
     let operations: Operation[] = [];
 
     let history: string = "";
+
+    let runs:  Map<number,string> = new Map<number,string>(); 
 
 
     const setDataBinder = (b: DataBinder) => {
@@ -62,65 +65,105 @@ describe("Dice Binding Benchmark", function () {
         history = "";
     }
 
-    const performInternal = async (times: number, size: number): Promise<BoundWorkspace> => {
+
+    const performInternal = async (times: number, size: number): Promise<any> => {
+
         const workspacePromise = initWorkspace2(containerId, setDataBinder, setWorkspace, setLocationHash);
-        workspacePromise.then(
-            w => {
+
+        return workspacePromise.then(
+           w => {
 
                 console.log(`Dice Binding:  createDiceProperties`);
 
-                createDiceProperties(size, workspace);
+                createDicePropertiesSynch(size, workspace);
 
                 console.log(`Dice Binding:  configureTypeBinding`);
 
-                configurePathBinding(dataBinder, workspace, new DiceController(addOperation, setPropCount));
+                configurePathBinding(dataBinder, workspace, new DiceAdapterController(addOperation, setPropCount));
 
                 console.log(`Dice Binding:  rollManyTimes`);
 
                 rollManyTimes(times, workspace);
             }
-        );
-        return workspacePromise;
+       );
     }
 
-    // beforeAll(function () {
+    //  const performInternal = async (times: number, size: number): Promise<BoundWorkspace> => {
 
-    // });
+    //     const workspacePromise = initWorkspace2(containerId, setDataBinder, setWorkspace, setLocationHash);
 
-    // beforeEach(function () {
+    //     workspacePromise.then(
 
-    // });
+    //         w => {
+
+    //             return createDiceProperties(size, workspace).then(
+
+    //                 (diceProps: NamedProperty[]) => {
+
+    //                     console.log(`Dice Binding:  configureTypeBinding`);
+
+    //                     configurePathBinding(dataBinder, workspace, new DiceAdapterController(addOperation, setPropCount));
+
+    //                     console.log(`Dice Binding:  rollManyTimes`);
+
+    //                     rollManyTimes(times, workspace);
+
+    //                     return diceProps;
+    //                 }
+    //             );
+    //         }
+    //     );
+        
+    //     return workspacePromise;
+    // }
+
+    const display = () => {
+        console.log(`Current latencies ${history}`);
+        runs.forEach((h: string, key: number) => {
+            console.log(`Historical latencies ${key} -> ${h}`);
+        });
+    }
 
     afterEach(function () {
-
-        operations.forEach(o => {
-            console.log(`Found operation latency ${o.latency}`);
-        });
-
-        console.log(`Recorded latencies ${history}`);
-
+        display();
         cleanUp();
     });
 
-    test("empty suite", () =>{
+    test("empty suite", () => {
         expect(2 + 2).toBe(4);
     });
 
     test("10 properties", () => {
-        return performInternal(10, 1000).then(data => {
-            console.log(`Dice Binding:  Test Executed ${data}`);
+
+        return performInternal(10, 10).then(props => {
+            
+            runs.set(10, history);
         });
     });
 
-    // test("100 properties", () => {
-    //     return performInternal(10, 100).then(data => {
-    //         console.log(`Dice Binding:  Test Executed ${data}`);
-    //     });
-    // });
+    test("100 properties", () => {
 
-    // test("1000 properties", () => {
-    //     return performInternal(10, 1000).then(data => {
-    //         console.log(`Dice Binding:  Test Executed ${data}`);
+        return performInternal(10, 100).then(props => {
+            
+            runs.set(100, history);
+        });
+    });
+
+    test("1000 properties", () => {
+
+        return performInternal(10, 1000).then(props => {
+
+            runs.set(1000, history);
+        });
+    });
+
+    // test("10000 properties", () => {
+
+    //     return performInternal(10, 10000).then(props => {
+
+    //         runs.set(10000, history);
     //     });
     // });
 });
+
+

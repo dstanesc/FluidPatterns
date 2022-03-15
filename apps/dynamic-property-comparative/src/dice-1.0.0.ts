@@ -5,6 +5,5 @@ export default  {
     properties: [
         { id: "diceValue", typeid: "Int32" },
         { id: "publishedAt", typeid: "String" },
-        { id: "receivedAt", typeid: "String" },
     ],
 };

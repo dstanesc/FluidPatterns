@@ -13,7 +13,7 @@ import { Workspace, BoundWorkspace, initializeBoundWorkspace, registerSchema } f
 
 import schema from "./dice-1.0.0";
 
-import { Operation, DEFAULT_CALL, DiceController } from "./diceController";
+import { Operation, DEFAULT_CALL, DiceBindingController, DiceAdapterController } from "./diceController";
 
 import { DiceBinding } from "./diceBinding";
 
@@ -21,7 +21,7 @@ import { PropCountRenderer, StatRenderer } from "./renderers";
 
 import { DiceAdapter, DiceArrayBinderHandle } from './diceAdapter';
 
-import { configureTypeBinding, unregisterTypeBinding, configurePathBinding, createDiceProperty, rollSingle, rollAll, removeAll, initWorkspace, sleep } from './diceApi';
+import { configureTypeBinding, unregisterTypeBinding, configurePathBinding, createDiceProperty, rollSingle, rollAll, removeAll, initWorkspace, initWorkspace2, sleep } from './diceApi';
 
 
 
@@ -65,7 +65,7 @@ export default function App() {
     if (workspace) {
       for (let i = 0; i < times; i++) {
         await sleep(SLEEP_TIME);
-        rollAll(workspace);
+        rollAll(i, workspace);
       }
     }
   }
@@ -78,9 +78,9 @@ export default function App() {
 
   const bind = () => {
 
-    // configurePathBinding(dataBinder, workspace, new DiceController(setCallStat, setPropCount));
+    configurePathBinding(dataBinder, workspace, new DiceAdapterController(setOpStat, setPropCount));
 
-    configureTypeBinding(dataBinder, workspace, setOpStat, setPropCount);
+    //configureTypeBinding(dataBinder, workspace, setOpStat, setPropCount);
   }
 
   return (
@@ -102,7 +102,7 @@ export default function App() {
         Config
       </span>
 
-      <span className="commit" onClick={() => load(1000)}>
+      <span className="commit" onClick={() => load(10)}>
         Load
       </span>
 
