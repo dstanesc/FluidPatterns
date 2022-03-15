@@ -3,24 +3,22 @@ import { PropCountRenderer, StatRenderer } from "./renderers";
 import { copy as deepClone } from "fastest-json-copy";
 
 
-export const DEFAULT_CALL = { time: 0, latency: 0, count: 0, avg: 0, history: ""};
+export const DEFAULT_CALL = { publishedAt: 0, latency: 0, count: 0, history: "" };
 
-export interface Call {
+export interface Operation {
 
-    time: number;
+    publishedAt: number;
 
     latency: number;
 
     count: number;
-
-    avg: number;
 
     history: string;
 }
 
 export class DiceController {
 
-    monitoredCalls: Map<string, Call>;
+    monitoredOperations: Map<string, Operation>;
 
     statRenderer: StatRenderer;
 
@@ -30,28 +28,27 @@ export class DiceController {
     constructor(statRenderer: StatRenderer, propCountRenderer: PropCountRenderer) {
         this.statRenderer = statRenderer;
         this.propCountRenderer = propCountRenderer;
-        this.monitoredCalls = new Map<string, Call>([
-            ["0", DEFAULT_CALL],
+        this.monitoredOperations = new Map<string, Operation>([
+            ["9", DEFAULT_CALL],
         ]);
     }
 
-    public insertValue(key: string, diceValue: number) {
-
+    public insertValue(key: string, publishedAt: number, receivedAt: number) {
+        console.log(`Dice insertValue key ${key}, publishedAt ${publishedAt}, receivedAt ${receivedAt}`);
         this.propCountRenderer(parseInt(key) + 1);
     }
 
-    public updateValue(key: string, diceValue: number) {
-        console.log(`Dice controller key ${key}, value ${diceValue}`);
-        let call: Call = this.monitoredCalls.get(key);
-        if (call) {
-            const now = Date.now();
-            call.count += 1
-            const currentLatency = now - call.time;
-            call.avg = call.latency+currentLatency/call.count;
-            call.latency = currentLatency;
-            call.time = now;
-            call.history +=  `${currentLatency}, `;
-            this.statRenderer(deepClone(call));
+    public updateValue(key: string, publishedAt: number, receivedAt: number) {
+        console.log(`Dice updateValue key ${key}, publishedAt ${publishedAt}, receivedAt ${receivedAt}`);
+        if (publishedAt > 0) {
+            let call: Operation = this.monitoredOperations.get(key);
+            if (call) {
+                call.publishedAt = publishedAt;
+                call.latency = receivedAt - publishedAt;
+                call.count += 1
+                call.history += `${call.latency}, `;
+                this.statRenderer(deepClone(call));
+            }
         }
     }
 }

@@ -17,18 +17,11 @@ export class DiceAdapter {
             const relativePath = context.getRelativeTokenizedPath();
             console.log(`Relative path ${relativePath}`);
             console.log(JSON.stringify(changeSet, null, 2));
-            // {
-            //     "Int32": {
-            //       "diceValue": 26
-            //     },
-            //     "typeid": "hex:dice-1.0.0"
-            //   }
-            
             const diceIndex: string = relativePath[0];
-           
-            if (changeSet.Int32) {
-                const diceValue: number = changeSet.Int32.diceValue;
-                this._diceController.insertValue(diceIndex, diceValue);
+            if (changeSet.String) {
+                const publishedAt: number = parseInt(changeSet.String.publishedAt);
+                const receivedAt: number = Date.now();
+                this._diceController.insertValue(diceIndex, publishedAt, receivedAt);
             }
         }
     }
@@ -39,17 +32,11 @@ export class DiceAdapter {
             const relativePath = context.getRelativeTokenizedPath();
             console.log(`Relative path ${relativePath}`);
             console.log(JSON.stringify(changeSet, null, 2));
-            // {
-            //     "Int32": {
-            //       "diceValue": 26
-            //     },
-            //     "typeid": "hex:dice-1.0.0"
-            //   }
             const diceIndex: string = relativePath[0];
-            console.log(`Relative path ${relativePath}`);
-            if (changeSet.Int32) {
-                const diceValue: number = changeSet.Int32.diceValue;
-                this._diceController.updateValue(diceIndex, diceValue);
+            if (changeSet.String) {
+                const publishedAt: number = parseInt(changeSet.String.publishedAt);
+                const receivedAt: number = Date.now();
+                this._diceController.updateValue(diceIndex, publishedAt, receivedAt);
             }
         }
     }
