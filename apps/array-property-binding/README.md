@@ -111,6 +111,9 @@ src/
 └── diceArrayDisplay.ts      -> Technology agnostic conceptualization for rendering aspects
 ```
 
+# Demo
+
+![Video](./doc/img/dice-array.gif)
 
 ## Disclaimer
 
