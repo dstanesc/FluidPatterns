@@ -5,7 +5,7 @@ import { Operation, DEFAULT_CALL, DiceBindingController } from "./diceController
 import { DiceBinding } from "./diceBinding";
 import { PropCountRenderer, StatRenderer } from "./renderers";
 import { DiceAdapter, DiceArrayBinderHandle } from './diceAdapter';
-import { initWorkspace, configureTypeBinding, unregisterTypeBinding, configurePathBinding, createDiceProperty, rollSingle, rollAll, removeAll, sleep, createDiceProperties, rollManyTimes, initWorkspace2 } from './diceApi';
+import { initWorkspace, configureTypeBinding, unregisterTypeBinding, configurePathBinding, createDiceProperty, rollSingle, rollAll, removeAll, sleep, createDiceProperties, rollManyTimes, initWorkspace2, createDicePropertiesSynch } from './diceApi';
 
 // @ts-ignore
 window.performance.mark = () => { };
@@ -27,6 +27,7 @@ describe("Dice Binding Benchmark", function () {
 
     let history: string = "";
 
+    let runs: Map<number, string> = new Map<number, string>();
 
     const setDataBinder = (b: DataBinder) => {
         dataBinder = b;
@@ -62,9 +63,9 @@ describe("Dice Binding Benchmark", function () {
         history = "";
     }
 
-    const performInternal = async (times: number, size: number): Promise<BoundWorkspace> => {
+    const performInternal = async (times: number, size: number): Promise<any> => {
         const workspacePromise = initWorkspace2(containerId, setDataBinder, setWorkspace, setLocationHash);
-        workspacePromise.then(
+        return workspacePromise.then(
             w => {
 
                 console.log(`Dice Binding:  configureTypeBinding`);
@@ -73,19 +74,13 @@ describe("Dice Binding Benchmark", function () {
 
                 console.log(`Dice Binding:  createDiceProperties`);
 
-                createDiceProperties(size, workspace);
+                createDicePropertiesSynch(size, workspace);
 
                 console.log(`Dice Binding:  rollManyTimes`);
 
                 rollManyTimes(times, workspace);
-
-                operations.forEach(o => {
-                    console.log(`Found operation latency ${o.latency}`);
-                });
-
             }
         );
-        return workspacePromise;
     }
 
     // beforeAll(function () {
@@ -96,32 +91,51 @@ describe("Dice Binding Benchmark", function () {
 
     // });
 
+    const display = () => {
+        console.log(`Current latencies ${history}`);
+        runs.forEach((h: string, key: number) => {
+            console.log(`Historical latencies ${key} -> ${h}`);
+        });
+    }
+
     afterEach(function () {
-        //cleanUp();
+        display();
+        cleanUp();
     });
 
-    test("empty suite", () =>{
+    test("empty suite", () => {
         expect(2 + 2).toBe(4);
     });
 
-    // test("10 properties", () => {
-    //     return performInternal(10, 10).then(data => {
-    //         console.log(`Dice Binding:  Test Executed ${data}`);
-    //         console.log(`Recorded latencies ${history}`);
-    //     });
-    // });
+    test("10 properties", () => {
 
-    // test("100 properties", () => {
-    //     return performInternal(10, 100).then(data => {
-    //         console.log(`Dice Binding:  Test Executed ${data}`);
-    //         console.log(`Recorded latencies ${history}`);
-    //     });
-    // });
+        return performInternal(10, 10).then(props => {
+            
+            runs.set(10, history);
+        });
+    });
 
-    // test("1000 properties", () => {
-    //     return performInternal(10, 1000).then(data => {
-    //         console.log(`Dice Binding:  Test Executed ${data}`);
-    //         console.log(`Recorded latencies ${history}`);
+    test("100 properties", () => {
+
+        return performInternal(10, 100).then(props => {
+            
+            runs.set(100, history);
+        });
+    });
+
+    test("1000 properties", () => {
+
+        return performInternal(10, 1000).then(props => {
+
+            runs.set(1000, history);
+        });
+    });
+
+    // test("10000 properties", () => {
+
+    //     return performInternal(10, 10000).then(props => {
+
+    //         runs.set(10000, history);
     //     });
     // });
 });
