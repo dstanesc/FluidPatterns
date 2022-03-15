@@ -29,12 +29,15 @@ export default function App() {
   const containerId = window.location.hash.substring(1) || undefined;
 
   // Register the template which is used to instantiate properties.
+
+  PropertyFactory.register(Object.values([evolvableSchema100,evolvableSchema101,evolvableSchema102,evolvableSchema103,evolvableSchema200]));
+  /*
   registerSchema(evolvableSchema100);
   registerSchema(evolvableSchema101);
   registerSchema(evolvableSchema102);
   registerSchema(evolvableSchema103);
   registerSchema(evolvableSchema200);
-
+*/
 
   useEffect(() => {
 
@@ -135,7 +138,7 @@ export default function App() {
         const rootProp: NodeProperty = workspace.rootProperty;
         to200(containerId, rootProp, workspace);}}>To V2.0.0</button>            
       <br></br> <br></br>
-      <h2>Data table</h2>    
+      <h2>Data Table</h2>    
       <div >
         {renderLocalMap(localMap)}
       </div>
