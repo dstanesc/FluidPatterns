@@ -19,7 +19,7 @@ import diceArraySchema from "./diceArray-1.0.0";
 
 import { retrieveArrayProperty, retrieveValueProperty, createDiceProperty, initPropertyTree, configureBinding } from "./diceArrayApi";
 
-
+import {Topics} from "@dstanesc/plexus-util";
 /*
  * Cell react component, the atomic dice view
  */

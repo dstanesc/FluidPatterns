@@ -22,7 +22,7 @@ export class DiceArrayBinding extends DataBinding {
         const relativePath = context.getRelativeTokenizedPath();
         const diceIndex: number = parseInt(relativePath[1]);
         const change: DiceArrayChange = new DiceArrayChange(operationType, diceIndex, 0);
-        diceArrayController?.updateValue(change);
+        diceArrayController.updateValue(change);
     }
 
     private performModificationInternal(key: string, context: ModificationContext) {
@@ -43,7 +43,7 @@ export class DiceArrayBinding extends DataBinding {
             if (changeSet.Int32) {
                 const diceValue: number = changeSet.Int32.diceValue;
                 const change: DiceArrayChange = new DiceArrayChange(operationType, diceIndex, diceValue);
-                diceArrayController?.updateValue(change);
+                diceArrayController.updateValue(change);
             }
         }
     }
