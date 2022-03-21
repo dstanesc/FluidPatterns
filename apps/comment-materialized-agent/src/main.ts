@@ -1,16 +1,19 @@
-import { configureBinding, initPropertyTree, retrieveArrayProperty, createStringProperty, Topics, stringArraySchema, queryArraySchema, queryResultArraySchema, queryResultSchema, querySchema, retrieveNestedTextProperty } from "@dstanesc/plexus-util";
+import { configureBinding, initPropertyTree, retrieveMapProperty, createContainerProperty, Topics, containerMapSchema, containerSchema, operationMapSchema, operationSchema, queryMapSchema, queryResultMapSchema, queryResultSchema, querySchema, PlexusModel } from "@dstanesc/plexus-util";
 import { BoundWorkspace, initializeBoundWorkspace, registerSchema } from "@dstanesc/fluid-util";
 import { DataBinder } from "@fluid-experimental/property-binder";
 import { Workspace } from "@dstanesc/fluid-util";
 import figlet from "figlet";
-import { ArrayProperty, StringProperty } from "@fluid-experimental/property-properties";
+import { ArrayProperty, MapProperty, NamedProperty, StringProperty } from "@fluid-experimental/property-properties";
 import { v4 as uuidv4 } from 'uuid';
 
-let registry: string[] = [];
+let registry: Map<string, PlexusModel> = new Map<string, PlexusModel>();
 
 const updateRegistry = (fn: any) => {
-    registry = fn(registry);
-    console.log(registry);
+  registry = fn(registry);
+  console.log(`updateRegistry callback received`);
+  registry.forEach((entry, key) => {
+    console.log(`key=${key} entry=${JSON.stringify(entry)}`);
+  })
 }
 
 const initRegistry = async () => {
@@ -18,12 +21,15 @@ const initRegistry = async () => {
   const out = figlet.textSync('Starting Fluid Plexus!', {
     font: 'Standard'
   });
-  
+
   console.log(out);
 
-  registerSchema(stringArraySchema);
-  registerSchema(queryArraySchema);
-  registerSchema(queryResultArraySchema);
+  registerSchema(operationSchema);
+  registerSchema(operationMapSchema);
+  registerSchema(containerSchema);
+  registerSchema(containerMapSchema);
+  registerSchema(queryMapSchema);
+  registerSchema(queryResultMapSchema);
   registerSchema(querySchema);
   registerSchema(queryResultSchema);
 
@@ -38,42 +44,23 @@ const initRegistry = async () => {
   console.log(`Created container ${workspace.containerId}`);
 
   // Configure registry binding
-  configureBinding(dataBinder, workspace, updateRegistry, "hex:stringArray-1.0.0", "registry");
-
+  configureBinding(dataBinder, workspace, updateRegistry, "hex:containerMap-1.0.0", "registry");
 
   console.log(`Binding configured`);
 
   // Initialize property tree
-  initPropertyTree(undefined, workspace, { registryListener: updateRegistry, operationLogListener: updateRegistry, queryListener:  updateRegistry, queryResultListener:  updateRegistry });
+  initPropertyTree(undefined, workspace, { registryListener: updateRegistry, operationLogListener: updateRegistry, queryListener: updateRegistry, queryResultListener: updateRegistry });
 
   console.log(`Property tree initialized`);
 
-  //Create some dummy data
-  const registryLog: ArrayProperty = retrieveArrayProperty(workspace, Topics.REGISTRY_LOG);
-
-  console.log(`RegistryLog ${registryLog}`);
-
-  const containerProperty: StringProperty = createStringProperty(uuidv4())
-
-  console.log(`Dummy registry entry ${containerProperty.getValue()}`);
-
-  registryLog.push(containerProperty);
-
-  workspace.commit();
-
-  const containerProperty2: StringProperty = createStringProperty(uuidv4())
-
-  console.log(`Dummy registry entry replaced ${containerProperty2.getValue()}`);
-
-  registryLog.set(0, containerProperty2);
-
-  workspace.commit();
+  // Create some dummy data
+  // createDummyData(workspace);
 
   return boundWorkspace;
 }
 
 
-initRegistry().then( boundWorkspace => {
+initRegistry().then(boundWorkspace => {
 
   const dataBinder = boundWorkspace.dataBinder;
 
@@ -84,3 +71,20 @@ initRegistry().then( boundWorkspace => {
   console.log(out);
 
 }).catch(err => console.log(err));
+
+function createDummyData(workspace: Workspace) {
+
+  const registryLog: MapProperty = retrieveMapProperty(workspace, Topics.REGISTRY_LOG);
+
+  console.log(`RegistryLog ${registryLog}`);
+
+  const uuid = uuidv4();
+
+  const containerProperty: NamedProperty = createContainerProperty(uuid);
+
+  console.log(`Dummy registry entry ${containerProperty.get<StringProperty>("id").getValue()}`);
+
+  registryLog.set(uuid, containerProperty);
+
+  workspace.commit();
+}

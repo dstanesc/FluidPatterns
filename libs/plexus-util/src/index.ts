@@ -1,23 +1,31 @@
 import {
     Topics,
     configureBinding,
-    createQueryArrayProperty,
+    createContainerMapProperty,
+    createContainerProperty,
+    createOperationMapProperty,
+    createOperationProperty,
+    createQueryMapProperty,
     createQueryProperty,
-    createQueryResultArrayProperty,
+    createQueryResultMapProperty,
     createQueryResultProperty,
     createStringArrayProperty,
     createStringProperty,
+    createInt32Property,
+    createInt32ArrayProperty,
     dispatchNestedTextProperty,
     initPropertyTree,
-    retrieveArrayProperty,
-    retrieveNestedTextProperty
+    retrieveMapProperty,
+    retrieveMappedTextProperty,
+    retrieveMappedIdProperty
 } from "./plexusApi";
 
 import { PlexusBinding } from "./plexusBinding";
-import { TextArrayChange } from "./plexusChanges";
-import { PlexusController } from "./plexusController";
+import { PlexusModelChange } from "./plexusChanges";
+import { PlexusMapController } from "./plexusController";
 
 import { 
+    PlexusModel,
     OperationLogListener, 
     PlexusListener, 
     PlexusListeners, 
@@ -27,38 +35,56 @@ import {
 } from "./plexusListeners";
 
 import { 
-    queryArraySchema, 
-    queryResultArraySchema, 
+    containerMapSchema,
+    operationMapSchema,
+    queryMapSchema, 
+    queryResultMapSchema,
+    containerSchema,
+    operationSchema, 
     queryResultSchema, 
     querySchema, 
-    stringArraySchema 
+    stringArraySchema,
+    int32ArraySchema
 } from "./plexusSchemas-1.0.0";
 
 export {
     Topics,
     configureBinding,
-    createQueryArrayProperty,
+    createContainerMapProperty,
+    createContainerProperty,
+    createOperationMapProperty,
+    createOperationProperty,
+    createQueryMapProperty,
     createQueryProperty,
-    createQueryResultArrayProperty,
+    createQueryResultMapProperty,
     createQueryResultProperty,
     createStringArrayProperty,
+    createInt32ArrayProperty,
     createStringProperty,
+    createInt32Property,
     dispatchNestedTextProperty,
     initPropertyTree,
-    retrieveArrayProperty,
-    retrieveNestedTextProperty,
+    retrieveMapProperty,
+    retrieveMappedTextProperty,
+    retrieveMappedIdProperty,
     PlexusBinding,
-    TextArrayChange,
-    PlexusController,
+    PlexusModelChange,
+    PlexusMapController,
+    PlexusModel,
     OperationLogListener, 
     PlexusListener, 
     PlexusListeners, 
     QueryLogListener, 
     QueryResultLogListener, 
     RegistryListener,
-    queryArraySchema, 
-    queryResultArraySchema, 
+    containerMapSchema,
+    operationMapSchema,
+    queryMapSchema, 
+    queryResultMapSchema, 
     queryResultSchema, 
     querySchema, 
-    stringArraySchema 
+    containerSchema,
+    operationSchema, 
+    stringArraySchema,
+    int32ArraySchema 
 }

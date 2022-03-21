@@ -1,7 +1,15 @@
 
+
+export interface PlexusModel {
+
+    id: string;
+    
+    text: string;
+}
+
 export type PlexusListener = {
 
-    (fn: (textArray: string[]) => string[]): void;
+    (fn: (content: Map<string, PlexusModel>) => Map<string, PlexusModel>): void;
 }
 
 export type RegistryListener = PlexusListener;

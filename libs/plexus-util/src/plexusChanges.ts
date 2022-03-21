@@ -1,17 +1,20 @@
 import { Utils } from "@fluid-experimental/property-changeset";
 
 
-export class TextArrayChange {
+export class PlexusModelChange {
 
     operationType: Utils.OperationType;
     
-    index: number;
+    key: string;
     
+    id: string;
+
     text: string;
     
-    constructor(operationType: Utils.OperationType, index: number, text: string) {
+    constructor(operationType: Utils.OperationType, key: string, id: string, text: string) {
         this.operationType = operationType;
-        this.index = index;
+        this.key = key;
+        this.id = id;
         this.text = text;
     }
 }
