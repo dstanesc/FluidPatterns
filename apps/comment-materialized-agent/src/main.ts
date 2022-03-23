@@ -14,7 +14,10 @@ import {
   querySchema,
   PlexusModel,
   PlexusListenerResult,
-  LoggedOperation
+  LoggedOperation,
+  checkPlexusNameservice,
+  updatePlexusNameservice
+
 } from "@dstanesc/plexus-util";
 
 import { BoundWorkspace, initializeBoundWorkspace, registerSchema } from "@dstanesc/fluid-util";
@@ -25,6 +28,8 @@ import { ArrayProperty, MapProperty, NamedProperty, StringProperty } from "@flui
 import { v4 as uuidv4 } from 'uuid';
 import { IPropertyTreeMessage, IRemotePropertyTreeMessage, SharedPropertyTree } from "@fluid-experimental/property-dds";
 
+
+const plexusService: string = "local-plexus-service"
 
 let registry: Map<string, PlexusModel> = new Map<string, PlexusModel>();
 
@@ -67,6 +72,10 @@ const queryReceived = (fn: any) => {
     console.log(`Could not find queryLog plexusModel for ${plexusListenerResult.operationType}`)
   }
 }
+
+
+
+
 const initAgent = async () => {
 
   const out = figlet.textSync('Starting Fluid Plexus!', {
@@ -85,14 +94,15 @@ const initAgent = async () => {
   registerSchema(queryResultSchema);
 
 
+  let containerId: string | undefined = await checkPlexusNameservice(plexusService);
+
   // Initialize the workspace
-  const boundWorkspace: BoundWorkspace = await initializeBoundWorkspace(undefined);
+  const boundWorkspace: BoundWorkspace = await initializeBoundWorkspace(containerId);
 
   const workspace: Workspace = boundWorkspace.workspace;
 
   const dataBinder: DataBinder = boundWorkspace.dataBinder;
 
-  console.log(`Created container ${workspace.containerId}`);
 
   // Configure registry binding
   configureBinding(dataBinder, workspace, updateRegistry, "hex:containerMap-1.0.0", "registry");
@@ -105,11 +115,17 @@ const initAgent = async () => {
 
   console.log(`Binding configured`);
 
-  // Initialize property tree
-  initPropertyTree(undefined, workspace, { registryListener: updateRegistry, operationLogListener: operationLogged, queryListener: updateRegistry, queryResultListener: updateRegistry });
+  if (!containerId) {
 
-  console.log(`Property tree initialized`);
+    // Initialize property tree
+    initPropertyTree(undefined, workspace, { registryListener: updateRegistry, operationLogListener: operationLogged, queryListener: updateRegistry, queryResultListener: updateRegistry });
 
+    console.log(`Property tree initialized`);
+
+    console.log(`Posting ${workspace.containerId} to the nameservice ..`);
+
+    await updatePlexusNameservice(plexusService, workspace.containerId);
+  }
   return boundWorkspace;
 }
 

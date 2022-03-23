@@ -7,7 +7,7 @@ import { PlexusMapController } from "./plexusController";
 import { PlexusBinding } from "./plexusBinding";
 import { v4 as uuidv4 } from 'uuid';
 import { SerializedChangeSet } from "@fluid-experimental/property-changeset";
-
+import axios from "axios";
 
 export interface LoggedOperation {
     containerId: string;
@@ -24,6 +24,32 @@ export enum Topics {
     QUERY_RESULT_LOG = "queryResultLog",
 }
 
+export async function checkPlexusNameservice(plexusService: string){
+
+    try {
+      console.log(`Check plexus container available for ${plexusService}`);
+      const resp = await axios.get(`http://localhost:3030/${plexusService}`);
+      console.log(`${resp.data}`);
+      return resp.data;
+    } catch (err) {
+      // Handle Error Here
+      //console.error(err);
+      console.log(`Plexus container NOT available`);
+      return undefined;
+    }
+  }
+  
+  export async function updatePlexusNameservice(plexusService: string, containerId: string){
+    try {
+      const resp = await axios.put(`http://localhost:3030/${plexusService}/id/${containerId}`);
+      console.log(`${resp.data}`);
+      return resp.data;
+    } catch (err) {
+      // Handle Error Here
+      console.error(err);
+      return undefined;
+    }
+  }
 
 // export function retrieveArrayProperty(workspace: Workspace, topic: string): ArrayProperty {
 //     const topicArrayProperty: ArrayProperty = workspace.rootProperty.resolvePath(`${topic}.data`)! as ArrayProperty

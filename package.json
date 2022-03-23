@@ -46,7 +46,8 @@
         "fastest-json-copy": "^1.0.1",
         "lodash": "^4.17.21",
         "uuid":"8.3.2",
-        "figlet":"^1.5.2"
+        "figlet":"^1.5.2",
+        "axios":"^0.26.1"
     },
     "scripts": {
         "dependencies": "lerna-dependency-graph",

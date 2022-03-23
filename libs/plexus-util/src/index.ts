@@ -20,7 +20,9 @@ import {
     initPropertyTree,
     retrieveMapProperty,
     retrieveMappedTextProperty,
-    retrieveMappedIdProperty
+    retrieveMappedIdProperty,
+    checkPlexusNameservice,
+    updatePlexusNameservice
 } from "./plexusApi";
 
 import { PlexusBinding } from "./plexusBinding";
@@ -94,5 +96,7 @@ export {
     containerSchema,
     operationSchema, 
     stringArraySchema,
-    int32ArraySchema 
+    int32ArraySchema,
+    checkPlexusNameservice,
+    updatePlexusNameservice
 }

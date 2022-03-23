@@ -33,7 +33,8 @@ import {
   querySchema,
   Topics,
   appendQueryProperty,
-  configureBinding as configurePlexusBinding
+  configureBinding as configurePlexusBinding,
+  checkPlexusNameservice
 } from "@dstanesc/plexus-util";
 
 import { commentSchema } from "@dstanesc/comment-util";
@@ -52,7 +53,7 @@ import { UserComment } from '@dstanesc/comment-util';
 import { addSerializeHook } from './serializeHook';
 
 
-
+const plexusServiceName: string = "local-plexus-service"
 
 /*
  * Cell react component, the atomic dice view
@@ -118,7 +119,7 @@ export default function App() {
     registerSchema(querySchema);
     registerSchema(queryResultSchema);
 
-    const configuredPlexusContainerId: string = "aabd6d6a-ef81-40c0-b095-90e86afca4ff";
+    const configuredPlexusContainerId: string = await checkPlexusNameservice(plexusServiceName);
 
     // Initialize the workspace
     const boundWorkspace: BoundWorkspace = await initializeBoundWorkspace(configuredPlexusContainerId);
