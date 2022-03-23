@@ -20,33 +20,38 @@ import { copy as deepClone } from "fastest-json-copy";
 
 import { Workspace, BoundWorkspace, initializeBoundWorkspace, registerSchema } from "@dstanesc/fluid-util";
 
-import { 
-  retrieveMapProperty, 
-  createContainerProperty, 
-  containerMapSchema, 
-  containerSchema, 
-  operationMapSchema, 
-  operationSchema, 
-  queryMapSchema, 
-  queryResultMapSchema, 
-  queryResultSchema, 
-  querySchema, 
-  Topics 
+import {
+  retrieveMapProperty,
+  createContainerProperty,
+  containerMapSchema,
+  containerSchema,
+  operationMapSchema,
+  operationSchema,
+  queryMapSchema,
+  queryResultMapSchema,
+  queryResultSchema,
+  querySchema,
+  Topics,
+  appendQueryProperty,
+  configureBinding as configurePlexusBinding
 } from "@dstanesc/plexus-util";
 
 import { commentSchema } from "@dstanesc/comment-util";
 
 import { commentThreadSchema } from "@dstanesc/comment-util";
 
-import { 
-  retrieveArrayProperty as retrieveCommentArrayProperty, 
-  retrieveCommentTextProperty, 
-  createCommentProperty, 
-  initPropertyTree, 
-  configureBinding 
+import {
+  retrieveArrayProperty as retrieveCommentArrayProperty,
+  retrieveCommentTextProperty,
+  createCommentProperty,
+  initPropertyTree,
+  configureBinding as configureCommentBinding
 } from "@dstanesc/comment-util";
 
 import { UserComment } from '@dstanesc/comment-util';
+import { addSerializeHook } from './serializeHook';
+
+
 
 
 /*
@@ -94,11 +99,12 @@ export default function App() {
 
   const commentContainerId = window.location.hash.substring(1) || undefined;
 
+
   useEffect(() => {
     initPlexusWorkspace()
       .then(() => initCommentWorkspace())
+      .then(() =>  addSerializeHook(plexusWorkspace.current, commentWorkspace.current))
       .then(() => registerContainerWithPlexus(plexusWorkspace.current, commentWorkspace.current));
-
   }, []); // [] to be executed only once
 
   async function initPlexusWorkspace() {
@@ -112,12 +118,18 @@ export default function App() {
     registerSchema(querySchema);
     registerSchema(queryResultSchema);
 
-    const configuredPlexusContainerId: string = "577ccfde-dd55-462e-b8e8-c899ef6ecce0";
+    const configuredPlexusContainerId: string = "aabd6d6a-ef81-40c0-b095-90e86afca4ff";
 
     // Initialize the workspace
     const boundWorkspace: BoundWorkspace = await initializeBoundWorkspace(configuredPlexusContainerId);
 
     const myPlexusWorkspace: Workspace = boundWorkspace.workspace;
+
+    const myPlexusBinder: DataBinder = boundWorkspace.dataBinder;
+
+    // Configure query result binding
+    configurePlexusBinding(myPlexusBinder, myPlexusWorkspace, queryResultReceived, "hex:queryResultMap-1.0.0", "queryResultLog");
+
 
     // Make workspace available
     plexusWorkspace.current = myPlexusWorkspace;
@@ -137,7 +149,7 @@ export default function App() {
     const commentDataBinder: DataBinder = boundWorkspace.dataBinder;
 
     // Configure binding
-    configureBinding(commentDataBinder, myCommentWorkspace, setComments);
+    configureCommentBinding(commentDataBinder, myCommentWorkspace, setComments);
 
     //Initialize the property tree
     initPropertyTree(commentContainerId, myCommentWorkspace, setComments);
@@ -148,9 +160,16 @@ export default function App() {
     // Everything good, update browser location with container identifier
     window.location.hash = myCommentWorkspace.containerId;
 
-    const myPlexusWorkspace: Workspace = plexusWorkspace.current;
+  }
 
-    registerContainerWithPlexus(myPlexusWorkspace, myCommentWorkspace);
+  const queryResultReceived = (fn: any) => {
+
+  }
+
+  const sendQuery = (queryText: string) => {
+    const queryLog: MapProperty = retrieveMapProperty(plexusWorkspace.current, Topics.QUERY_LOG);
+    appendQueryProperty(queryText, queryLog);
+    plexusWorkspace.current.commit();
   }
 
   const registerContainerWithPlexus = (myPlexusWorkspace: Workspace, myCommentWorkspace: Workspace) => {
@@ -174,6 +193,10 @@ export default function App() {
     diceArrayProperty.remove(i);
     commentWorkspace.current.commit();
   }
+
+  const handleSendQuery = () => {
+    sendQuery("text");
+  };
 
 
   const handleClickOpen = () => {
@@ -199,6 +222,10 @@ export default function App() {
 
       <Button variant="contained" size="large" color="success" onClick={handleClickOpen}>
         Add
+      </Button>
+
+      <Button variant="contained" size="large" color="success" onClick={handleSendQuery}>
+        Query
       </Button>
 
       <Dialog open={open} onClose={handleClose}>

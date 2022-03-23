@@ -6,6 +6,15 @@ import { PlexusListener, PlexusListeners, PlexusModel, RegistryListener } from "
 import { PlexusMapController } from "./plexusController";
 import { PlexusBinding } from "./plexusBinding";
 import { v4 as uuidv4 } from 'uuid';
+import { SerializedChangeSet } from "@fluid-experimental/property-changeset";
+
+
+export interface LoggedOperation {
+    containerId: string;
+    changeSet: SerializedChangeSet;
+    guid: string
+    sequenceNumber: number;
+}
 
 export enum Topics {
     REGISTRY_LOG = "registryLog",
@@ -64,7 +73,7 @@ export function dispatchNestedTextProperty(workspace: Workspace, topic: string, 
             callback(plexusModelMap => { 
                 const resultMap = new Map<string, PlexusModel>(plexusModelMap); 
                 resultMap.set(id, plexusModel); 
-                return resultMap; 
+                return {"operationType": "insert", "result" :resultMap, "increment": plexusModel};; 
             });
         });
     }
@@ -96,12 +105,23 @@ export function createQueryProperty(text: string): NamedProperty {
     return queryProperty;
 }
 
+export function appendQueryProperty(text: string, queryLog: MapProperty){
+    const uid = uuidv4();
+    const queryProperty = PropertyFactory.create<NamedProperty>("hex:query-1.0.0", undefined, { "id": uid, "text": text });
+    queryLog.set(uid, queryProperty);
+}
+
 export function createQueryResultProperty(text: string): NamedProperty {
     const uid = uuidv4();
     const queryResultProperty = PropertyFactory.create<NamedProperty>("hex:queryResult-1.0.0", undefined, { "id": uid, "text": text });
     return queryResultProperty;
 }
 
+export function appendQueryResultProperty(text: string, queryResultLog: MapProperty){
+    const uid = uuidv4();
+    const queryResultProperty = PropertyFactory.create<NamedProperty>("hex:queryResult-1.0.0", undefined, { "id": uid, "text": text });
+    queryResultLog.set(uid, queryResultProperty);
+}
 
 export function createContainerMapProperty(): NamedNodeProperty {
     const containerArrayProperty: NamedNodeProperty = PropertyFactory.create<NamedNodeProperty>("hex:containerMap-1.0.0");
@@ -147,9 +167,9 @@ export function initPropertyTree(containerId: string | undefined, workspace: Wor
         workspace.commit();
     } else {
         dispatchNestedTextProperty(workspace, Topics.REGISTRY_LOG, plexusListeners.registryListener);
-        //dispatchNestedTextProperty(workspace, Topics.OPERATION_LOG, plexusListeners.operationLogListener);
-        //dispatchNestedTextProperty(workspace, Topics.QUERY_LOG, plexusListeners.queryListener);
-        //dispatchNestedTextProperty(workspace, Topics.QUERY_RESULT_LOG, plexusListeners.queryResultListener);
+        dispatchNestedTextProperty(workspace, Topics.OPERATION_LOG, plexusListeners.operationLogListener);
+        dispatchNestedTextProperty(workspace, Topics.QUERY_LOG, plexusListeners.queryListener);
+        dispatchNestedTextProperty(workspace, Topics.QUERY_RESULT_LOG, plexusListeners.queryResultListener);
     }
 }
 

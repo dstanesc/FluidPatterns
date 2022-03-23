@@ -16,20 +16,23 @@ export class PlexusMapController {
         if (modelChange.operationType === "modify") {
             this.listener(plexusModelMap => { 
                 const resultMap = new Map(plexusModelMap); 
-                resultMap.set(modelChange.key, { "id": modelChange.id, "text": modelChange.text }); 
-                return resultMap; 
+                const increment = { "id": modelChange.id, "text": modelChange.text };
+                resultMap.set(modelChange.key, increment); 
+                return {"operationType": modelChange.operationType, "result" :resultMap, "increment": increment}; 
             });
         } else if (modelChange.operationType === "insert") {
             this.listener(plexusModelMap => { 
                 const resultMap = new Map(); 
-                resultMap.set(modelChange.key, { "id": modelChange.id, "text": modelChange.text }); 
-                return resultMap; 
+                const increment = { "id": modelChange.id, "text": modelChange.text };
+                resultMap.set(modelChange.key, increment); 
+                return {"operationType": modelChange.operationType, "result" :resultMap, "increment": increment};
             });
         } else if (modelChange.operationType === "remove") {
             this.listener(plexusModelMap => { 
                 const resultMap = new Map(plexusModelMap); 
+                const increment = resultMap.get(modelChange.key);
                 resultMap.delete(modelChange.key);
-                return resultMap; 
+                return {"operationType": modelChange.operationType, "result" :resultMap, "increment": increment};
             });
         } else {
             throw new Error("Cannot handle " + modelChange.operationType);

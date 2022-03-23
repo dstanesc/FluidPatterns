@@ -24,7 +24,7 @@ export class PlexusBinding extends DataBinding {
         const operationType: Utils.OperationType = context.getOperationType()!;
         const relativePath = context.getRelativeTokenizedPath();
         //const commentIndex: number = parseInt(relativePath[1]);
-        const change: PlexusModelChange = new PlexusModelChange(operationType, key, "", "");
+        const change: PlexusModelChange = new PlexusModelChange(operationType, key, key, "");
         plexusController.updateValue(change);
     }
 

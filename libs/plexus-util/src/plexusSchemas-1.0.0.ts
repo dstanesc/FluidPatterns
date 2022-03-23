@@ -81,3 +81,11 @@ export const operationMapSchema =  {
         { id: "data", typeid: "hex:operation-1.0.0", context: "map" },
     ],
 };
+
+export const operationArraySchema =  {
+    typeid: "hex:operationArray-1.0.0",
+    inherits: "NamedNodeProperty",
+    properties: [
+        { id: "data", typeid: "hex:operation-1.0.0", context: "array" },
+    ],
+};

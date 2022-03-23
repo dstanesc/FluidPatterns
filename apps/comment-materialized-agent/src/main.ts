@@ -1,22 +1,73 @@
-import { configureBinding, initPropertyTree, retrieveMapProperty, createContainerProperty, Topics, containerMapSchema, containerSchema, operationMapSchema, operationSchema, queryMapSchema, queryResultMapSchema, queryResultSchema, querySchema, PlexusModel } from "@dstanesc/plexus-util";
+import {
+  configureBinding,
+  initPropertyTree,
+  retrieveMapProperty,
+  createContainerProperty,
+  Topics,
+  containerMapSchema,
+  containerSchema,
+  operationMapSchema,
+  operationSchema,
+  queryMapSchema,
+  queryResultMapSchema,
+  queryResultSchema,
+  querySchema,
+  PlexusModel,
+  PlexusListenerResult,
+  LoggedOperation
+} from "@dstanesc/plexus-util";
+
 import { BoundWorkspace, initializeBoundWorkspace, registerSchema } from "@dstanesc/fluid-util";
 import { DataBinder } from "@fluid-experimental/property-binder";
 import { Workspace } from "@dstanesc/fluid-util";
 import figlet from "figlet";
 import { ArrayProperty, MapProperty, NamedProperty, StringProperty } from "@fluid-experimental/property-properties";
 import { v4 as uuidv4 } from 'uuid';
+import { IPropertyTreeMessage, IRemotePropertyTreeMessage, SharedPropertyTree } from "@fluid-experimental/property-dds";
+
 
 let registry: Map<string, PlexusModel> = new Map<string, PlexusModel>();
 
 const updateRegistry = (fn: any) => {
-  registry = fn(registry);
-  console.log(`updateRegistry callback received`);
+  const plexusListenerResult: PlexusListenerResult = fn(registry);
+  registry = plexusListenerResult.result;
   registry.forEach((entry, key) => {
     console.log(`key=${key} entry=${JSON.stringify(entry)}`);
   })
 }
 
-const initRegistry = async () => {
+let operationLog: Map<string, PlexusModel> = new Map<string, PlexusModel>();
+
+const operationLogged = (fn: any) => {
+  const plexusListenerResult: PlexusListenerResult = fn(operationLog);
+  operationLog = plexusListenerResult.result;
+  const plexusModel: PlexusModel = plexusListenerResult.increment;
+  if (plexusModel) {
+    const guid: string = plexusModel.id;
+    const jsonString = plexusModel.text;
+    //console.log(`key=${guid} entry=\n${jsonString}`);
+    const loggedOperation: LoggedOperation = JSON.parse(jsonString);
+    console.log(`loggedOperation from containerId=${loggedOperation.containerId} sequenceNumber=${loggedOperation.sequenceNumber} entry=${jsonString}`);
+  } else {
+    console.log(`Could not find operationLog plexusModel for ${plexusListenerResult.operationType}`)
+  }
+}
+
+let queryLog: Map<string, PlexusModel> = new Map<string, PlexusModel>();
+
+const queryReceived = (fn: any) => {
+  const plexusListenerResult: PlexusListenerResult = fn(queryLog);
+  queryLog = plexusListenerResult.result;
+  const plexusModel: PlexusModel = plexusListenerResult.increment;
+  if (plexusModel) {
+    const guid: string = plexusModel.id;
+    const queryText = plexusModel.text;
+    console.log(`Received query guid=${guid} queryText=${queryText}`);
+  } else {
+    console.log(`Could not find queryLog plexusModel for ${plexusListenerResult.operationType}`)
+  }
+}
+const initAgent = async () => {
 
   const out = figlet.textSync('Starting Fluid Plexus!', {
     font: 'Standard'
@@ -46,21 +97,24 @@ const initRegistry = async () => {
   // Configure registry binding
   configureBinding(dataBinder, workspace, updateRegistry, "hex:containerMap-1.0.0", "registry");
 
+  // Configure operation binding
+  configureBinding(dataBinder, workspace, operationLogged, "hex:operationMap-1.0.0", "operationLog");
+
+  // Configure query binding
+  configureBinding(dataBinder, workspace, queryReceived, "hex:queryMap-1.0.0", "queryLog");
+
   console.log(`Binding configured`);
 
   // Initialize property tree
-  initPropertyTree(undefined, workspace, { registryListener: updateRegistry, operationLogListener: updateRegistry, queryListener: updateRegistry, queryResultListener: updateRegistry });
+  initPropertyTree(undefined, workspace, { registryListener: updateRegistry, operationLogListener: operationLogged, queryListener: updateRegistry, queryResultListener: updateRegistry });
 
   console.log(`Property tree initialized`);
-
-  // Create some dummy data
-  // createDummyData(workspace);
 
   return boundWorkspace;
 }
 
 
-initRegistry().then(boundWorkspace => {
+initAgent().then(boundWorkspace => {
 
   const dataBinder = boundWorkspace.dataBinder;
 
@@ -72,19 +126,3 @@ initRegistry().then(boundWorkspace => {
 
 }).catch(err => console.log(err));
 
-function createDummyData(workspace: Workspace) {
-
-  const registryLog: MapProperty = retrieveMapProperty(workspace, Topics.REGISTRY_LOG);
-
-  console.log(`RegistryLog ${registryLog}`);
-
-  const uuid = uuidv4();
-
-  const containerProperty: NamedProperty = createContainerProperty(uuid);
-
-  console.log(`Dummy registry entry ${containerProperty.get<StringProperty>("id").getValue()}`);
-
-  registryLog.set(uuid, containerProperty);
-
-  workspace.commit();
-}

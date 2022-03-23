@@ -1,5 +1,6 @@
 import {
     Topics,
+    LoggedOperation,
     configureBinding,
     createContainerMapProperty,
     createContainerProperty,
@@ -7,8 +8,10 @@ import {
     createOperationProperty,
     createQueryMapProperty,
     createQueryProperty,
+    appendQueryProperty,
     createQueryResultMapProperty,
     createQueryResultProperty,
+    appendQueryResultProperty,
     createStringArrayProperty,
     createStringProperty,
     createInt32Property,
@@ -26,6 +29,7 @@ import { PlexusMapController } from "./plexusController";
 
 import { 
     PlexusModel,
+    PlexusListenerResult,
     OperationLogListener, 
     PlexusListener, 
     PlexusListeners, 
@@ -49,6 +53,7 @@ import {
 
 export {
     Topics,
+    LoggedOperation,
     configureBinding,
     createContainerMapProperty,
     createContainerProperty,
@@ -56,6 +61,8 @@ export {
     createOperationProperty,
     createQueryMapProperty,
     createQueryProperty,
+    appendQueryProperty,
+    appendQueryResultProperty,
     createQueryResultMapProperty,
     createQueryResultProperty,
     createStringArrayProperty,
@@ -71,6 +78,7 @@ export {
     PlexusModelChange,
     PlexusMapController,
     PlexusModel,
+    PlexusListenerResult,
     OperationLogListener, 
     PlexusListener, 
     PlexusListeners, 

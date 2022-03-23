@@ -28,6 +28,6 @@
       "dev": "tsc -w",
       "test": "npm-run-all compile test:jest",
       "test:jest": "jest dist",
-      "start":"tsc && node --experimental-specifier-resolution=node --loader ts-node/esm src/main.ts"
+      "start":"tsc && node --inspect --experimental-specifier-resolution=node --loader ts-node/esm src/main.ts"
     }
   }
