@@ -32,16 +32,21 @@ npm run build
 
 ## Materialized View Support
 
->Note: Work in progress
+>Note: Work in progress!!! Current status is __draft__.
 
-Main documentation [page](./apps/comment-materialized-experiment/README.md)
+Main documentation [page](./apps/comment-authoring/README.md)
 
 ### Packages
 
-- [Container Nameservice Agent](./apps/comment-nameservice-agent/)
-- [Comment Plexus Agent](./apps/comment-materialized-agent/)
-- [Comment Materialized Experiment](./apps/comment-materialized-experiment/)
-- [Comment Materialized Search](./apps/comment-materialized-search/)
+- Apps
+  - [Plexus Nameservice Agent](./apps/plexus-nameservice-agent/)
+  - [Plexus Service Agent](./apps/plexus-service-agent/)
+  - [Comment Authoring](./apps/comment-authoring/)
+  - [Comment Search](./apps/comment-search/)
+
+- Libs
+ - [Comment Util](./libs/comment-util/)
+ - [Plexus Util](./libs/plexus-util/)
 
 ## Schema Patterns
 

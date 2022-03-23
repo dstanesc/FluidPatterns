@@ -34,34 +34,36 @@ npm run build
 1. Start _Plexus Nameservice_
 
 ```sh
-cd FluidPatterns/apps/comment-nameservice-agent
+cd FluidPatterns/apps/plexus-nameservice-agent
 npm start
 ```
 
 2. Start _Plexus Service_
 
 ```sh
-cd FluidPatterns/apps/comment-materialized-agent
+cd FluidPatterns/apps/plexus-service-agent
 npm start
 ```
 
 3. Start _Comment Authoring Application_
 
 ```sh
-cd FluidPatterns/apps/comment-materialized-experiment
+cd FluidPatterns/apps/comment-authoring
 npm start
 ```
 
 4. Start _Comment Search Application_
 
 ```sh
-cd FluidPatterns/apps/comment-materialized-search
+cd FluidPatterns/apps/comment-search
 npm start
 ```
 
 ## Workflow
 
 ![Plexus architecture](./doc/img/plexus-architecture.png)
+
+Edit the sequence [diagram](https://sequencediagram.org/index.html#initialData=C4S2BsFMAIAUoB4FcDO0CCAnAxgCzJNsEppAFBkAOAhpqNiDQHbADmmA9kpdACIcBbaiCbQAwuBCQWKKrXqNqLDEmC4OmEa3GTpwOXRANmwaAGUkAoZoBekABIcOAawMKT5yLTw6pLMtIAJtAUNIbGSqbwkMho6Kx6ZIHUwNQARtQoMACyKZCa1JJ2wQBqUgDubkaKytGx0ABy1AKQWZgAbkbkZEwcwDAc7flwiKgYCSwAXAD0pKwgKMCYAJ4AOkzTHJT5KSAcTAAyHKzr0wCOSPnLRycbF1cASq1I4MA3FOiq6ppM2hJ+wAAtAA+ABUFistBAdkcLkmFDqY3iegAPCDEWgmi02p1sJBJnMFv1MBixPtUiJ8gBJQIfL4aLS+VGAjGNZqtfK4-EJYCk8nCJjU2lkMxeHC4JksNGsrEcjpdSY8vksAVCulqBm-SVA4Gs5FTQmLfJklWUzDQAAUW1A+0KAEoKBDrNCHE5nOjRnEJsBJpQkGlJCgxLglAlZGQ9d6PTEkd7JigLplcMHQ60EZ7xnoQbliSBCi7ShVffkUESzImULhIIEU780yKxT5-lndRn9T6-QGFrgAIqXFbpmNe5nAnP5PNFavQMqQcqTe4rXgpdKZbqRlui7wS5tTTuB3BPFAvYAoIA)
 
 ## Disclaimer
 
