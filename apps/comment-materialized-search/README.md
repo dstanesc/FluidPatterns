@@ -1,7 +1,4 @@
-# Plexus Experiment 
-
-Investigates the ability of FluidFramework / PropertyDDS infrastructure to externalize and consolidate the information stored in multiple containers serving a single domain application. The goal of the exercise is to evaluate the possibility of adding specialized query support via materialized views. 
-
+# Search Experiment 
 
 # Getting Started
 
@@ -27,41 +24,6 @@ npm install --legacy-peer-deps
 npm run build
 ```
 
-# Run
-
-> Note: Starting order is relevant.
-
-1. Start _Plexus Nameservice_
-
-```sh
-cd FluidPatterns/apps/comment-nameservice-agent
-npm start
-```
-
-2. Start _Plexus Service_
-
-```sh
-cd FluidPatterns/apps/comment-materialized-agent
-npm start
-```
-
-3. Start _Comment Authoring Application_
-
-```sh
-cd FluidPatterns/apps/comment-materialized-experiment
-npm start
-```
-
-4. Start _Comment Search Application_
-
-```sh
-cd FluidPatterns/apps/comment-materialized-search
-npm start
-```
-
-## Workflow
-
-![Plexus architecture](./doc/img/plexus-architecture.png)
 
 ## Disclaimer
 

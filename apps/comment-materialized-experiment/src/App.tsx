@@ -50,7 +50,7 @@ import {
 } from "@dstanesc/comment-util";
 
 import { UserComment } from '@dstanesc/comment-util';
-import { addSerializeHook } from './serializeHook';
+import { addSummarizeHook } from './summarizeHook';
 
 
 const plexusServiceName: string = "local-plexus-service"
@@ -104,7 +104,7 @@ export default function App() {
   useEffect(() => {
     initPlexusWorkspace()
       .then(() => initCommentWorkspace())
-      .then(() =>  addSerializeHook(plexusWorkspace.current, commentWorkspace.current))
+      .then(() =>  addSummarizeHook(plexusWorkspace.current, commentWorkspace.current))
       .then(() => registerContainerWithPlexus(plexusWorkspace.current, commentWorkspace.current));
   }, []); // [] to be executed only once
 

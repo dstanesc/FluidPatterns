@@ -30,6 +30,19 @@ npm run build
 - [Array Slice Property Binder](./apps/array-slice-property-binder/) 
 - [Comparative Binding Evaluation](./apps/dynamic-property-comparative/) 
 
+## Materialized View Support
+
+>Note: Work in progress
+
+Main documentation [page](./apps/comment-materialized-experiment/README.md)
+
+### Packages
+
+- [Container Nameservice Agent](./apps/comment-nameservice-agent/)
+- [Comment Plexus Agent](./apps/comment-materialized-agent/)
+- [Comment Materialized Experiment](./apps/comment-materialized-experiment/)
+- [Comment Materialized Search](./apps/comment-materialized-search/)
+
 ## Schema Patterns
 
 ## Disclaimer

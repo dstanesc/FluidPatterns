@@ -131,22 +131,22 @@ export function createQueryProperty(text: string): NamedProperty {
     return queryProperty;
 }
 
-export function appendQueryProperty(text: string, queryLog: MapProperty){
+export function appendQueryProperty(text: string, queryLog: MapProperty): string {
     const uid = uuidv4();
     const queryProperty = PropertyFactory.create<NamedProperty>("hex:query-1.0.0", undefined, { "id": uid, "text": text });
     queryLog.set(uid, queryProperty);
+    return uid;
 }
 
-export function createQueryResultProperty(text: string): NamedProperty {
-    const uid = uuidv4();
+export function createQueryResultProperty(uid: string, text: string): NamedProperty {
     const queryResultProperty = PropertyFactory.create<NamedProperty>("hex:queryResult-1.0.0", undefined, { "id": uid, "text": text });
     return queryResultProperty;
 }
 
-export function appendQueryResultProperty(text: string, queryResultLog: MapProperty){
-    const uid = uuidv4();
+export function appendQueryResultProperty(uid: string, text: string, queryResultLog: MapProperty): string {
     const queryResultProperty = PropertyFactory.create<NamedProperty>("hex:queryResult-1.0.0", undefined, { "id": uid, "text": text });
     queryResultLog.set(uid, queryResultProperty);
+    return uid;
 }
 
 export function createContainerMapProperty(): NamedNodeProperty {

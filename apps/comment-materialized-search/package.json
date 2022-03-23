@@ -1,6 +1,6 @@
 {
-    "name": "@dstanesc/comment-materialized-experiment",
-    "description": "Investigate PropertyDDS materialized projections",
+    "name": "@dstanesc/comment-materialized-search",
+    "description": "Investigate PropertyDDS materialized search",
     "homepage": "https://fluidframework.com",
     "repository": "https://github.com/microsoft/FluidFramework",
     "license": "MIT",
@@ -45,7 +45,7 @@
     "scripts": {
         "build": "react-scripts build",
         "clean": "rimraf build node_modules",
-        "start": "PORT=3003 react-scripts start",
+        "start": "PORT=3006 react-scripts start",
         "test": "react-scripts test"
     },
     "eslintConfig": {

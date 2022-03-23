@@ -16,7 +16,8 @@ import {
   PlexusListenerResult,
   LoggedOperation,
   checkPlexusNameservice,
-  updatePlexusNameservice
+  updatePlexusNameservice,
+  appendQueryResultProperty
 
 } from "@dstanesc/plexus-util";
 
@@ -65,16 +66,26 @@ const queryReceived = (fn: any) => {
   queryLog = plexusListenerResult.result;
   const plexusModel: PlexusModel = plexusListenerResult.increment;
   if (plexusModel) {
-    const guid: string = plexusModel.id;
+    const uid: string = plexusModel.id;
     const queryText = plexusModel.text;
-    console.log(`Received query guid=${guid} queryText=${queryText}`);
+    console.log(`Received query guid=${uid} queryText=${queryText}`);
+    //sendQueryResult(uid, "dummy result")
   } else {
     console.log(`Could not find queryLog plexusModel for ${plexusListenerResult.operationType}`)
   }
 }
 
+let  plexusWorkspace: Workspace;
 
+const sendQueryResult = (uid: string, queryText: string) => {
+  const queryResultLog: MapProperty = retrieveMapProperty(plexusWorkspace, Topics.QUERY_RESULT_LOG);
+  appendQueryResultProperty(uid, queryText, queryResultLog);
+  plexusWorkspace.commit();
+}
 
+const queryResultReceived = (fn: any) => {
+
+}
 
 const initAgent = async () => {
 
@@ -103,6 +114,7 @@ const initAgent = async () => {
 
   const dataBinder: DataBinder = boundWorkspace.dataBinder;
 
+  plexusWorkspace = workspace;
 
   // Configure registry binding
   configureBinding(dataBinder, workspace, updateRegistry, "hex:containerMap-1.0.0", "registry");
@@ -117,8 +129,8 @@ const initAgent = async () => {
 
   if (!containerId) {
 
-    // Initialize property tree
-    initPropertyTree(undefined, workspace, { registryListener: updateRegistry, operationLogListener: operationLogged, queryListener: updateRegistry, queryResultListener: updateRegistry });
+    // Initialize plexus property tree
+    initPropertyTree(undefined, workspace, { registryListener: updateRegistry, operationLogListener: operationLogged, queryListener: queryReceived, queryResultListener: queryResultReceived});
 
     console.log(`Property tree initialized`);
 

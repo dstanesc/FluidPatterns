@@ -11,7 +11,7 @@ import {
 
 import { MapProperty, NamedProperty } from "@fluid-experimental/property-properties";
 
-export function addSerializeHook(plexusWorkspace: Workspace, commentWorkspace: Workspace) {
+export function addSummarizeHook(plexusWorkspace: Workspace, commentWorkspace: Workspace) {
 
     const origPrune = (SharedPropertyTree as any).prune as any;
 
