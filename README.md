@@ -45,8 +45,8 @@ Main documentation [page](./apps/comment-authoring/README.md)
   - [Comment Search](./apps/comment-search/)
 
 - Libs
- - [Comment Util](./libs/comment-util/)
- - [Plexus Util](./libs/plexus-util/)
+  - [Comment Util](./libs/comment-util/)
+  - [Plexus Util](./libs/plexus-util/)
 
 ## Schema Patterns
 
