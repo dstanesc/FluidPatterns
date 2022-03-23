@@ -1,6 +1,6 @@
-# Plexus Experiment 
+# Plexus Agent 
 
-Investigates the ability of FluidFramework / PropertyDDS infrastructure to externalize and consolidate the information stored in multiple containers serving a single domain application. The goal of the exercise is to evaluate the possibility of adding specialized query support via materialized views. 
+A Plexus agent is an autonomous, PropertyDDS based collaborator. It provides several consolidation functions across multiple containers associated with a given domain application, such container registry, operation log, query & query result log. 
 
 
 # Getting Started
