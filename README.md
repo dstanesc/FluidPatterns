@@ -50,6 +50,8 @@ Main documentation [page](./apps/comment-authoring/README.md)
 
 ## Schema Patterns
 
+- [Schema Evolution](./apps/schema-evolution/)
+ 
 ## Disclaimer
 
 This project has adopted the [Microsoft Open Source Code of Conduct](https://opensource.microsoft.com/codeofconduct/).
