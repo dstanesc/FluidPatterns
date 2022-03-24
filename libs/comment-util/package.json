@@ -1,0 +1,28 @@
+{
+  "name": "@dstanesc/comment-util",
+  "version": "0.1.0",
+  "description": "Shared library of Comment App utilities",
+  "homepage": "https://fluidframework.com",
+  "repository": "https://github.com/microsoft/FluidFramework",
+  "license": "MIT",
+  "author": "Microsoft and contributors",
+  "type": "module",
+  "main": "dist/index.js",
+  "module": "lib/index.js",
+  "types": "dist/index.d.ts",
+  "devDependencies": {
+    "lerna": "^3.15.0",
+    "lerna-dependency-graph": "^1.1.0",
+    "watch": "^1.0.2"
+  },
+  "dependencies": {
+    "@dstanesc/fluid-util": "^0.1.0"
+  },
+  "scripts": {
+    "clean": "rimraf dist node_modules",
+    "compile": "tsc",
+    "dev": "tsc -w",
+    "test": "npm-run-all compile test:jest",
+    "test:jest": "jest dist"
+  }
+}

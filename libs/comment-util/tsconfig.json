@@ -1,0 +1,9 @@
+{
+    "extends": "../../tsconfig-common.json",
+    "compilerOptions": {
+        "outDir": "dist",
+        "esModuleInterop": true,
+        "resolveJsonModule": true        
+    },
+    "include": ["src"]
+}

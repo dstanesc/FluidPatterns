@@ -5,7 +5,7 @@ export class DiceBinding extends DataBinding {
 
     private updateDice(value: number) {
         const dice = this.getRepresentation<Dice>();
-        dice?.updateValue(value);
+        dice.updateValue(value);
     }
     static initialize() {
         this.registerOnValues("diceValue", ["modify"], this.prototype.updateDice);

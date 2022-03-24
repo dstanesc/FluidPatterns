@@ -12,5 +12,15 @@
     </head>
     <body style="margin: 0; height: 100%; background-color: black;">
         <div id="root"></div>
+        <br/><br/>
+        <pre style="font-size: 18px; color: greenyellow;">
+            // Register DiceBinding for hex:dice-1.0.0,  upgradeType: UpgradeType.MINOR
+            fluidBinder.defineDataBinding("view", "hex:dice-1.0.0", DiceBinding, {
+              upgradeType: UpgradeType.MINOR
+            });
+
+            //Insert hex:dice-1.1.0
+            rootProp.insert("dice", PropertyFactory.create("hex:dice-1.1.0", undefined, { "diceValue": "0", "diceColor": "green" }));
+        </pre>
     </body>
 </html>

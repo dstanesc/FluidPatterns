@@ -9,6 +9,7 @@
     },
     "devDependencies": {
         "@auth0/auth0-react": "^1.2.0",
+        "@babel/polyfill": "^7.12.1",
         "@fluid-experimental/get-container": "0.57.0",
         "@fluid-experimental/property-binder": "0.57.0",
         "@fluid-experimental/property-changeset": "0.57.0",
@@ -43,7 +44,10 @@
         "underscore": "^1.13.2",
         "watch": "^1.0.2",
         "fastest-json-copy": "^1.0.1",
-        "lodash": "^4.17.21"
+        "lodash": "^4.17.21",
+        "uuid":"8.3.2",
+        "figlet":"^1.5.2",
+        "axios":"^0.26.1"
     },
     "scripts": {
         "dependencies": "lerna-dependency-graph",
@@ -54,6 +58,6 @@
         "dev": "lerna run dev --parallel",
         "test": "cross-env CI=true lerna run test",
         "simple-binding": "npm start --prefix apps/simple-property-binding",
-        "complex-binding": "npm start --prefix apps/complex-property-binding"
+        "array-binding": "npm start --prefix apps/array-property-binding"
     }
 }

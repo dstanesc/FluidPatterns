@@ -25,7 +25,28 @@ npm run build
 ## Data Binding Patterns
 
 - [Simple Property Binding](./apps/simple-property-binding/) 
-- [Complex Property Binding](./apps/complex-property-binding/) 
+- [Array Property Binding](./apps/array-property-binding/)
+- [Array Slice Property Binding](./apps/array-slice-property-binding/) 
+- [Array Slice Property Binder](./apps/array-slice-property-binder/) 
+- [Comparative Binding Evaluation](./apps/dynamic-property-comparative/) 
+
+## Materialized View Support
+
+>Note: Work in progress!!! Current status is __draft__.
+
+Main documentation [page](./apps/comment-authoring/README.md)
+
+### Packages
+
+- Apps
+  - [Plexus Nameservice Agent](./apps/plexus-nameservice-agent/)
+  - [Plexus Service Agent](./apps/plexus-service-agent/)
+  - [Comment Authoring](./apps/comment-authoring/)
+  - [Comment Search](./apps/comment-search/)
+
+- Libs
+  - [Comment Util](./libs/comment-util/)
+  - [Plexus Util](./libs/plexus-util/)
 
 ## Schema Patterns
 

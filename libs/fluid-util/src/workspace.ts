@@ -101,12 +101,12 @@ export class LazyWorkspace extends LazyLoadedDataObject<ISharedDirectory> implem
 
     public containerId: string | undefined;
 
-    private _tree?: SharedPropertyTree;
+    private _tree: SharedPropertyTree;
     private _queryString: string | undefined;
     private _existing: boolean = false;
 
     stopTransmission(stopped: boolean): void {
-        this._tree?.stopTransmission(stopped);
+        this._tree.stopTransmission(stopped);
     }
 
     /**
@@ -130,7 +130,7 @@ export class LazyWorkspace extends LazyLoadedDataObject<ISharedDirectory> implem
                     undefined,
                     this._queryString).handle,
                 );
-                this._tree = await this.root.get<IFluidHandle<SharedPropertyTree>>(propertyKey)?.get();
+                this._tree = await this.root.get<IFluidHandle<SharedPropertyTree>>(propertyKey).get();
             }
         }
 
@@ -155,7 +155,7 @@ export class LazyWorkspace extends LazyLoadedDataObject<ISharedDirectory> implem
 
     public static getFactory(): IFluidDataStoreFactory { return PropertyTreeInstantiationFactory; }
 
-    public static async create(parentContext: IFluidDataStoreContext, props?: any) {
+    public static async create(parentContext: IFluidDataStoreContext, props: any) {
         // return PropertyTreeRoot.factory.create(parentContext, props);
         throw new Error("Not yet implemented");
     }
