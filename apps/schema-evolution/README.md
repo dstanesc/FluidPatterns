@@ -38,16 +38,10 @@ npx tinylicious
 Terminal 2
 
 ```sh
-cd FluidPatterns/apps/simple-property-binding
-npm install -g serve
-serve -s build
+cd FluidPatterns/apps/schema-evolution
+npm start
 ```
-or
 
-```sh
-cd FluidPatterns
-npm run simple-binding
-```
 
 ## Disclaimer
 
