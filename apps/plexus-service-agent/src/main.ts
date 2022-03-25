@@ -69,7 +69,6 @@ const queryReceived = (fn: any) => {
     const uid: string = plexusModel.id;
     const queryText = plexusModel.text;
     console.log(`Received query guid=${uid} queryText=${queryText}`);
-    //sendQueryResult(uid, "dummy result")
   } else {
     console.log(`Could not find queryLog plexusModel for ${plexusListenerResult.operationType}`)
   }
@@ -85,6 +84,16 @@ const sendQueryResult = (uid: string, queryText: string) => {
 
 const queryResultReceived = (fn: any) => {
 
+}
+
+const answerQueries = () => {
+  queryLog.forEach( (query, uid) => {
+    console.log(`Answering query ${uid} ${query.text}`);
+    sendQueryResult(uid, "dummy result 1");
+    sendQueryResult(uid, "dummy result 2");
+    sendQueryResult(uid, "dummy result 3");
+    queryLog.delete(uid);
+  });
 }
 
 const initAgent = async () => {
@@ -138,6 +147,9 @@ const initAgent = async () => {
 
     await updatePlexusNameservice(plexusService, workspace.containerId);
   }
+
+  setInterval(answerQueries, 3000);
+
   return boundWorkspace;
 }
 

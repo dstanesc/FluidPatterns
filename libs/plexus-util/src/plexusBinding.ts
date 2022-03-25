@@ -5,16 +5,25 @@ import { Utils } from "@fluid-experimental/property-changeset";
 import { SerializedChangeSet } from "@fluid-experimental/property-dds";
 import { PlexusMapController } from "./plexusController";
 import { PlexusModelChange } from "./plexusChanges";
+import { DataBindingParams } from "@fluid-experimental/property-binder/dist/data_binder/dataBinding";
+import { v4 as uuidv4 } from 'uuid';
 
 export class PlexusBinding extends DataBinding {
 
+    bindingInstanceIdentifier: string;
+
+    constructor(in_params: DataBindingParams){
+        super(in_params);
+        this.bindingInstanceIdentifier = uuidv4();
+    }
+
     private elementInsert(key: string, context: ModificationContext) {
-        console.log(`PlexusBinding#elementInsert ${key} ${JSON.stringify(context.getNestedChangeSet(), null, 2)}`);
+        console.log(`PlexusBinding#elementInsert binding=${this.bindingInstanceIdentifier} ${key} ${JSON.stringify(context.getNestedChangeSet(), null, 2)}`);
         this.performModificationInternal(key, context);
     }
 
     private elementUpdate(key: string, context: ModificationContext) {
-        console.log(`PlexusBinding#elementUpdate ${key} ${JSON.stringify(context.getNestedChangeSet(), null, 2)}`);
+        console.log(`PlexusBinding#elementUpdate binding=${this.bindingInstanceIdentifier} ${key} ${JSON.stringify(context.getNestedChangeSet(), null, 2)}`);
         this.performModificationInternal(key, context);
     }
 

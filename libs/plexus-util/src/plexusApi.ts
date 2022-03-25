@@ -19,7 +19,6 @@ export interface LoggedOperation {
 export enum Topics {
     REGISTRY_LOG = "registryLog",
     OPERATION_LOG = "operationLog",
-    OPERATION_OFFSET_LOG = "operationOffsetLog",
     QUERY_LOG = "queryLog",
     QUERY_RESULT_LOG = "queryResultLog",
 }
@@ -95,7 +94,7 @@ export function dispatchNestedTextProperty(workspace: Workspace, topic: string, 
             const nestedIdProperty: StringProperty = nestedProperty.get("id") as StringProperty;
             const id = nestedIdProperty.getValue();
             const text = nestedTextProperty.getValue();
-            const plexusModel = { "id": id, "text": text };
+            const plexusModel = {"key":id, "id": id, "text": text };
             callback(plexusModelMap => { 
                 const resultMap = new Map<string, PlexusModel>(plexusModelMap); 
                 resultMap.set(id, plexusModel); 
@@ -143,8 +142,9 @@ export function createQueryResultProperty(uid: string, text: string): NamedPrope
     return queryResultProperty;
 }
 
-export function appendQueryResultProperty(uid: string, text: string, queryResultLog: MapProperty): string {
-    const queryResultProperty = PropertyFactory.create<NamedProperty>("hex:queryResult-1.0.0", undefined, { "id": uid, "text": text });
+export function appendQueryResultProperty(queryId: string, text: string, queryResultLog: MapProperty): string {
+    const uid = uuidv4();
+    const queryResultProperty = PropertyFactory.create<NamedProperty>("hex:queryResult-1.0.0", undefined, { "id": queryId, "text": text });
     queryResultLog.set(uid, queryResultProperty);
     return uid;
 }

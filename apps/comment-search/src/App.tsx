@@ -58,22 +58,23 @@ const plexusServiceName: string = "local-plexus-service"
 
 
 
-function Result(comment: any) {
+function Result(props: any) {
   return (
     <button className="comment">
-      {comment.text}
+      {props.comment}
     </button>
   );
 }
 
 
-function ResultList(comments: any) {
+function ResultList(props: any) {
+
+  const results = props.comments.map(comment => <Result key={comment.key} comment={comment.text} />);
+
   return (
     <div>
       <div className="board-row">
-        {
-          comments.map((comment: any, i: any) => <Result key={comment.id} comment={comment} />)
-        }
+        { results }
       </div>
     </div>
   );
@@ -90,7 +91,11 @@ export default function App() {
 
   const [searchShow, setSearchShow] = useState(false);
 
-  let queryResultLog: Map<string, PlexusModel> = new Map<string, PlexusModel>();
+  const queryResults = useRef([]);
+
+  const queryId = useRef("");
+
+  const [resultArray, setResultArray] = useState([]);
 
   useEffect(() => {
     initPlexusWorkspace();
@@ -125,23 +130,27 @@ export default function App() {
   }
 
   const queryResultReceived = (fn: any) => {
-    const plexusListenerResult: PlexusListenerResult = fn(queryResultLog);
-    queryResultLog = plexusListenerResult.result;
+    const plexusListenerResult: PlexusListenerResult = fn(new Map());
     const plexusModel: PlexusModel = plexusListenerResult.increment;
     if (plexusModel) {
-      const guid: string = plexusModel.id;
-      const queryText = plexusModel.text;
-      console.log(`Received query guid=${guid} queryText=${queryText}`);
+      const resultId: string = plexusModel.key;
+      const queryId: string = plexusModel.id;
+      const queryResultText = plexusModel.text;
+      console.log(`Received result resultId=${resultId}  queryId=${queryId} queryResultText=${queryResultText}`);
+      queryResults.current.push(plexusModel);
     } else {
       console.log(`Could not find queryLog plexusModel for ${plexusListenerResult.operationType}`)
     }
+    const filtered =  queryResults.current.filter(result => result.id === queryId.current);
+    setResultArray(filtered);
     setSearchShow(true);
   }
 
   const sendQuery = (queryText: string) => {
     setSearchShow(false);
     const queryLog: MapProperty = retrieveMapProperty(plexusWorkspace.current, Topics.QUERY_LOG);
-    appendQueryProperty(queryText, queryLog);
+    queryId.current = appendQueryProperty(queryText, queryLog);
+    queryResults.current = [];
     plexusWorkspace.current.commit();
   }
 
@@ -151,9 +160,10 @@ export default function App() {
   };
 
   function showResults() {
+   
     if (searchShow) {
       return (
-        <ResultList comments={queryResultLog} />
+        <ResultList comments={resultArray} />
       );
     }
   }
@@ -170,7 +180,7 @@ export default function App() {
         variant="outlined"
         value={searchText}
         onChange={e => setSearchText(e.target.value)}
-      /> 
+      />
       <div>
         <Button variant="contained" size="large" color="success" onClick={handleSendQuery}>
           Search

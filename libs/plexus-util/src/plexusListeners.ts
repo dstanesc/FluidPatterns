@@ -3,6 +3,8 @@ import { Utils } from "@fluid-experimental/property-changeset";
 
 export interface PlexusModel {
 
+    key: string;
+
     id: string;
     
     text: string;

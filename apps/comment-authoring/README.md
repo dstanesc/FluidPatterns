@@ -59,6 +59,19 @@ cd FluidPatterns/apps/comment-search
 npm start
 ```
 
+## Packages
+
+- Apps
+  - [Plexus Nameservice Agent](../../apps/plexus-nameservice-agent/)
+  - [Plexus Service Agent](../../apps/plexus-service-agent/)
+  - [Comment Authoring](../../apps/comment-authoring/)
+  - [Comment Search](../../apps/comment-search/)
+
+- Libs
+  - [Comment Util](../../libs/comment-util/)
+  - [Plexus Util](../../libs/plexus-util/)
+
+
 ## Workflow
 
 ![Plexus architecture](./doc/img/plexus-architecture.png)
