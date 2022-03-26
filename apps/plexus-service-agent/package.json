@@ -1,5 +1,5 @@
 {
-    "name": "@dstanesc/comment-materialized-agent",
+    "name": "@dstanesc/plexus-service-agent",
     "version": "0.1.0",
     "description": "Materialized View Agent",
     "homepage": "https://fluidframework.com",
@@ -20,7 +20,8 @@
       "@tsconfig/node16":"^1.0.2",
       "@types/figlet":"1.5.4",
       "@types/uuid":"^8.3.4",
-      "ts-node":"^10.7.0"
+      "ts-node":"^10.7.0",
+      "@elastic/elasticsearch": "~7.10.0"
     },
     "scripts": {
       "clean": "rimraf dist node_modules",

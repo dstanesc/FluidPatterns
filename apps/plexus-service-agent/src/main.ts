@@ -27,10 +27,21 @@ import { Workspace } from "@dstanesc/fluid-util";
 import figlet from "figlet";
 import { ArrayProperty, MapProperty, NamedProperty, StringProperty } from "@fluid-experimental/property-properties";
 import { v4 as uuidv4 } from 'uuid';
-import { IPropertyTreeMessage, IRemotePropertyTreeMessage, SharedPropertyTree } from "@fluid-experimental/property-dds";
+import { IPropertyTreeMessage, IRemotePropertyTreeMessage, SerializedChangeSet, SharedPropertyTree } from "@fluid-experimental/property-dds";
+import jp from "jsonpath";
+import { Client } from "@elastic/elasticsearch";
+import { QueryResult } from "@dstanesc/plexus-util/dist/plexusApi";
 
+const plexusServiceAlias: string = "local-plexus-service"
 
-const plexusService: string = "local-plexus-service"
+const elasticSearchClient = new Client({ node: 'http://elastic:9200' });
+
+interface ElasticDocument {
+  containerId: string;
+  commentId: string;
+  sequenceNumber: number;
+  commentText: string;
+}
 
 let registry: Map<string, PlexusModel> = new Map<string, PlexusModel>();
 
@@ -54,6 +65,8 @@ const operationLogged = (fn: any) => {
     //console.log(`key=${guid} entry=\n${jsonString}`);
     const loggedOperation: LoggedOperation = JSON.parse(jsonString);
     console.log(`loggedOperation from containerId=${loggedOperation.containerId} sequenceNumber=${loggedOperation.sequenceNumber} entry=${jsonString}`);
+    (async () => await indexElasticSearch(loggedOperation))(); //IIFE
+
   } else {
     console.log(`Could not find operationLog plexusModel for ${plexusListenerResult.operationType}`)
   }
@@ -74,7 +87,7 @@ const queryReceived = (fn: any) => {
   }
 }
 
-let  plexusWorkspace: Workspace;
+let plexusWorkspace: Workspace;
 
 const sendQueryResult = (uid: string, queryText: string) => {
   const queryResultLog: MapProperty = retrieveMapProperty(plexusWorkspace, Topics.QUERY_RESULT_LOG);
@@ -83,18 +96,106 @@ const sendQueryResult = (uid: string, queryText: string) => {
 }
 
 const queryResultReceived = (fn: any) => {
+  // ignore callback
+}
 
+
+const indexElasticSearch = (loggedOperation: LoggedOperation) => {
+
+  const containerId = loggedOperation.containerId;
+  const changeSet: SerializedChangeSet = loggedOperation.changeSet;
+  const commentId: string = loggedOperation.guid;
+  const sequenceNumber: number = loggedOperation.sequenceNumber;
+  const insert = jp.query(changeSet, '$..String')[0];
+  const commentText = insert.text;
+
+  console.log(`Indexing request received for ${commentText}`);
+
+  const elasticDocument: ElasticDocument = {
+    "containerId": containerId,
+    "commentId": commentId,
+    "sequenceNumber": sequenceNumber,
+    "commentText": commentText
+  };
+
+  console.log(`Indexing ${JSON.stringify(elasticDocument, null, 2)}`);
+
+  const toIndex = {
+    index: "plexus-materialized-view",
+    id: commentId,
+    body: elasticDocument
+  };
+
+  elasticSearchClient.index(toIndex);
 }
 
 const answerQueries = () => {
-  queryLog.forEach( (query, uid) => {
+
+  queryLog.forEach(async (query, uid) => {
+
     console.log(`Answering query ${uid} ${query.text}`);
-    sendQueryResult(uid, "dummy result 1");
-    sendQueryResult(uid, "dummy result 2");
-    sendQueryResult(uid, "dummy result 3");
+
+    const { body } = await elasticSearchClient.search({
+      index: 'plexus-materialized-view',
+      body: {
+        query: {
+          match: {
+            commentText: query.text
+          }
+        }
+      }
+    });
+
+
+    //   "hits": {
+    //     "total": {
+    //       "value": 2,
+    //       "relation": "eq"
+    //     },
+    //     "max_score": 0.5981865,
+    //     "hits": [
+    //       {
+    //         "_index": "plexus-materialized-view",
+    //         "_type": "_doc",
+    //         "_id": "0e5b78b9-c7b6-413b-b9fb-4196a29c3ebe",
+    //         "_score": 0.5981865,
+    //         "_source": {
+    //           "containerId": "1eecdc4d-71c4-4b1c-927a-864d05b64e43",
+    //           "commentId": "0e5b78b9-c7b6-413b-b9fb-4196a29c3ebe",
+    //           "sequenceNumber": 17,
+    //           "commentText": "We should try again and again"
+    //         }
+    //       }
+    //     ]
+    //   }
+    // }
+    const resultArray = body.hits.hits;
+
+    resultArray.forEach((result, i) => {
+      const source = result._source;
+      const queryResult: QueryResult = {
+        index: i,
+        score: result._score,
+        containerId: source.containerId,
+        commentId: source.commentId,
+        sequenceNumber: source.sequenceNumber,
+        commentText: source.commentText
+      };
+
+      const queryResultString = JSON.stringify(queryResult, null, 2);
+
+      console.log(`Sending query result ${queryResultString}`);
+
+      sendQueryResult(uid, queryResultString);
+
+    });
     queryLog.delete(uid);
   });
 }
+
+
+
+
 
 const initAgent = async () => {
 
@@ -114,7 +215,7 @@ const initAgent = async () => {
   registerSchema(queryResultSchema);
 
 
-  let containerId: string | undefined = await checkPlexusNameservice(plexusService);
+  let containerId: string | undefined = await checkPlexusNameservice(plexusServiceAlias);
 
   // Initialize the workspace
   const boundWorkspace: BoundWorkspace = await initializeBoundWorkspace(containerId);
@@ -139,13 +240,13 @@ const initAgent = async () => {
   if (!containerId) {
 
     // Initialize plexus property tree
-    initPropertyTree(undefined, workspace, { registryListener: updateRegistry, operationLogListener: operationLogged, queryListener: queryReceived, queryResultListener: queryResultReceived});
+    initPropertyTree(undefined, workspace, { registryListener: updateRegistry, operationLogListener: operationLogged, queryListener: queryReceived, queryResultListener: queryResultReceived });
 
     console.log(`Property tree initialized`);
 
     console.log(`Posting ${workspace.containerId} to the nameservice ..`);
 
-    await updatePlexusNameservice(plexusService, workspace.containerId);
+    await updatePlexusNameservice(plexusServiceAlias, workspace.containerId);
   }
 
   setInterval(answerQueries, 3000);

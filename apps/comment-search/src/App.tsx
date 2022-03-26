@@ -52,29 +52,53 @@ import {
 } from "@dstanesc/comment-util";
 
 import { UserComment } from '@dstanesc/comment-util';
+import { QueryResult } from '@dstanesc/plexus-util/dist/plexusApi';
+import { Link } from 'react-router-dom';
 
 
 const plexusServiceName: string = "local-plexus-service"
 
 
 
+// QueryResult {
+//   index: number;
+//   score: number;
+//   containerId: string;
+//   commentId: string;
+//   sequenceNumber: number;
+//   commentText: string
+// }
+
 function Result(props: any) {
+
+  const goAuthor = () => {
+    const authoringLink = `http://localhost:3003/#${props.queryResult.containerId}`;
+    window.open(authoringLink)
+  };
+  
   return (
-    <button className="comment">
-      {props.comment}
-    </button>
+    <div className="anno">
+      <span>ContainerId: <Button onClick={goAuthor} className="anno">{props.queryResult.containerId}</Button></span><br />
+      <span>CommentId: {props.queryResult.commentId}</span><br />
+      <span>Index: {props.queryResult.index}</span><br />
+      <span>SequentialNo:{props.queryResult.sequenceNumber}</span><br />
+      <span>Score: {props.queryResult.score}</span><br />
+      <button className="comment">
+        {props.queryResult.commentText}
+      </button>
+    </div>
   );
 }
 
 
 function ResultList(props: any) {
 
-  const results = props.comments.map(comment => <Result key={comment.key} comment={comment.text} />);
+  const results = props.queryResults.map(queryResult => <Result key={queryResult.index} queryResult={queryResult} />);
 
   return (
     <div>
       <div className="board-row">
-        { results }
+        {results}
       </div>
     </div>
   );
@@ -141,8 +165,16 @@ export default function App() {
     } else {
       console.log(`Could not find queryLog plexusModel for ${plexusListenerResult.operationType}`)
     }
-    const filtered =  queryResults.current.filter(result => result.id === queryId.current);
-    setResultArray(filtered);
+    const queryResultArray = queryResults.current
+      .filter(result => result.id === queryId.current)
+      .map(result => {
+        console.log(`Received query result \n${result.text}`);
+        const queryResult: QueryResult = JSON.parse(result.text);
+        return queryResult;
+      });
+
+    setResultArray(queryResultArray);
+
     setSearchShow(true);
   }
 
@@ -160,10 +192,10 @@ export default function App() {
   };
 
   function showResults() {
-   
+
     if (searchShow) {
       return (
-        <ResultList comments={resultArray} />
+        <ResultList queryResults={resultArray} />
       );
     }
   }
@@ -171,17 +203,18 @@ export default function App() {
   return (
     <div>
       <br /><br /><br />
-      <TextField
-        autoFocus
-        margin="normal"
-        id="text"
-        label="Enter your search here"
-        type="text"
-        variant="outlined"
-        value={searchText}
-        onChange={e => setSearchText(e.target.value)}
-      />
-      <div>
+      <div className="center">
+        <TextField
+          autoFocus
+          margin="normal"
+          id="text"
+          label="Enter your search here"
+          type="text"
+          variant="outlined"
+          value={searchText}
+          color="success"
+          onChange={e => setSearchText(e.target.value)}
+        /> <br/>
         <Button variant="contained" size="large" color="success" onClick={handleSendQuery}>
           Search
         </Button>

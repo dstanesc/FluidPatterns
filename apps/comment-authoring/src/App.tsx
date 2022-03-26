@@ -222,11 +222,7 @@ export default function App() {
       <br /><br /><br />
 
       <Button variant="contained" size="large" color="success" onClick={handleClickOpen}>
-        Add
-      </Button>
-
-      <Button variant="contained" size="large" color="success" onClick={handleSendQuery}>
-        Query
+        Add Comment
       </Button>
 
       <Dialog open={open} onClose={handleClose}>

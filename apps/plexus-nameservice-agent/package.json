@@ -1,5 +1,5 @@
 {
-    "name": "@dstanesc/comment-nameservice-agent",
+    "name": "@dstanesc/plexus-nameservice-agent",
     "version": "0.1.0",
     "description": "Container Nameservice Agent",
     "homepage": "https://fluidframework.com",

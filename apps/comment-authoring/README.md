@@ -31,28 +31,35 @@ npm run build
 
 > Note: Starting order is relevant.
 
-1. Start _Plexus Nameservice_
+1. Start _Plexus Fulltext Indexing Service_ 
+
+```sh
+cd FluidPatterns
+docker-compose up
+```
+
+2. Start _Plexus Nameservice_
 
 ```sh
 cd FluidPatterns/apps/plexus-nameservice-agent
 npm start
 ```
 
-2. Start _Plexus Service_
+3. Start _Plexus Service_
 
 ```sh
 cd FluidPatterns/apps/plexus-service-agent
 npm start
 ```
 
-3. Start _Comment Authoring Application_
+4. Start _Comment Authoring Application_
 
 ```sh
 cd FluidPatterns/apps/comment-authoring
 npm start
 ```
 
-4. Start _Comment Search Application_
+5. Start _Comment Search Application_
 
 ```sh
 cd FluidPatterns/apps/comment-search
