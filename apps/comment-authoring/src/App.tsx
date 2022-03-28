@@ -51,6 +51,7 @@ import {
 
 import { UserComment } from '@dstanesc/comment-util';
 import { addSummarizeHook } from './summarizeHook';
+import { constants } from 'os';
 
 
 const plexusServiceName: string = "local-plexus-service"
@@ -100,6 +101,12 @@ export default function App() {
 
   const commentContainerId = window.location.hash.substring(1) || undefined;
 
+  const queryString = window.location.search;
+  const params = new URLSearchParams(queryString);
+  const commentId = params.get('commentId');
+
+  console.log(`CommentId =${commentId}`);
+
 
   useEffect(() => {
     initPlexusWorkspace()
@@ -125,12 +132,6 @@ export default function App() {
     const boundWorkspace: BoundWorkspace = await initializeBoundWorkspace(configuredPlexusContainerId);
 
     const myPlexusWorkspace: Workspace = boundWorkspace.workspace;
-
-    const myPlexusBinder: DataBinder = boundWorkspace.dataBinder;
-
-    // Configure query result binding
-    configurePlexusBinding(myPlexusBinder, myPlexusWorkspace, queryResultReceived, "hex:queryResultMap-1.0.0", "queryResultLog");
-
 
     // Make workspace available
     plexusWorkspace.current = myPlexusWorkspace;
@@ -163,16 +164,6 @@ export default function App() {
 
   }
 
-  const queryResultReceived = (fn: any) => {
-
-  }
-
-  const sendQuery = (queryText: string) => {
-    const queryLog: MapProperty = retrieveMapProperty(plexusWorkspace.current, Topics.QUERY_LOG);
-    appendQueryProperty(queryText, queryLog);
-    plexusWorkspace.current.commit();
-  }
-
   const registerContainerWithPlexus = (myPlexusWorkspace: Workspace, myCommentWorkspace: Workspace) => {
     const registryLog: MapProperty = retrieveMapProperty(myPlexusWorkspace, Topics.REGISTRY_LOG);
     const commentContainerId = myCommentWorkspace.containerId;
@@ -194,11 +185,6 @@ export default function App() {
     diceArrayProperty.remove(i);
     commentWorkspace.current.commit();
   }
-
-  const handleSendQuery = () => {
-    sendQuery("text");
-  };
-
 
   const handleClickOpen = () => {
     setOpen(true);
