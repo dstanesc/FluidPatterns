@@ -126,7 +126,16 @@ const indexElasticSearch = (loggedOperation: LoggedOperation) => {
     body: elasticDocument
   };
 
-  elasticSearchClient.index(toIndex);
+  elasticSearchClient.exists({
+    index: "plexus-materialized-view",
+    id: commentId
+  }).then(exists => {
+    console.log(`Exists check =${JSON.stringify(exists, null, 2)}`);
+    if (!exists.body) {
+      console.log(`Actually indexing`);
+      elasticSearchClient.index(toIndex);
+    }
+  });
 }
 
 const answerQueries = () => {
