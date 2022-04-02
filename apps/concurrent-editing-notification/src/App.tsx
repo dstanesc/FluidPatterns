@@ -1,150 +1,235 @@
-import React from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { render } from 'react-dom';
-import { Stage, Layer, Rect, Transformer, Shape } from 'react-konva';
+import { Stage, Layer, Rect, Transformer, Text } from 'react-konva';
+import { Html } from 'react-konva-utils';
+import Button from '@mui/material/Button';
+import Table from '@mui/material/Table';
+import TableBody from '@mui/material/TableBody';
+import TableCell from '@mui/material/TableCell';
+import TableContainer from '@mui/material/TableContainer';
+import TableHead from '@mui/material/TableHead';
+import TableRow from '@mui/material/TableRow';
+import Paper from '@mui/material/Paper';
 
-const Rectangle = ({ shapeProps, isSelected, onSelect, onChange }) => {
+import './App.css';
 
-    const shapeRef = React.useRef<any>(null);
+import { DataBinder } from "@fluid-experimental/property-binder";
 
-    const trRef = React.useRef<any>(null);
+import { IPropertyTreeMessage, IRemotePropertyTreeMessage, SharedPropertyTree } from "@fluid-experimental/property-dds";
 
-    React.useEffect(() => {
-        if (isSelected) {
-            // we need to attach transformer manually
-            trRef.current.nodes([shapeRef.current]);
-            trRef.current.getLayer().batchDraw();
-        }
-    }, [isSelected]);
+import { copy as deepClone } from "fastest-json-copy";
+
+import {
+    Workspace,
+    BoundWorkspace,
+    initializeBoundWorkspace,
+    registerSchema
+} from "@dstanesc/fluid-util";
+
+import { assemblyComponentSchema } from "./assemblyComponent-1.0.0";
+
+import { assemblySchema } from "./assembly-1.0.0";
+
+import {
+    configureAssemblyBinding,
+    createComponentProperty,
+    initPropertyTree,
+    retrieveAssemblyMapProperty,
+    updateAssemblyComponentProperty
+} from './assemblyApi';
+
+import { AssemblyComponent } from './assemblyListener';
+
+import { MapProperty, NamedProperty } from '@fluid-experimental/property-properties';
+
+function Rectangle(props: any) {
 
     return (
-        <React.Fragment>
-            <Rect
-                onClick={onSelect}
-                onTap={onSelect}
-                ref={shapeRef}
-                {...shapeProps}
-                draggable
-                onDragEnd={(e) => {
-                    onChange({
-                        ...shapeProps,
-                        x: e.target.x(),
-                        y: e.target.y(),
-                    });
-                }}
-                onTransformEnd={(e) => {
-                    const node = shapeRef.current;
-                    const scaleX = node.scaleX();
-                    const scaleY = node.scaleY();
-                    node.scaleX(1);
-                    node.scaleY(1);
-                    onChange({
-                        ...shapeProps,
-                        x: node.x(),
-                        y: node.y(),
-                        width: Math.max(5, node.width() * scaleX),
-                        height: Math.max(node.height() * scaleY),
-                    });
-                }}
-            />
-            {isSelected && (
-                <Transformer
-                    ref={trRef}
-                    boundBoxFunc={(oldBox, newBox) => {
-                        // limit resize
-                        if (newBox.width < 5 || newBox.height < 5) {
-                            return oldBox;
-                        }
-                        return newBox;
-                    }}
-                />
-            )}
-        </React.Fragment>
+        <Rect
+            ref={props.rectRef}
+            {...props.value}
+            draggable
+            onDragStart={props.onDragStart}
+            onDragEnd={props.onDragEnd}
+        />
     );
-};
+}
 
-const initialRectangles = [
+
+const initialData = [
     {
         "x": 409,
         "y": 129,
         "width": 100,
         "height": 100,
         "fill": "red",
-        "shadowBlur": 10,
-        "cornerRadius": 10,
         "id": "rect1"
-      },
-      {
+    },
+    {
         "x": 278,
         "y": 340,
         "width": 112,
         "height": 100,
         "fill": "red",
-        "shadowBlur": 10,
-        "cornerRadius": 10,
         "id": "rect2"
-      },
-      {
+    },
+    {
         "x": 194,
         "y": 123,
         "width": 200,
         "height": 200,
         "fill": "green",
-        "shadowBlur": 10,
-        "cornerRadius": 10,
         "id": "rect3"
-      },
-      {
+    },
+    {
         "x": 410,
         "y": 246,
         "width": 254,
         "height": 251,
         "fill": "yellow",
-        "shadowBlur": 10,
-        "cornerRadius": 10,
         "id": "rect4"
-      }
+    }
 ];
+
 
 export default function App() {
 
-    const [rectangles, setRectangles] = React.useState(initialRectangles);
-    const [selectedId, selectShape] = React.useState(null);
+    const containerId = window.location.hash.substring(1) || undefined;
 
-    const checkDeselect = (e) => {
-        // deselect when clicked on empty area
-        const clickedOnEmpty = e.target === e.target.getStage();
-        if (clickedOnEmpty) {
-            selectShape(null);
-        }
-    };
+    const [loadDisabled, setLoadDisabled] = useState(false)
+
+    const workspace = useRef<Workspace>(null);
+
+    const [components, setComponents] = useState<AssemblyComponent[]>([]);
+
+    useEffect(() => {
+        initAssemblyWorkspace();
+    }, []); // [] to be executed only once
+
+    async function initAssemblyWorkspace() {
+
+        // Register the templates used to instantiate properties.
+        registerSchema(assemblyComponentSchema);
+        registerSchema(assemblySchema);
+
+        // Initialize the workspace
+        const boundWorkspace: BoundWorkspace = await initializeBoundWorkspace(containerId);
+
+        const myWorkspace: Workspace = boundWorkspace.workspace;
+
+        const myDataBinder: DataBinder = boundWorkspace.dataBinder;
+
+        // Configure binding
+        configureAssemblyBinding(myDataBinder, myWorkspace, setComponents);
+
+        //Initialize the property tree
+        initPropertyTree(containerId, myWorkspace, setComponents);
+
+        // Make workspace available
+        workspace.current = myWorkspace;
+
+        // Everything good, update browser location with container identifier
+        window.location.hash = myWorkspace.containerId;
+    }
+
+
+    const loadAssembly = () => {
+        const assemblyMapProperty: MapProperty = retrieveAssemblyMapProperty(workspace.current);
+        initialData.forEach(assemblyComponent => {
+            const componentProperty: NamedProperty = createComponentProperty(assemblyComponent);
+            assemblyMapProperty.insert(assemblyComponent.id, componentProperty);
+        });
+        workspace.current.commit();
+        setLoadDisabled(true);
+    }
+
+    const modifyComponent = (assemblyComponent: AssemblyComponent) => {
+
+        const assemblyMapProperty = retrieveAssemblyMapProperty(workspace.current);
+
+        updateAssemblyComponentProperty(assemblyMapProperty, assemblyComponent);
+
+        workspace.current.commit();
+    }
 
     return (
         <Stage
             width={window.innerWidth}
             height={window.innerHeight}
-            onMouseDown={checkDeselect}
-            onTouchStart={checkDeselect}
         >
             <Layer>
-                {rectangles.map((rect, i) => {
+                {components.map((rect, i) => {
+
+                    let nodeRef;
+
+                    const changeSize = () => {
+
+                        const sx = Math.random() + 0.4;
+                        const sy = Math.random() + 0.4;
+
+                        // nodeRef.to({
+                        //     scaleX: sx,
+                        //     scaleY: sy,
+                        //     width: Math.max(100, nodeRef.width() * sx),
+                        //     height: Math.max(100, nodeRef.height() * sy),
+                        //     duration: 0.2
+                        // });
+                    }
+
+                    const changeSizeAndUpdate = () => {
+
+                        changeSize();
+
+                        sleep(2000);
+
+                        const assemblyComponent: AssemblyComponent = {
+                            "id": rect.id,
+                            "fill": rect.fill,
+                            "x": parseInt(nodeRef.x()),
+                            "y": parseInt(nodeRef.y()),
+                            "width": parseInt(nodeRef.width()),
+                            "height": parseInt(nodeRef.height())
+                        };
+
+                        console.log(`Updating component ${JSON.stringify(assemblyComponent, null, 2)}`);
+
+                        modifyComponent(assemblyComponent);
+                    }
+
                     return (
                         <Rectangle
-                            key={i}
-                            shapeProps={rect}
-                            isSelected={rect.id === selectedId}
-                            onSelect={() => {
-                                selectShape(rect.id);
-                            }}
-                            onChange={(newAttrs) => {
-                                const rects = rectangles.slice();
-                                rects[i] = newAttrs;
-                                setRectangles(rects);
-                                console.log(`${JSON.stringify(rects, null, 2)}`);
-                            }}
+                            rectRef={el => nodeRef = el}
+                            key={rect.id}
+                            value={rect}
+                            onDragStart={changeSize}
+                            onDragEnd={changeSizeAndUpdate}
                         />
                     );
                 })}
             </Layer>
+
+            <Layer>
+                <Html>
+                    <Button disabled={loadDisabled} className="load" variant="contained" size="large" color="success" onClick={loadAssembly}>
+                        Load Assembly
+                    </Button>
+                </Html>
+            </Layer>
+
+            <Layer>
+                <Text
+                    text={JSON.stringify(components, null, 2)}
+                    x={1000}
+                    y={100}
+                    padding={20}
+                    fontSize={18}
+                />
+            </Layer>
+
         </Stage>
     );
 };
+
+function sleep(ms: number) {
+    return new Promise((resolve) => setTimeout(resolve, ms));
+}

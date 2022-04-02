@@ -107,7 +107,6 @@ export default function App() {
 
   console.log(`CommentId =${commentId}`);
 
-
   useEffect(() => {
     initPlexusWorkspace()
       .then(() => initCommentWorkspace())
@@ -161,7 +160,6 @@ export default function App() {
 
     // Everything good, update browser location with container identifier
     window.location.hash = myCommentWorkspace.containerId;
-
   }
 
   const registerContainerWithPlexus = (myPlexusWorkspace: Workspace, myCommentWorkspace: Workspace) => {
