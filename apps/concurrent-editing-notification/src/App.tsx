@@ -10,6 +10,8 @@ import TableContainer from '@mui/material/TableContainer';
 import TableHead from '@mui/material/TableHead';
 import TableRow from '@mui/material/TableRow';
 import Paper from '@mui/material/Paper';
+import ToggleButton from '@mui/material/ToggleButton';
+import ToggleButtonGroup from '@mui/material/ToggleButtonGroup';
 
 import './App.css';
 
@@ -23,8 +25,10 @@ import {
     Workspace,
     BoundWorkspace,
     initializeBoundWorkspace,
-    registerSchema
-} from "@dstanesc/fluid-util";
+    registerSchema,
+    createSimpleWorkspace,
+    SimpleWorkspace
+} from "./workspace";
 
 import { assemblyComponentSchema } from "./assemblyComponent-1.0.0";
 
@@ -48,7 +52,7 @@ function Rectangle(props: any) {
         <Rect
             ref={props.rectRef}
             {...props.value}
-            draggable
+            draggable={props.draggable}
             onDragStart={props.onDragStart}
             onDragEnd={props.onDragEnd}
         />
@@ -96,51 +100,74 @@ export default function App() {
 
     const containerId = window.location.hash.substring(1) || undefined;
 
-    const [loadDisabled, setLoadDisabled] = useState(false)
-
-    const workspace = useRef<Workspace>(null);
+    const workspace = useRef<SimpleWorkspace>(null);
 
     const [components, setComponents] = useState<AssemblyComponent[]>([]);
 
+    const [remoteComponents, setRemoteComponents] = useState<AssemblyComponent[]>([]);
+
+    const [assemblyLocalVisible, setAssemblyLocalVisible] = useState(true);
+
+    const [assemblyRemoteVisible, setAssemblyRemoteVisible] = useState(false);
+
+    const [visible, setVisible] = useState(() => ["local"]);
+
     useEffect(() => {
-        initAssemblyWorkspace();
+        initLocalAssemblyWorkspace()
+            .then(() => { if (!containerId) loadAssembly() })
+            .then(() => initRemoteAssemblyWorkspace());
     }, []); // [] to be executed only once
 
-    async function initAssemblyWorkspace() {
+    async function initLocalAssemblyWorkspace() {
 
         // Register the templates used to instantiate properties.
         registerSchema(assemblyComponentSchema);
         registerSchema(assemblySchema);
 
         // Initialize the workspace
-        const boundWorkspace: BoundWorkspace = await initializeBoundWorkspace(containerId);
+        const simpleWorkspace: SimpleWorkspace = await createSimpleWorkspace(containerId);
 
-        const myWorkspace: Workspace = boundWorkspace.workspace;
-
-        const myDataBinder: DataBinder = boundWorkspace.dataBinder;
+        const myDataBinder: DataBinder = simpleWorkspace.dataBinder;
 
         // Configure binding
-        configureAssemblyBinding(myDataBinder, myWorkspace, setComponents);
+        configureAssemblyBinding(myDataBinder, simpleWorkspace, "local", setComponents);
 
         //Initialize the property tree
-        initPropertyTree(containerId, myWorkspace, setComponents);
+        initPropertyTree(containerId, simpleWorkspace, setComponents);
 
         // Make workspace available
-        workspace.current = myWorkspace;
+        workspace.current = simpleWorkspace;
 
         // Everything good, update browser location with container identifier
-        window.location.hash = myWorkspace.containerId;
+        window.location.hash = simpleWorkspace.containerId;
     }
 
-
-    const loadAssembly = () => {
+    const loadAssembly = async () => {
         const assemblyMapProperty: MapProperty = retrieveAssemblyMapProperty(workspace.current);
         initialData.forEach(assemblyComponent => {
             const componentProperty: NamedProperty = createComponentProperty(assemblyComponent);
             assemblyMapProperty.insert(assemblyComponent.id, componentProperty);
         });
         workspace.current.commit();
-        setLoadDisabled(true);
+    }
+
+
+    async function initRemoteAssemblyWorkspace() {
+
+        // Initialize the workspace
+        const simpleWorkspace: SimpleWorkspace = await createSimpleWorkspace(workspace.current.containerId);
+
+        // Configure binding
+        configureAssemblyBinding(simpleWorkspace.dataBinder, simpleWorkspace, "remote", setRemoteComponents);
+
+        //Initialize the property tree
+        initPropertyTree(containerId, simpleWorkspace, setRemoteComponents);
+    }
+
+
+    const commitWorkspace = () => {
+
+        workspace.current.commit();
     }
 
     const modifyComponent = (assemblyComponent: AssemblyComponent) => {
@@ -148,47 +175,41 @@ export default function App() {
         const assemblyMapProperty = retrieveAssemblyMapProperty(workspace.current);
 
         updateAssemblyComponentProperty(assemblyMapProperty, assemblyComponent);
-
-        workspace.current.commit();
     }
+
+    const handleVisibility = (
+        event: React.MouseEvent<HTMLElement>,
+        newFormats: string[],
+    ) => {
+        setVisible(newFormats);
+    };
 
     return (
         <Stage
             width={window.innerWidth}
             height={window.innerHeight}
         >
-            <Layer>
+            <Layer visible={visible.includes("local")}>
+
                 {components.map((rect, i) => {
 
-                    let nodeRef;
+                    let shape;
 
-                    const changeSize = () => {
+                    const resizeAndUpdate = () => {
 
-                        const sx = Math.random() + 0.4;
-                        const sy = Math.random() + 0.4;
-
-                        // nodeRef.to({
-                        //     scaleX: sx,
-                        //     scaleY: sy,
-                        //     width: Math.max(100, nodeRef.width() * sx),
-                        //     height: Math.max(100, nodeRef.height() * sy),
-                        //     duration: 0.2
-                        // });
-                    }
-
-                    const changeSizeAndUpdate = () => {
-
-                        changeSize();
-
-                        sleep(2000);
+                        const resize = true;
+                        const newX = (resize) ? Math.floor(shape.x() * randomInRange(0.8, 1.2)) : Math.floor(shape.x());
+                        const newY = (resize) ? Math.floor(shape.y() * randomInRange(0.8, 1.2)) : Math.floor(shape.y());
+                        const newWidth = (resize) ? Math.floor(Math.max(100, shape.width() * randomInRange(0.7, 1.3))) : Math.floor(shape.width());
+                        const newHeight = (resize) ? Math.floor(Math.max(100, shape.height() * randomInRange(0.7, 1.3))) : Math.floor(shape.height());
 
                         const assemblyComponent: AssemblyComponent = {
                             "id": rect.id,
                             "fill": rect.fill,
-                            "x": parseInt(nodeRef.x()),
-                            "y": parseInt(nodeRef.y()),
-                            "width": parseInt(nodeRef.width()),
-                            "height": parseInt(nodeRef.height())
+                            "x": newX,
+                            "y": newY,
+                            "width": newWidth,
+                            "height": newHeight,
                         };
 
                         console.log(`Updating component ${JSON.stringify(assemblyComponent, null, 2)}`);
@@ -198,11 +219,28 @@ export default function App() {
 
                     return (
                         <Rectangle
-                            rectRef={el => nodeRef = el}
+                            rectRef={node => shape = node}
                             key={rect.id}
                             value={rect}
-                            onDragStart={changeSize}
-                            onDragEnd={changeSizeAndUpdate}
+                            onDragStart={() => { }}
+                            onDragEnd={resizeAndUpdate}
+                            draggable={true}
+                        />
+                    );
+                })}
+            </Layer>
+
+            <Layer visible={visible.includes("remote")} opacity={0.2}>
+
+                {remoteComponents.map((rect, i) => {
+                    return (
+                        <Rectangle
+                            rectRef={node => { }}
+                            key={rect.id}
+                            value={rect}
+                            onDragStart={() => { }}
+                            onDragEnd={() => { }}
+                            draggable={false}
                         />
                     );
                 })}
@@ -210,8 +248,20 @@ export default function App() {
 
             <Layer>
                 <Html>
-                    <Button disabled={loadDisabled} className="load" variant="contained" size="large" color="success" onClick={loadAssembly}>
-                        Load Assembly
+                    <ToggleButtonGroup
+                        value={visible}
+                        onChange={handleVisibility}
+                        aria-label="layer visibility"
+                    >
+                        <ToggleButton sx={{m: 2}} size="medium" color="success" value="local" aria-label="local">
+                            LOCAL
+                        </ToggleButton>
+                        <ToggleButton sx={{m: 2}} size="medium" color="success" value="remote" aria-label="remote">
+                            REMOTE
+                        </ToggleButton>
+                    </ToggleButtonGroup>
+                    <Button sx={{m: 2}} variant="outlined" size="large" color="success" onClick={commitWorkspace}>
+                        COMMIT
                     </Button>
                 </Html>
             </Layer>
@@ -226,10 +276,26 @@ export default function App() {
                 />
             </Layer>
 
+            <Layer>
+                <Text
+                    text={JSON.stringify(remoteComponents, null, 2)}
+                    x={1200}
+                    y={100}
+                    padding={20}
+                    fontSize={18}
+                />
+            </Layer>
+
         </Stage>
     );
 };
 
 function sleep(ms: number) {
     return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+function randomInRange(min, max) {
+    const random = (Math.random() * (max - min)) + min;
+    console.log(`Random in range generated ${random}`);
+    return random;
 }

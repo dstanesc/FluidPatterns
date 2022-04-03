@@ -42,8 +42,9 @@ function updateFields(original: AssemblyComponent, change: AssemblyComponent): A
         console.log(`Received assembly change ${key} ${value}`);
         if (value) {
             originalCopy[key] = value;
-            console.log( `Updating${key} to ${value}`);
+            console.log( `Updating ${key} to ${value}`);
         }
     });
+    console.log( `Updating object to ${JSON.stringify(originalCopy, null, 2)}`);
     return originalCopy;
 }

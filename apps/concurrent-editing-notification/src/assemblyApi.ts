@@ -6,10 +6,11 @@ import { AssemblyController } from "./assemblyController";
 import { AssemblyComponent, AssemblyListener } from "./assemblyListener";
 import { AssemblyBinding } from "./assemblyBinding";
 import { copy as deepCopy } from "fastest-json-copy";
+import { SimpleWorkspace } from "./workspace";
 
 export function enrich(toEnrich: AssemblyComponent): AssemblyComponent {
     const assemblyComponent = deepCopy(toEnrich);
-    assemblyComponent["shadowBlur"] = 10;
+    assemblyComponent["shadowBlur"] = 20;
     assemblyComponent["cornerRadius"] = 10;
     return assemblyComponent;
 }
@@ -24,7 +25,7 @@ export function createComponentProperty(component: AssemblyComponent): NamedProp
     return operationProperty;
 }
 
-export function retrieveAssemblyMapProperty(workspace: Workspace): MapProperty {
+export function retrieveAssemblyMapProperty(workspace: SimpleWorkspace): MapProperty {
     const assemblyMapProperty: MapProperty = workspace.rootProperty.resolvePath("assembly.components")! as MapProperty
     return assemblyMapProperty;
 }
@@ -44,7 +45,7 @@ export function updateAssemblyComponentProperty(assemblyMapProperty: MapProperty
     heightProperty.setValue(assemblyComponent.height);
 }
 
-export function initPropertyTree(containerId: string | undefined, workspace: Workspace, assemblyListener: AssemblyListener) {
+export function initPropertyTree(containerId: string | undefined, workspace: SimpleWorkspace, assemblyListener: AssemblyListener) {
     if (containerId === undefined) {
         const assemblyProperty: MapProperty = createAssemblyProperty();
         const rootProp: NodeProperty = workspace.rootProperty;
@@ -75,11 +76,10 @@ export function initPropertyTree(containerId: string | undefined, workspace: Wor
     }
 }
 
-export function configureAssemblyBinding(dataBinder: DataBinder, workspace: Workspace, assemblyListener: AssemblyListener) {
-    dataBinder.defineRepresentation("view", "hex:assembly-1.0.0", (property) => {
+export function configureAssemblyBinding(dataBinder: DataBinder, workspace: SimpleWorkspace, view: string, assemblyListener: AssemblyListener) {
+    dataBinder.defineRepresentation(view, "hex:assembly-1.0.0", (property) => {
         return new AssemblyController(assemblyListener);
     });
-
-    dataBinder.defineDataBinding("view", "hex:assembly-1.0.0", AssemblyBinding);
-    dataBinder.activateDataBinding("view");
+    dataBinder.defineDataBinding(view, "hex:assembly-1.0.0", AssemblyBinding);
+    dataBinder.activateDataBinding(view);
 }
