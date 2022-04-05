@@ -16,7 +16,7 @@ import evolvableSchema200 from "./evolvable-2.0.0";
 import { EvolvableRenderer } from './evolvableRenderer';
 import { Evolvable } from './evolvable';
 import { EvolvableBinding } from './evolvableBinding';
-import { ArrayProperty, NodeProperty, PropertyFactory, StringArrayProperty, StringProperty, ValueProperty } from '@fluid-experimental/property-properties';
+import { ArrayProperty, Int32ArrayProperty, NodeProperty, PropertyFactory, StringArrayProperty, StringProperty, ValueProperty } from '@fluid-experimental/property-properties';
 import { IRemotePropertyTreeMessage, SharedPropertyTree } from '@fluid-experimental/property-dds';
 import { ChangeSet } from '@fluid-experimental/property-changeset';
 import { Console } from 'console';
@@ -33,6 +33,8 @@ export default function App() {
   const [workspace, setWorkspace] = useState<Workspace>();
 
   const [log, setLog] = useState<Workspace>();
+
+  const [pos, setPos] = useState<number>(-1);
 
   const containerId = window.location.hash.substring(1) || undefined;
 
@@ -79,6 +81,7 @@ export default function App() {
     ) => {
         console.log("Miso MyPrune invoked");
         let isHistory =  false;
+        
         remoteChanges.forEach((rch) => {
             const rchstr = JSON.stringify(rch);
             if(rchstr.includes("history_buffer")){
@@ -97,6 +100,7 @@ export default function App() {
         const removedRemoteChanges = remoteChanges.slice(0,remoteChanges.length - prunedRemoteChanges.length);
         if(removedRemoteChanges.length>0){
           const firstChange = cloneChange(removedRemoteChanges[0].changeSet);
+          let seq = prunedRemoteChanges[prunedRemoteChanges.length-1].sequenceNumber;
           for(let i=1;i<removedRemoteChanges.length;i++){
             const nextChange = cloneChange(removedRemoteChanges[i].changeSet);
             console.log(JSON.stringify(nextChange.getSerializedChangeSet()));
@@ -105,11 +109,15 @@ export default function App() {
           }
           const mySerialized = JSON.stringify(firstChange.getSerializedChangeSet());
           let historyBufferProp = myLogRoot.resolvePath("history_buffer");
+          let historyBufferSeq = myLogRoot.resolvePath("history_buffer_seq");
           if(historyBufferProp === undefined){
             historyBufferProp =  PropertyFactory.create("String","array");
-            myLogRoot.insert("history_buffer",historyBufferProp);            
+            myLogRoot.insert("history_buffer",historyBufferProp);    
+            historyBufferSeq =  PropertyFactory.create("Int32","array");
+            myLogRoot.insert("history_buffer_seq",historyBufferSeq);
           }
           (historyBufferProp as StringArrayProperty).push(mySerialized);
+          (historyBufferSeq as Int32ArrayProperty).push(seq);
           myLogWorkspace.commit();
         }        
         return origResult;
@@ -169,14 +177,44 @@ export default function App() {
     <div className="App">
     <h1>Evolution Example</h1>
     <h2>Init Schema</h2>
-      <button onClick={() => {    
-        const rootProp: NodeProperty = log.rootProperty;
-        const hist = rootProp.resolvePath("history_buffer") as StringArrayProperty;
-        const lastChangeSerialized = hist.get(hist.length-1);
-        const lastChangeset = new ChangeSet(JSON.parse(lastChangeSerialized));
-        lastChangeset.toInverseChangeSet();
-        const changesOfLastChangeset = lastChangeset._changes;
-        workspace.tree.root.applyChangeSet(changesOfLastChangeset);
+      <button onClick={() => {   
+        const myPos = pos;
+        console.log("miso12 " + myPos);
+        if(pos===0){
+        }
+        else
+        if(pos===-1){
+          const remoteChanges = workspace.tree.remoteChanges;
+          const firstChange = cloneChange(remoteChanges[0].changeSet);
+          for(let i=1;i<remoteChanges.length;i++){
+            const nextChange = cloneChange(remoteChanges[i].changeSet);        
+            firstChange.applyChangeSet(nextChange);
+          }
+          firstChange.toInverseChangeSet();
+          const changes = firstChange._changes;
+          workspace.tree.root.applyChangeSet(changes);
+          setPos((remoteChanges[0] as IRemotePropertyTreeMessage).sequenceNumber);
+        } 
+        else {
+          const rootProp: NodeProperty = log.rootProperty;
+          const seqHist = rootProp.resolvePath("history_buffer_seq") as Int32ArrayProperty;
+          for(let i=seqHist.length-1;i>=0;i--){
+            const currentHistSeq=seqHist.get(i);
+            if(pos>=currentHistSeq){
+              const hist = rootProp.resolvePath("history_buffer") as StringArrayProperty;
+              const changesetToApply = hist.get(i);
+              const inverse = new ChangeSet(JSON.parse(changesetToApply));
+              inverse.toInverseChangeSet();
+              const changes = inverse._changes;
+              workspace.tree.root.applyChangeSet(changes);
+              const newPos = i===0?0:seqHist.get(i-1);
+              console.log("miso13 newPos " + newPos);
+              setPos(newPos);              
+              break;
+            }
+          }
+        }
+
       }      
       }>{"<"}</button>
 
