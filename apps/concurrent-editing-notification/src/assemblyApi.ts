@@ -8,6 +8,46 @@ import { AssemblyBinding } from "./assemblyBinding";
 import { copy as deepCopy } from "fastest-json-copy";
 import { SimpleWorkspace } from "./workspace";
 
+
+//https://www.schemecolor.com/yellow-green-orange-organics.php
+const initialData = [
+    {
+        "x": 409,
+        "y": 129,
+        "width": 100,
+        "height": 100,
+        "fill": "#F58A2C",
+        "id": "rect1"
+    },
+    {
+        "x": 278,
+        "y": 340,
+        "width": 112,
+        "height": 100,
+        "fill": "#DCF285",
+        "id": "rect2"
+    },
+    {
+        "x": 194,
+        "y": 123,
+        "width": 200,
+        "height": 200,
+        "fill": "#617A2E",
+        "id": "rect3"
+    },
+    {
+        "x": 410,
+        "y": 246,
+        "width": 254,
+        "height": 251,
+        "fill": "#FADA39",
+        "id": "rect4"
+    }
+];
+
+
+
+
 export function enrich(toEnrich: AssemblyComponent): AssemblyComponent {
     const assemblyComponent = deepCopy(toEnrich);
     assemblyComponent["shadowBlur"] = 20;
@@ -45,22 +85,28 @@ export function updateAssemblyComponentProperty(assemblyMapProperty: MapProperty
     heightProperty.setValue(assemblyComponent.height);
 }
 
-export function initPropertyTree(containerId: string | undefined, workspace: SimpleWorkspace, assemblyListener: AssemblyListener) {
-    if (containerId === undefined) {
+export function initPropertyTree(init: boolean, workspace: SimpleWorkspace, assemblyListener: AssemblyListener) {
+    if (init) {
         const assemblyProperty: MapProperty = createAssemblyProperty();
         const rootProp: NodeProperty = workspace.rootProperty;
         rootProp.insert("assembly", assemblyProperty);
         workspace.commit();
+        const mapProperty: MapProperty = assemblyProperty.get("components") as MapProperty;
+        initialData.forEach(assemblyComponent => {
+            const componentProperty: NamedProperty = createComponentProperty(assemblyComponent);
+            mapProperty.insert(assemblyComponent.id, componentProperty);
+        });
+        workspace.commit();
     } else {
         const mapProperty: MapProperty = retrieveAssemblyMapProperty(workspace);
         mapProperty.getIds().forEach(key => {
-            const nestedProperty = mapProperty.get(key) as NamedProperty;
-            const idProperty: StringProperty = nestedProperty.get("id") as StringProperty;
-            const fillProperty: StringProperty = nestedProperty.get("fill") as StringProperty;
-            const xProperty: Int32Property = nestedProperty.get("x") as Int32Property;
-            const yProperty: Int32Property = nestedProperty.get("y") as Int32Property;
-            const widthProperty: Int32Property = nestedProperty.get("width") as Int32Property;
-            const heightProperty: Int32Property = nestedProperty.get("height") as Int32Property;
+            const assemblyComponentProperty = mapProperty.get(key) as NamedProperty;
+            const idProperty: StringProperty = assemblyComponentProperty.get("id") as StringProperty;
+            const fillProperty: StringProperty = assemblyComponentProperty.get("fill") as StringProperty;
+            const xProperty: Int32Property = assemblyComponentProperty.get("x") as Int32Property;
+            const yProperty: Int32Property = assemblyComponentProperty.get("y") as Int32Property;
+            const widthProperty: Int32Property = assemblyComponentProperty.get("width") as Int32Property;
+            const heightProperty: Int32Property = assemblyComponentProperty.get("height") as Int32Property;
 
             const assemblyComponent: AssemblyComponent = {
                 "id": idProperty.getValue(),
@@ -70,7 +116,6 @@ export function initPropertyTree(containerId: string | undefined, workspace: Sim
                 "width": widthProperty.getValue(),
                 "height": heightProperty.getValue()
             };
-
             assemblyListener( assembly => [...assembly, enrich(assemblyComponent)]);
         });
     }

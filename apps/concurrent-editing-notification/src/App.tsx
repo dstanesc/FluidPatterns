@@ -1,15 +1,8 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { render } from 'react-dom';
+
 import { Stage, Layer, Rect, Transformer, Text } from 'react-konva';
 import { Html } from 'react-konva-utils';
 import Button from '@mui/material/Button';
-import Table from '@mui/material/Table';
-import TableBody from '@mui/material/TableBody';
-import TableCell from '@mui/material/TableCell';
-import TableContainer from '@mui/material/TableContainer';
-import TableHead from '@mui/material/TableHead';
-import TableRow from '@mui/material/TableRow';
-import Paper from '@mui/material/Paper';
 import ToggleButton from '@mui/material/ToggleButton';
 import ToggleButtonGroup from '@mui/material/ToggleButtonGroup';
 
@@ -17,17 +10,13 @@ import './App.css';
 
 import { DataBinder } from "@fluid-experimental/property-binder";
 
-import { IPropertyTreeMessage, IRemotePropertyTreeMessage, SharedPropertyTree } from "@fluid-experimental/property-dds";
-
 import { copy as deepClone } from "fastest-json-copy";
 
 import {
-    Workspace,
-    BoundWorkspace,
-    initializeBoundWorkspace,
     registerSchema,
     createSimpleWorkspace,
-    SimpleWorkspace
+    SimpleWorkspace,
+    ReadyLogger
 } from "./workspace";
 
 import { assemblyComponentSchema } from "./assemblyComponent-1.0.0";
@@ -36,15 +25,15 @@ import { assemblySchema } from "./assembly-1.0.0";
 
 import {
     configureAssemblyBinding,
-    createComponentProperty,
     initPropertyTree,
     retrieveAssemblyMapProperty,
     updateAssemblyComponentProperty
 } from './assemblyApi';
 
 import { AssemblyComponent } from './assemblyListener';
+import { assembly, index, isModified } from './assemblyDiff';
+import _ from "lodash"
 
-import { MapProperty, NamedProperty } from '@fluid-experimental/property-properties';
 
 function Rectangle(props: any) {
 
@@ -60,65 +49,43 @@ function Rectangle(props: any) {
 }
 
 
-const initialData = [
-    {
-        "x": 409,
-        "y": 129,
-        "width": 100,
-        "height": 100,
-        "fill": "red",
-        "id": "rect1"
-    },
-    {
-        "x": 278,
-        "y": 340,
-        "width": 112,
-        "height": 100,
-        "fill": "red",
-        "id": "rect2"
-    },
-    {
-        "x": 194,
-        "y": 123,
-        "width": 200,
-        "height": 200,
-        "fill": "green",
-        "id": "rect3"
-    },
-    {
-        "x": 410,
-        "y": 246,
-        "width": 254,
-        "height": 251,
-        "fill": "yellow",
-        "id": "rect4"
-    }
-];
-
-
 export default function App() {
 
     const containerId = window.location.hash.substring(1) || undefined;
 
     const workspace = useRef<SimpleWorkspace>(null);
 
-    const [components, setComponents] = useState<AssemblyComponent[]>([]);
+    const [localComponents, setLocalComponents] = useState<AssemblyComponent[]>([]);
 
     const [remoteComponents, setRemoteComponents] = useState<AssemblyComponent[]>([]);
 
-    const [assemblyLocalVisible, setAssemblyLocalVisible] = useState(true);
+    const baseline = useRef<AssemblyComponent[]>([]);
 
-    const [assemblyRemoteVisible, setAssemblyRemoteVisible] = useState(false);
+    const [localChanges, setLocalChanges] = useState<Map<string, AssemblyComponent>>(new Map());
+
+    const [remoteChanges, setRemoteChanges] = useState<Map<string, AssemblyComponent>>(new Map());
 
     const [visible, setVisible] = useState(() => ["local"]);
 
     useEffect(() => {
         initLocalAssemblyWorkspace()
-            .then(() => { if (!containerId) loadAssembly() })
-            .then(() => initRemoteAssemblyWorkspace());
+            .then((localWorkspace) => initRemoteAssemblyWorkspace(localWorkspace));
+        //.then((remoteWorkspace) => createBaseline());
     }, []); // [] to be executed only once
 
-    async function initLocalAssemblyWorkspace() {
+
+    useEffect(() => {
+        if (baseline.current.length > 0)
+            setLocalChanges(index(isModified(localComponents, baseline.current)));
+    }, [localComponents]);
+
+    useEffect(() => {
+        if (baseline.current.length > 0)
+            setRemoteChanges(index(isModified(remoteComponents, baseline.current)));
+    }, [remoteComponents]);
+
+
+    async function initLocalAssemblyWorkspace(): Promise<SimpleWorkspace> {
 
         // Register the templates used to instantiate properties.
         registerSchema(assemblyComponentSchema);
@@ -130,44 +97,48 @@ export default function App() {
         const myDataBinder: DataBinder = simpleWorkspace.dataBinder;
 
         // Configure binding
-        configureAssemblyBinding(myDataBinder, simpleWorkspace, "local", setComponents);
+        configureAssemblyBinding(myDataBinder, simpleWorkspace, "local", setLocalComponents);
 
         //Initialize the property tree
-        initPropertyTree(containerId, simpleWorkspace, setComponents);
+        initPropertyTree(containerId === undefined, simpleWorkspace, setLocalComponents);
 
         // Make workspace available
         workspace.current = simpleWorkspace;
 
         // Everything good, update browser location with container identifier
         window.location.hash = simpleWorkspace.containerId;
+
+        return simpleWorkspace;
     }
 
-    const loadAssembly = async () => {
-        const assemblyMapProperty: MapProperty = retrieveAssemblyMapProperty(workspace.current);
-        initialData.forEach(assemblyComponent => {
-            const componentProperty: NamedProperty = createComponentProperty(assemblyComponent);
-            assemblyMapProperty.insert(assemblyComponent.id, componentProperty);
-        });
-        workspace.current.commit();
-    }
-
-
-    async function initRemoteAssemblyWorkspace() {
+    async function initRemoteAssemblyWorkspace(localWorkspace: SimpleWorkspace): Promise<SimpleWorkspace> {
 
         // Initialize the workspace
-        const simpleWorkspace: SimpleWorkspace = await createSimpleWorkspace(workspace.current.containerId);
+        const simpleWorkspace: SimpleWorkspace = await createSimpleWorkspace(localWorkspace.containerId);
+
+        initPropertyTree(false, simpleWorkspace, setRemoteComponents);
 
         // Configure binding
         configureAssemblyBinding(simpleWorkspace.dataBinder, simpleWorkspace, "remote", setRemoteComponents);
 
-        //Initialize the property tree
-        initPropertyTree(containerId, simpleWorkspace, setRemoteComponents);
+        return simpleWorkspace;
     }
 
+    async function createBaseline() {
+
+        baseline.current = [...localComponents];
+    }
 
     const commitWorkspace = () => {
 
         workspace.current.commit();
+
+        createBaseline();
+    }
+
+    const mergeWorkspace = () => {
+
+       setVisible(["localChanges", "remoteChanges"]);
     }
 
     const modifyComponent = (assemblyComponent: AssemblyComponent) => {
@@ -191,7 +162,7 @@ export default function App() {
         >
             <Layer visible={visible.includes("local")}>
 
-                {components.map((rect, i) => {
+                {localComponents.map((rect, i) => {
 
                     let shape;
 
@@ -214,17 +185,30 @@ export default function App() {
 
                         console.log(`Updating component ${JSON.stringify(assemblyComponent, null, 2)}`);
 
+                        if (baseline.current.length === 0) {
+                            createBaseline();
+                        }
+
                         modifyComponent(assemblyComponent);
                     }
+
+                    let decoration = remoteChanges.has(rect.id) ? { stroke: "blue", strokeWidth: 4 } : {};
+
+                    if (remoteChanges.has(rect.id) && localChanges.has(rect.id) && !_.isEqual(localChanges.get(rect.id), remoteChanges.get(rect.id))) {
+                        decoration.stroke = "red";
+                    }
+
+                    const decorated = Object.assign(decoration, rect);
 
                     return (
                         <Rectangle
                             rectRef={node => shape = node}
                             key={rect.id}
-                            value={rect}
+                            value={decorated}
                             onDragStart={() => { }}
                             onDragEnd={resizeAndUpdate}
                             draggable={true}
+
                         />
                     );
                 })}
@@ -246,6 +230,38 @@ export default function App() {
                 })}
             </Layer>
 
+            <Layer visible={visible.includes("localChanges")} opacity={0.2}>
+
+                {assembly(localChanges).map((rect, i) => {
+                    return (
+                        <Rectangle
+                            rectRef={node => { }}
+                            key={rect.id}
+                            value={rect}
+                            onDragStart={() => { }}
+                            onDragEnd={() => { }}
+                            draggable={false}
+                        />
+                    );
+                })}
+            </Layer>
+
+            <Layer visible={visible.includes("remoteChanges")} opacity={0.2}>
+
+                {assembly(remoteChanges).map((rect, i) => {
+                    return (
+                        <Rectangle
+                            rectRef={node => { }}
+                            key={rect.id}
+                            value={rect}
+                            onDragStart={() => { }}
+                            onDragEnd={() => { }}
+                            draggable={false}
+                        />
+                    );
+                })}
+            </Layer>
+
             <Layer>
                 <Html>
                     <ToggleButtonGroup
@@ -253,22 +269,34 @@ export default function App() {
                         onChange={handleVisibility}
                         aria-label="layer visibility"
                     >
-                        <ToggleButton sx={{m: 2}} size="medium" color="success" value="local" aria-label="local">
+                        <ToggleButton sx={{ m: 1 }} size="large" color="success" value="local" aria-label="local">
                             LOCAL
                         </ToggleButton>
-                        <ToggleButton sx={{m: 2}} size="medium" color="success" value="remote" aria-label="remote">
+                        <ToggleButton sx={{ m: 1 }} size="large" color="success" value="remote" aria-label="remote">
                             REMOTE
                         </ToggleButton>
+                        <ToggleButton sx={{ m: 1 }} size="large" color="success" value="localChanges" aria-label="localChanges">
+                            LOCAL CHANGES
+                        </ToggleButton>
+                        <ToggleButton sx={{ m: 1 }} size="large" color="success" value="remoteChanges" aria-label="remoteChanges">
+                            REMOTE CHANGES
+                        </ToggleButton>
                     </ToggleButtonGroup>
-                    <Button sx={{m: 2}} variant="outlined" size="large" color="success" onClick={commitWorkspace}>
+                    <Button sx={{ m: 2 }} variant="outlined" size="large" color="success" onClick={commitWorkspace}>
                         COMMIT
+                    </Button>
+                    <Button sx={{ m: 2 }} variant="outlined" size="large" color="success" onClick={mergeWorkspace}>
+                        MERGE
+                    </Button>
+                    <Button sx={{ m: 2 }} variant="outlined" size="large" color="success" onClick={createBaseline}>
+                        BASELINE
                     </Button>
                 </Html>
             </Layer>
 
-            <Layer>
+            {/* <Layer>
                 <Text
-                    text={JSON.stringify(components, null, 2)}
+                    text={JSON.stringify(localComponents, null, 2)}
                     x={1000}
                     y={100}
                     padding={20}
@@ -284,15 +312,12 @@ export default function App() {
                     padding={20}
                     fontSize={18}
                 />
-            </Layer>
+            </Layer> */}
 
         </Stage>
     );
 };
 
-function sleep(ms: number) {
-    return new Promise((resolve) => setTimeout(resolve, ms));
-}
 
 function randomInRange(min, max) {
     const random = (Math.random() * (max - min)) + min;
