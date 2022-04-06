@@ -167,26 +167,41 @@ export default function App() {
   }
 
   return (
-   
+
+    
+
     <div className="App">
     <h1>Squashing Example</h1>
       <button onClick={() => {   
-        const myPos = pos;
+    
+   const rootProp: NodeProperty = log.rootProperty;
+    const seqHist = rootProp.resolvePath("history_buffer_seq") as Int32ArrayProperty;
+    const lastSquashedSeq=seqHist.get(seqHist.length-1);
+    const remoteChanges = workspace.tree.remoteChanges;
+    let firstUnsquashedRemoteIndex=0;
+    for(let i=0;i<remoteChanges.length;i++){
+      const currentSeqNr = (remoteChanges[i] as IRemotePropertyTreeMessage).sequenceNumber;
+      if(lastSquashedSeq<currentSeqNr){
+        firstUnsquashedRemoteIndex=i;
+        break;
+      }
+    }
+    
+    const myPos = pos;
         console.log("miso12 " + myPos);
         if(pos===0){
         }
         else
         if(pos===-1){
-          const remoteChanges = workspace.tree.remoteChanges;
-          const firstChange = cloneChange(remoteChanges[0].changeSet);
-          for(let i=1;i<remoteChanges.length;i++){
+          const firstChange = cloneChange(remoteChanges[firstUnsquashedRemoteIndex].changeSet);
+          for(let i=firstUnsquashedRemoteIndex+1;i<remoteChanges.length;i++){
             const nextChange = cloneChange(remoteChanges[i].changeSet);        
             firstChange.applyChangeSet(nextChange);
           }
           firstChange.toInverseChangeSet();
           const changes = firstChange._changes;
           workspace.tree.root.applyChangeSet(changes);
-          setPos((remoteChanges[0] as IRemotePropertyTreeMessage).sequenceNumber);
+          setPos((remoteChanges[firstUnsquashedRemoteIndex] as IRemotePropertyTreeMessage).sequenceNumber);
         } 
         else {
           const rootProp: NodeProperty = log.rootProperty;
@@ -238,9 +253,22 @@ export default function App() {
             }
           }
           if(!isApplied){
+
+            const rootProp: NodeProperty = log.rootProperty;
+            const seqHist = rootProp.resolvePath("history_buffer_seq") as Int32ArrayProperty;
+            const lastSquashedSeq=seqHist.get(seqHist.length-1);
             const remoteChanges = workspace.tree.remoteChanges;
-            const firstChange = cloneChange(remoteChanges[0].changeSet);
-            for(let i=1;i<remoteChanges.length;i++){
+            let firstUnsquashedRemoteIndex=0;
+            for(let i=0;i<remoteChanges.length;i++){
+              const currentSeqNr = (remoteChanges[i] as IRemotePropertyTreeMessage).sequenceNumber;
+              if(lastSquashedSeq<currentSeqNr){
+                firstUnsquashedRemoteIndex=i;
+                break;
+              }
+            }
+  
+            const firstChange = cloneChange(remoteChanges[firstUnsquashedRemoteIndex].changeSet);
+            for(let i=firstUnsquashedRemoteIndex+1;i<remoteChanges.length;i++){
               const nextChange = cloneChange(remoteChanges[i].changeSet);        
               firstChange.applyChangeSet(nextChange);
             }
