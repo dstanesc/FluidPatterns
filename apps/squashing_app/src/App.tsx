@@ -96,15 +96,13 @@ export default function App() {
         if(isHistory){
           return origResult;
         }
-        const prunedRemoteChanges = origResult.remoteChanges;
-        const removedRemoteChanges = remoteChanges.slice(0,remoteChanges.length - prunedRemoteChanges.length);
+        const removedRemoteChanges = remoteChanges.slice(0,remoteChanges.length - origResult.remoteChanges.length);
         if(removedRemoteChanges.length>0){
           const firstChange = cloneChange(removedRemoteChanges[0].changeSet);
-          let seq = prunedRemoteChanges[prunedRemoteChanges.length-1].sequenceNumber;
+          let seq = removedRemoteChanges[removedRemoteChanges.length-1].sequenceNumber;
           for(let i=1;i<removedRemoteChanges.length;i++){
             const nextChange = cloneChange(removedRemoteChanges[i].changeSet);
-            console.log(JSON.stringify(nextChange.getSerializedChangeSet()));
-            
+            console.log(JSON.stringify(nextChange.getSerializedChangeSet()));            
             firstChange.applyChangeSet(nextChange);
           }
           const mySerialized = JSON.stringify(firstChange.getSerializedChangeSet());
@@ -207,7 +205,7 @@ export default function App() {
               inverse.toInverseChangeSet();
               const changes = inverse._changes;
               workspace.tree.root.applyChangeSet(changes);
-              const newPos = i===0?0:seqHist.get(i-1);
+              const newPos = i===0?0:seqHist.get(i-1)+1;
               console.log("miso13 newPos " + newPos);
               setPos(newPos);              
               break;
@@ -218,14 +216,71 @@ export default function App() {
       }      
       }>{"<"}</button>
 
+
+
+<button onClick={() => {   
+        const myPos = pos;
+        console.log("miso14 " + myPos);
+        if(pos===-1){
+        } 
+        else {
+          const rootProp: NodeProperty = log.rootProperty;
+          const seqHist = rootProp.resolvePath("history_buffer_seq") as Int32ArrayProperty;
+          for(let i=0;i<seqHist.length;i++){
+            const currentHistSeq=seqHist.get(i);
+            let isApplied = false;
+            if(pos<currentHistSeq){
+              const hist = rootProp.resolvePath("history_buffer") as StringArrayProperty;
+              const changesetToApply = hist.get(i);
+              const changeset = new ChangeSet(JSON.parse(changesetToApply));
+              const changes = changeset._changes;
+              workspace.tree.root.applyChangeSet(changes);
+              const newPos = seqHist.get(i);
+              console.log("miso15 newPos " + newPos);
+              setPos(newPos);    
+              isApplied = true;          
+              break;
+            }
+            if(!isApplied){
+              const remoteChanges = workspace.tree.remoteChanges;
+              const firstChange = cloneChange(remoteChanges[0].changeSet);
+              for(let i=1;i<remoteChanges.length;i++){
+                const nextChange = cloneChange(remoteChanges[i].changeSet);        
+                firstChange.applyChangeSet(nextChange);
+              }
+              const changes = firstChange._changes;
+              workspace.tree.root.applyChangeSet(changes);
+              setPos(-1);
+            }
+          }
+        }
+
+      }      
+      }>{">"}</button>
+
+
+
+
+
+
       <button onClick={() => {    
         const rootProp: NodeProperty = log.rootProperty;
         const hist = rootProp.resolvePath("history_buffer") as StringArrayProperty;
+        const histSeq = rootProp.resolvePath("history_buffer_seq") as Int32ArrayProperty;
         for(let i=0;i < hist.length; i++){
+          console.log("--------SQUASHED--------------");
           console.log("------------------------------------");
-          console.log(i);
+          console.log(histSeq.get(i));
           console.log("------------------------------------");
           console.log(hist.get(i));
+          console.log("------------------------------------");
+        }
+        const myRemoteChanges = workspace.tree.remoteChanges;
+        for(let i=0;i < myRemoteChanges.length; i++){
+          console.log("---------CURRENT-----------------");
+          console.log((myRemoteChanges[i] as IRemotePropertyTreeMessage).sequenceNumber);
+          console.log("------------------------------------");
+          console.log(JSON.stringify(cloneChange(myRemoteChanges[i].changeSet).getSerializedChangeSet()));
           console.log("------------------------------------");
         }
         
