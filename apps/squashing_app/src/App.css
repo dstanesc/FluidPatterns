@@ -22,7 +22,7 @@
 .commit {
     min-height: 50%; 
     font-size: 50px; 
-    color: black;
+    color: darkblue;
     text-align: left; 
     cursor: pointer; 
     border: 1px solid;
@@ -34,6 +34,12 @@ th, .attrcell, .typecell {
     min-width: 40px;
   }
 
+  button {    
+    font-size: 20px; 
+    font-weight: bold;
+    color: darkblue;
+  }  
+
   .attrcell {
     color: darkblue;   
     text-align: left; 
@@ -41,7 +47,8 @@ th, .attrcell, .typecell {
   }  
 
   .typecell {
-    font-size: 20px; 
+    min-width: 60px;
+    font-size: 60px; 
     font-weight: bold;
     color: red;   
     text-align: center; 

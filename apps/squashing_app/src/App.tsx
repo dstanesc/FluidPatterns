@@ -36,6 +36,9 @@ export default function App() {
 
   const [pos, setPos] = useState<number>(-1);
 
+  const [intervalId, setIntervalId] = useState<any>();
+
+
   const containerId = window.location.hash.substring(1) || undefined;
 
   // Register the template which is used to instantiate properties.
@@ -75,7 +78,7 @@ export default function App() {
         remoteChanges: IRemotePropertyTreeMessage[],
         unrebasedRemoteChanges: Record<string, IRemotePropertyTreeMessage>,
     ) => {
-        console.log("Miso MyPrune invoked");
+        console.log("Miso MyPrune invoked : Min Sequence Number " + minimumSequenceNumber);
         let isHistory =  false;
         
         remoteChanges.forEach((rch) => {
@@ -92,9 +95,13 @@ export default function App() {
         if(isHistory){
           return origResult;
         }
+
+        
         const removedRemoteChanges = remoteChanges.slice(0,remoteChanges.length - origResult.remoteChanges.length);
+          
         if(removedRemoteChanges.length>0){
           const firstChange = cloneChange(removedRemoteChanges[0].changeSet);
+          console.log(JSON.stringify(firstChange.getSerializedChangeSet()));  
           let seq = removedRemoteChanges[removedRemoteChanges.length-1].sequenceNumber;
           for(let i=1;i<removedRemoteChanges.length;i++){
             const nextChange = cloneChange(removedRemoteChanges[i].changeSet);
@@ -102,6 +109,8 @@ export default function App() {
             firstChange.applyChangeSet(nextChange);
           }
           const mySerialized = JSON.stringify(firstChange.getSerializedChangeSet());
+          console.log(JSON.stringify("Remaining Changes NR:  " + origResult.remoteChanges.length));  
+          console.log("SQUASHED : " + mySerialized);
           let historyBufferProp = myLogRoot.resolvePath("history_buffer");
           let historyBufferSeq = myLogRoot.resolvePath("history_buffer_seq");
           if(historyBufferProp === undefined){
@@ -141,7 +150,7 @@ export default function App() {
 
   const roll = () => {
     const map = new Map<string, any>();
-    const numA: number = parseInt(localMap.get("numA"));
+    const numA: number = parseInt(workspace.tree.root.resolvePath("evolvable.numA").value);
     if(numA>=999999){
       map.set("numA","0");
     }
@@ -172,13 +181,14 @@ export default function App() {
 
     <div className="App">
     <h1>Squashing Example</h1>
+    <br></br>
       <button onClick={() => {   
     
    const rootProp: NodeProperty = log.rootProperty;
     const seqHist = rootProp.resolvePath("history_buffer_seq") as Int32ArrayProperty;
     const lastSquashedSeq=seqHist.get(seqHist.length-1);
     const remoteChanges = workspace.tree.remoteChanges;
-    let firstUnsquashedRemoteIndex=0;
+    let firstUnsquashedRemoteIndex=-1;
     for(let i=0;i<remoteChanges.length;i++){
       const currentSeqNr = (remoteChanges[i] as IRemotePropertyTreeMessage).sequenceNumber;
       if(lastSquashedSeq<currentSeqNr){
@@ -187,28 +197,33 @@ export default function App() {
       }
     }
     
-    const myPos = pos;
+    let myPos = pos;
         console.log("miso12 " + myPos);
-        if(pos===0){
+        if(myPos===0){
         }
         else
-        if(pos===-1){
-          const firstChange = cloneChange(remoteChanges[firstUnsquashedRemoteIndex].changeSet);
-          for(let i=firstUnsquashedRemoteIndex+1;i<remoteChanges.length;i++){
-            const nextChange = cloneChange(remoteChanges[i].changeSet);        
-            firstChange.applyChangeSet(nextChange);
+        if(myPos===-1){
+          if(firstUnsquashedRemoteIndex===-1){
+            myPos=lastSquashedSeq;
           }
-          firstChange.toInverseChangeSet();
-          const changes = firstChange._changes;
-          workspace.tree.root.applyChangeSet(changes);
-          setPos((remoteChanges[firstUnsquashedRemoteIndex] as IRemotePropertyTreeMessage).sequenceNumber);
+          else {
+            const firstChange = cloneChange(remoteChanges[firstUnsquashedRemoteIndex].changeSet);
+            for(let i=firstUnsquashedRemoteIndex+1;i<remoteChanges.length;i++){
+              const nextChange = cloneChange(remoteChanges[i].changeSet);        
+              firstChange.applyChangeSet(nextChange);
+            }
+            firstChange.toInverseChangeSet();
+            const changes = firstChange._changes;
+            workspace.tree.root.applyChangeSet(changes);
+            setPos((remoteChanges[firstUnsquashedRemoteIndex] as IRemotePropertyTreeMessage).sequenceNumber);            
+          }
         } 
-        else {
+        if(myPos!==-1 && myPos!==0) {
           const rootProp: NodeProperty = log.rootProperty;
           const seqHist = rootProp.resolvePath("history_buffer_seq") as Int32ArrayProperty;
           for(let i=seqHist.length-1;i>=0;i--){
             const currentHistSeq=seqHist.get(i);
-            if(pos>=currentHistSeq){
+            if(myPos>=currentHistSeq){
               const hist = rootProp.resolvePath("history_buffer") as StringArrayProperty;
               const changesetToApply = hist.get(i);
               const inverse = new ChangeSet(JSON.parse(changesetToApply));
@@ -252,13 +267,20 @@ export default function App() {
               break;
             }
           }
+
+ 
+
           if(!isApplied){
+
 
             const rootProp: NodeProperty = log.rootProperty;
             const seqHist = rootProp.resolvePath("history_buffer_seq") as Int32ArrayProperty;
             const lastSquashedSeq=seqHist.get(seqHist.length-1);
             const remoteChanges = workspace.tree.remoteChanges;
-            let firstUnsquashedRemoteIndex=0;
+            let firstUnsquashedRemoteIndex=-1
+
+ 
+
             for(let i=0;i<remoteChanges.length;i++){
               const currentSeqNr = (remoteChanges[i] as IRemotePropertyTreeMessage).sequenceNumber;
               if(lastSquashedSeq<currentSeqNr){
@@ -266,15 +288,19 @@ export default function App() {
                 break;
               }
             }
-  
-            const firstChange = cloneChange(remoteChanges[firstUnsquashedRemoteIndex].changeSet);
-            for(let i=firstUnsquashedRemoteIndex+1;i<remoteChanges.length;i++){
-              const nextChange = cloneChange(remoteChanges[i].changeSet);        
-              firstChange.applyChangeSet(nextChange);
+            if(firstUnsquashedRemoteIndex===-1){
+              setPos(-1);
             }
-            const changes = firstChange._changes;
-            workspace.tree.root.applyChangeSet(changes);
-            setPos(-1);
+            else {
+              const firstChange = cloneChange(remoteChanges[firstUnsquashedRemoteIndex].changeSet);
+              for(let i=firstUnsquashedRemoteIndex+1;i<remoteChanges.length;i++){
+                const nextChange = cloneChange(remoteChanges[i].changeSet);        
+                firstChange.applyChangeSet(nextChange);
+              }
+              const changes = firstChange._changes;
+              workspace.tree.root.applyChangeSet(changes);
+              setPos(-1);
+            }            
           }
         }
 
@@ -282,9 +308,16 @@ export default function App() {
       }>{">"}</button>
 
 
+<button onClick={() => {   
+      const h=setInterval(()=>roll(),1);
+      setIntervalId(h);
+      }      
+      }>{"Drive"}</button>
 
-
-
+<button onClick={() => {   
+      clearInterval(intervalId)
+      }      
+      }>{"Stop"}</button>
 
       <button onClick={() => {    
         const rootProp: NodeProperty = log.rootProperty;
@@ -311,14 +344,13 @@ export default function App() {
       }>{"Debug"}</button>
 
 
-       <br></br><br></br>
+       <br></br><br></br><br></br>
  
       <h2>Odometer</h2>
-      <br></br> <br></br>
       <div >
         {renderLocalMap(localMap)}
       </div>
-      <br></br><br></br>
+      <br></br><br></br><br></br>
       <button className="commit" onClick={() => roll()}>
         Roll
       </button>
@@ -370,7 +402,7 @@ function renderRoot(mymap: Map<string,any>){
 
 function initialize100(containerId: string | undefined, rootProp: NodeProperty, workspace: Workspace) {
     if(!rootProp.resolvePath("evolvable")){
-      rootProp.insert("evolvable", PropertyFactory.create("hex:evolvable-1.0.0", undefined, { "numA": 0, "strB": "-" }));
+      rootProp.insert("evolvable", PropertyFactory.create("hex:evolvable-1.0.0", undefined, { "numA": 0}));
       workspace.commit();  
     }
 }
