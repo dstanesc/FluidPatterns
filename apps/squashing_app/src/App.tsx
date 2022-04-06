@@ -169,8 +169,7 @@ export default function App() {
   return (
    
     <div className="App">
-    <h1>Evolution Example</h1>
-    <h2>Init Schema</h2>
+    <h1>Squashing Example</h1>
       <button onClick={() => {   
         const myPos = pos;
         console.log("miso12 " + myPos);
@@ -286,12 +285,8 @@ export default function App() {
 
        <br></br><br></br>
  
-      <h2>Init Schema</h2>
-      <button onClick={() => {    
-        const rootProp: NodeProperty = workspace.rootProperty;
-        initialize100(containerId, rootProp, workspace);}}>Create V1.0.0</button>
+      <h2>Odometer</h2>
       <br></br> <br></br>
-      <h2>Data Table</h2>    
       <div >
         {renderLocalMap(localMap)}
       </div>
@@ -310,7 +305,6 @@ function renderLocalMap(mymap: Map<string,any>){
   const reactElem: any[] = [];
   reactElem.push((
   <table className="evotable">
-     <th>{"Attribute"}</th><th>{"Value"}</th>
   {renderRoot(mymap)}
   </table>
   ));
@@ -320,20 +314,24 @@ function renderLocalMap(mymap: Map<string,any>){
 
 function renderRoot(mymap: Map<string,any>){
   const reactElem: any[] = [];
+  
+  const numA=mymap.get("numA");
+  const a0 = numA%10;
+  const a1 = (Math.floor(numA/10))%10;
+  const a2 = (Math.floor(numA/100))%10;
+  const a3 = (Math.floor(numA/1000))%10;
+  const a4 = (Math.floor(numA/10000))%10;
+  const a5 = (Math.floor(numA/100000))%10;
   reactElem.push(
-    Array.from(mymap.keys()).filter((key)=>key=="typeId").map((key)=>
-    (
       <tr>
-          <td className="typecell">{key}</td><td className="typecell">{mymap.get(key)}</td>
+          <td className="typecell">{a5}</td>
+          <td className="typecell">{a4}</td>
+          <td className="typecell">{a3}</td>
+          <td className="typecell">{a2}</td>
+          <td className="typecell">{a1}</td>
+          <td className="typecell">{a0}</td>
        </tr>
-    )));
-  reactElem.push(
-  Array.from(mymap.keys()).filter((key)=>key!=="typeId").sort().map((key)=>
-  (
-    <tr>
-        <td className="attrcell">{key}</td><td className="attrcell">{mymap.get(key)}</td>
-     </tr>
-  )));
+    );
   return reactElem;
 }
 

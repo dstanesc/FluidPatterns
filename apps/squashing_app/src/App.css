@@ -31,7 +31,7 @@
 th, .attrcell, .typecell {    
     border: 3px solid;
     border-color: black;
-    min-width: 200px;
+    min-width: 40px;
   }
 
   .attrcell {
@@ -44,7 +44,7 @@ th, .attrcell, .typecell {
     font-size: 20px; 
     font-weight: bold;
     color: red;   
-    text-align: left; 
+    text-align: center; 
       
   }  
 
