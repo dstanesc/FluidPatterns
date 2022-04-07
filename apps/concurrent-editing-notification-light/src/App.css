@@ -1,0 +1,23 @@
+.dice {
+    min-height: 50%;
+    font-size: 100px;
+    color: red;
+    text-align: center;
+    cursor: pointer;
+}
+
+.commit {
+    min-height: 50%;
+    font-size: 100px;
+    color: greenyellow;
+    text-align: center;
+    cursor: pointer;
+}
+
+.dirty {
+    min-height: 10%;
+    font-size: 50px;
+    color: blue;
+    text-align: center;
+    cursor: pointer;
+}
