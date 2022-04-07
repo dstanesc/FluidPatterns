@@ -8,15 +8,25 @@ import { AssemblyBinding } from "./assemblyBinding";
 import { copy as deepCopy } from "fastest-json-copy";
 import { SimpleWorkspace } from "./workspace";
 
+// Palette
+// #eeff41 (yellow green)
+// #0097a7 (green)
+// #ffab40 (orange)
+// #78909c (gray)
+// #212121 (dark gray)
+// #4285f4 (blue)
+// #eeeeee (light gray)
+// #595959 (darker gray)
+// white
+// black
 
-//https://www.schemecolor.com/yellow-green-orange-organics.php
-const initialData = [
+export const initialData = [
     {
         "x": 409,
         "y": 129,
         "width": 100,
         "height": 100,
-        "fill": "#F58A2C",
+        "fill": "#eeff41",
         "id": "rect1"
     },
     {
@@ -24,7 +34,7 @@ const initialData = [
         "y": 340,
         "width": 112,
         "height": 100,
-        "fill": "#DCF285",
+        "fill": "#ffab40",
         "id": "rect2"
     },
     {
@@ -32,7 +42,7 @@ const initialData = [
         "y": 123,
         "width": 200,
         "height": 200,
-        "fill": "#617A2E",
+        "fill": "#4285f4",
         "id": "rect3"
     },
     {
@@ -40,7 +50,7 @@ const initialData = [
         "y": 246,
         "width": 254,
         "height": 251,
-        "fill": "#FADA39",
+        "fill": "#0097a7",
         "id": "rect4"
     }
 ];

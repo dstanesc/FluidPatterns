@@ -13,7 +13,7 @@ export class AssemblyController {
     }
 
     public updateValue(assemblyChange: AssemblyChange) {
-        console.log(`AssemblyController#updateValue ${assemblyChange.id} ${assemblyChange.operationType} ${assemblyChange.component}`);
+        //console.log(`AssemblyController#updateValue ${assemblyChange.id} ${assemblyChange.operationType} ${assemblyChange.component}`);
         if (assemblyChange.operationType === "modify") {
             this.listener(assembly => {
                 return assembly.map((component, index) => component.id === assemblyChange.id
@@ -39,12 +39,12 @@ export class AssemblyController {
 function updateFields(original: AssemblyComponent, change: AssemblyComponent): AssemblyComponent {
     const originalCopy = deepCopy(original);
     Object.entries(change).forEach(([key, value]) => {
-        console.log(`Received assembly change ${key} ${value}`);
+        //console.log(`Received assembly change ${key} ${value}`);
         if (value) {
             originalCopy[key] = value;
-            console.log( `Updating ${key} to ${value}`);
+            //console.log( `Updating ${key} to ${value}`);
         }
     });
-    console.log( `Updating object to ${JSON.stringify(originalCopy, null, 2)}`);
+    //console.log( `Updating object to ${JSON.stringify(originalCopy, null, 2)}`);
     return originalCopy;
 }

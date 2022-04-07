@@ -10,17 +10,17 @@ import { AssemblyComponent } from "./assemblyListener";
 export class AssemblyBinding extends DataBinding {
 
     private componentInsert(key: string, context: ModificationContext) {
-        console.log(`AssemblyBinding#componentInsert ${key} ${JSON.stringify(context.getNestedChangeSet(), null, 2)}`);
+        //console.log(`AssemblyBinding#componentInsert ${key} ${JSON.stringify(context.getNestedChangeSet(), null, 2)}`);
         this.performModificationInternal(key, context);
     }
 
     private componentUpdate(key: string, context: ModificationContext) {
-        console.log(`AssemblyBinding#componentUpdate ${key} ${JSON.stringify(context.getNestedChangeSet(), null, 2)}`);
+        //console.log(`AssemblyBinding#componentUpdate ${key} ${JSON.stringify(context.getNestedChangeSet(), null, 2)}`);
         this.performModificationInternal(key, context);
     }
 
     private componentRemove(key: string, context: ModificationContext) {
-        console.log(`AssemblyBinding#componentRemove  key=${key} relativePath=${context.getRelativeTokenizedPath()}`);
+        //console.log(`AssemblyBinding#componentRemove  key=${key} relativePath=${context.getRelativeTokenizedPath()}`);
         const plexusController: AssemblyController | undefined = this.getRepresentation<AssemblyController>();
         const operationType: Utils.OperationType = context.getOperationType()!;
         const relativePath = context.getRelativeTokenizedPath();
@@ -32,7 +32,7 @@ export class AssemblyBinding extends DataBinding {
     private performModificationInternal(key: string, context: ModificationContext) {
         const assemblyController: AssemblyController | undefined = this.getRepresentation<AssemblyController>();
         const operationType: Utils.OperationType = context.getOperationType()!;
-        console.log(`AssemblyBinding#performModificationInternal key=${key} operation=${operationType}`);
+        //console.log(`AssemblyBinding#performModificationInternal key=${key} operation=${operationType}`);
        
         if (context.getNestedChangeSet()) {
 

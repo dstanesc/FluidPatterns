@@ -36,6 +36,8 @@
         "@emotion/react" : "latest",
         "@emotion/styled": "latest",
         "@mui/material": "latest",
+        "@mui/icons-material": "latest",
+        "@mui/x-data-grid": "latest",
         "terser-webpack-plugin": "4.2.3",
         "ts-pnp": "1.2.0",
         "url-loader": "4.1.1",
