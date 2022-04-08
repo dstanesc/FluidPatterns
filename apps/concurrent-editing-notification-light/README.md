@@ -51,6 +51,10 @@ cd FluidPatterns/apps/concurrent-editing-notification-light
 npm start
 ```
 
+## Preview
+
+![Blue Dot](./img/blue-dot.png)
+
 ## Disclaimer
 
 This project has adopted the [Microsoft Open Source Code of Conduct](https://opensource.microsoft.com/codeofconduct/).
