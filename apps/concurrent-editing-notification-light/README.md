@@ -4,9 +4,10 @@ Lightweight solution for the concurrent editing problem described at large in th
 
 Although highly efficient, current approach is impractical for complex applications as lacks good encapsulation. 
 
-The solution leverages:
-- Undocumented and possibly evolving _PropertyDDS_ internal API. 
-- Undocumented and possibly evolving _PropertyDDS_ serialization format.
+The solution leverages undocumented and possibly evolving _PropertyDDS_:
+- internal API. 
+- serialization format.
+- internal state transitions
 
 For the same reason the solution lacks portability.
 
