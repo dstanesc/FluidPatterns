@@ -230,7 +230,7 @@ export default function App() {
               inverse.toInverseChangeSet();
               const changes = inverse._changes;
               workspace.tree.root.applyChangeSet(changes);
-              const newPos = i===0?0:seqHist.get(i-1)+1;
+              const newPos = i===0?0:seqHist.get(i-1);
               console.log("miso13 newPos " + newPos);
               setPos(newPos);              
               break;
