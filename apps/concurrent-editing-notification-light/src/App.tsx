@@ -65,7 +65,7 @@ export default function App() {
 
       configureRemoteBinding(myWorkspace);
     }
-    
+
     initWorkspace();
 
   }, []);
@@ -75,9 +75,9 @@ export default function App() {
     workspace.on("changeSetModified", (cs) => {
       const tree: SharedPropertyTree = workspace.tree;
       const remoteTip: SerializedChangeSet = tree.remoteTipView;
-      // extract current remote value and display if pending changes
-      const remoteDiceValue = remoteTip.insert["hex:dice-1.0.0"].dice.Int32.diceValue.toString();
       if (tree.root.getPendingChanges()._changes.modify) {
+        // extract current remote value and display
+        const remoteDiceValue = remoteTip.insert["hex:dice-1.0.0"].dice.Int32.diceValue.toString();
         setRemoteValue(remoteDiceValue);
       } else {
         resetRemoteValue();

@@ -51,6 +51,16 @@ cd FluidPatterns/apps/concurrent-editing-notification-light
 npm start
 ```
 
+## Description
+
+Super simplified notification demonstration using a single workspace and the internal api, state transitions and serialization format of _PropertyDDS_. Because of the above identified shortcomings this exercise serves only to formulate the theoretical foundation for its own rejection and is not a complete _blue/red dot_ instantiation.
+
+## Sequence Diagram
+
+![sequence diagram](./img/sequence.svg)
+
+Edit the above [diagram](https://sequencediagram.org/index.html#initialData=C4S2BsFMAIGEHsB2BjArgJ3ZRxoFEATMERAc2gDl5QAzEZAQ1CWgBkRSALYAKB4AcG6UMhCCc0AILh6kAUJFiGEgOrx0AawDOg5JAC002fOH0lEgMqchkAgAV08fpGEBPACpYDRvXz4+DAD4AKjVNHQY9Qxk9AC4SMD4w7V1vGKDgqxt7R2c3T0g02XjERJ5kiKiA-UCsrBynF2APL2jirFIQLWAXWAZwcAAjSI0eUkdUfmgAYgAmGlnIAHZB6AAREBoaKXSZgHdOMDlqwIDY4a1IGUQ5CtS2qNP02PB4RnALYCY5cvUUyKKegAPPo6rYHI18q0zohqJtXKw3v0ALLwIh0RjMRB+O4Ah5BGFwmiuWDWMiQCyQYCo9EgWw8AIg2rWeoQvLNAqAyCxYBeAB0jmobKarj5zkQRDIpOUpEgWj4-Vw4slpGl5PljJqYIa7JahXxsUgAA9eZFgAAlSAAW2okDW8CtDBIADV+qhIAAKXmFAXW23uMSxSnoED9EAAL1satllOAAEoGekamcsDaep9vjwrpdoInZMnnlhLha-emvj0sxLKwRc3wgA).
+
 ## Preview
 
 ![Blue Dot](./img/blue-dot.png)
