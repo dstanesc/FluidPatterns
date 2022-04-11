@@ -88,7 +88,7 @@ The user has the ability analyze at any time the remote state
 
 ![Local & Remote Workspaces](./img/local-remote-states-1.svg)
 
-The user has the ability to reconcile conflicts before commit
+The user has the ability to reconcile conflicts before committing the local changes.
 
 ## Visual Paradigm - Merge
 
