@@ -68,19 +68,29 @@ A scenario based on graphical artifacts is chosen. An assembly / mechanism consi
 Current proposal tries to address the concerns formulated with the [lightweight solution](../concurrent-editing-notification-light/). The goal is to demonstrate a portable pattern (ie relative to PropertyDDS to TreeDDS evolution). The intention is to abstract dependencies so that patterns can remain reusable and conceptually agnostic to the underlying data and ui technologies. 
 
 
-## Sequence 
+## Sequence Diagram
 
 ![Sequence Diagram](./img/sequence.svg)
 
-## Local Workspace
 
-![Local Workspace](./img/local-state.png)
+## Visual Paradigm - Local Workspace
 
-## Local / Remote Workspaces
+Individual layers are displaying multiple perspectives on the shared data including visual and analytical information. Layers can be enabled/disabled/overlaid on user convenience.
 
-![Local & Remote Workspaces](./img/local-remote-states.png)
+ - Conflicting changes are highlighted by framing the component with a red border
+ - Non-conflicting changes  are highlighted by framing the component with a blue border
 
-## Merge
+![Local Workspace](./img/local-state-1.svg)
 
-![Merge](./img/merge.png)
+## Visual Paradigm - Local / Remote Workspaces
+
+The user has the ability analyze at any time the remote state
+
+![Local & Remote Workspaces](./img/local-remote-states-1.svg)
+
+The user has the ability to reconcile conflicts before commit
+
+## Visual Paradigm - Merge
+
+![Merge](./img/merge-1.svg)
 

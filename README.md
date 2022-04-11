@@ -30,6 +30,11 @@ npm run build
 - [Array Slice Property Binder](./apps/array-slice-property-binder/) 
 - [Comparative Binding Evaluation](./apps/dynamic-property-comparative/) 
 
+## Concurrent Editing Notification
+
+- [Lightweight Concurrent Editing Notification](./apps/concurrent-editing-notification-light/)
+- [Concurrent Editing Notification](./apps/concurrent-editing-notification/)
+
 ## Materialized View Support
 
 >Note: Work in progress!!! Current status is __draft__.

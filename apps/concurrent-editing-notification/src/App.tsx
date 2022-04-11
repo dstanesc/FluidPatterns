@@ -56,6 +56,7 @@ const getTableColumns = (shape: string): GridColDef[] => {
         { field: 'field', headerName: shape, type: 'string', width: 70 },
         { field: 'local', headerName: 'LOCAL', type: 'number', width: 70 },
         { field: 'remote', headerName: 'SDC', type: 'number', width: 70 },
+        { field: 'diff', headerName: 'DIFF', type: 'number', width: 70 },
     ];
 };
 
@@ -221,6 +222,11 @@ export default function App() {
             return (mergeComponents.filter(component => component.id === shape).length > 0) ? "" : "none";
         }
         return visible.dataTable ? "" : "none";
+    }
+
+    const getRowClass = (diff: number) => {
+
+        return diff === 0 ? "" : "highlight";
     }
 
     return (
@@ -461,7 +467,7 @@ export default function App() {
                             top: "0px",
                             left: "0px",
                             height: "320px",
-                            width: "240px",
+                            width: "310px",
                         },
                     }}
                 >
@@ -475,6 +481,7 @@ export default function App() {
                             boxShadow: 4,
                             display: getTableVisibility("rect1")
                         }}
+                        getRowClassName={(params) => `row-${getRowClass(params.row.diff)}`}
                     />
                 </Html>
                 <Html
@@ -482,9 +489,9 @@ export default function App() {
                         style: {
                             position: 'absolute',
                             top: "0px",
-                            left: "260px",
+                            left: "330px",
                             height: "320px",
-                            width: "240px",
+                            width: "310px",
                         },
                     }}
                 >
@@ -498,6 +505,7 @@ export default function App() {
                             boxShadow: 4,
                             display: getTableVisibility("rect2")
                         }}
+                        getRowClassName={(params) => `row-${getRowClass(params.row.diff)}`}
                     />
                 </Html>
                 <Html
@@ -507,7 +515,7 @@ export default function App() {
                             top: "340px",
                             left: "0px",
                             height: "320px",
-                            width: "240px",
+                            width: "310px",
                         },
                     }}
                 >
@@ -521,6 +529,7 @@ export default function App() {
                             boxShadow: 4,
                             display: getTableVisibility("rect3")
                         }}
+                        getRowClassName={(params) => `row-${getRowClass(params.row.diff)}`}
                     />
                 </Html>
                 <Html
@@ -528,9 +537,9 @@ export default function App() {
                         style: {
                             position: 'absolute',
                             top: "340px",
-                            left: "260px",
+                            left: "330px",
                             height: "320px",
-                            width: "240px",
+                            width: "310px",
                         },
                     }}
                 >
@@ -544,6 +553,7 @@ export default function App() {
                             boxShadow: 4,
                             display: getTableVisibility("rect4")
                         }}
+                        getRowClassName={(params) => `row-${getRowClass(params.row.diff)}`}
                     />
                 </Html>
             </Layer>
