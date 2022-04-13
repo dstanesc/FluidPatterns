@@ -1,5 +1,5 @@
 import {
-    SquashedHistoryWorkspace,
+    TrackerWorkspace,
     TrackedWorkspace,
     createOneToOneTracking,
     createTrackedWorkspace,
@@ -17,7 +17,7 @@ import {
 
 
 export {
-    SquashedHistoryWorkspace,
+    TrackerWorkspace,
     TrackedWorkspace,
     createOneToOneTracking,
     createTrackedWorkspace,

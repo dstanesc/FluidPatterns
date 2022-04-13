@@ -11,7 +11,7 @@ import {
     AzureClient,
     LOCAL_MODE_TENANT_ID,
 } from "@fluidframework/azure-client";
-import { SquashedHistory, TrackedPropertyTree } from "./trackdds";
+import { SquashedHistory, TrackedPropertyTree, Tracker } from "./trackdds";
 
 
 
@@ -34,8 +34,8 @@ export interface SimpleWorkspace {
 
 
 
-export interface SquashedHistoryWorkspace extends SimpleWorkspace{
-    tree: SquashedHistory;
+export interface TrackerWorkspace extends SimpleWorkspace{
+    tree: Tracker;
 }
 
 export interface TrackedWorkspace extends SimpleWorkspace{
@@ -76,19 +76,19 @@ export async function createTrackedWorkspace(containerId: string | undefined,
 
 
 export async function createTrackerWorkspace(containerId: string | undefined, 
-    logger: ITelemetryBaseLogger| undefined = undefined): Promise<SquashedHistoryWorkspace> {
+    logger: ITelemetryBaseLogger| undefined = undefined): Promise<TrackerWorkspace> {
         const containerSchema = {
             initialObjects: { tree: SquashedHistory }
         };
-    const tracker = createSimpleWorkspace(containerSchema,containerId,logger) as Promise<SquashedHistoryWorkspace>;
+    const tracker = createSimpleWorkspace(containerSchema,containerId,logger) as Promise<TrackerWorkspace>;
     return tracker;
 }
 
-export function saveTracking(tracked: TrackedWorkspace, tracker: SquashedHistoryWorkspace){
+export function saveTracking(tracked: TrackedWorkspace, tracker: TrackerWorkspace){
     tracked.tree.init(tracker.containerId,tracked.containerId);
 }
 
-export function track(tracked: TrackedWorkspace, tracker: SquashedHistoryWorkspace){
+export function track(tracked: TrackedWorkspace, tracker: TrackerWorkspace){
     TrackedPropertyTree.registerTrackerMethod(tracked.containerId,tracker.tree);
 }
 

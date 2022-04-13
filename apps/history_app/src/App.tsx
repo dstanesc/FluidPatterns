@@ -11,7 +11,7 @@ import { EvolvableRenderer } from './evolvableRenderer';
 import { Evolvable } from './evolvable';
 import { EvolvableBinding } from './evolvableBinding';
 import {  NodeProperty, PropertyFactory, StringProperty, ValueProperty } from '@fluid-experimental/property-properties';
-import { createOneToOneTracking, SquashedHistoryWorkspace, TrackedWorkspace } from "@dstanesc/tracker-util";
+import { createOneToOneTracking, TrackerWorkspace, TrackedWorkspace } from "@dstanesc/tracker-util";
 import { ChangeSet } from '@fluid-experimental/property-changeset';
 import { IRemotePropertyTreeMessage } from '@fluid-experimental/property-dds';
 
@@ -26,7 +26,7 @@ export default function App() {
 
   const [workspace, setWorkspace] = useState<TrackedWorkspace>();
 
-  const [log, setLog] = useState<SquashedHistoryWorkspace>();
+  const [log, setLog] = useState<TrackerWorkspace>();
 
   const [pos, setPos] = useState<number>(-1);
 
