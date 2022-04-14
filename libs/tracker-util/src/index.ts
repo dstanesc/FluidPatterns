@@ -6,13 +6,13 @@ import {
     createTrackerWorkspace,
     saveTracking,
     track,
-} from "./tracking/workspaces.js";
+} from "./tracking/workspaces";
 
 import {
     ChangeEntry,
     Tracker,
     TrackedPropertyTree,
-} from "./tracking/trackdds.js";
+} from "./tracking/trackdds";
 
 
 

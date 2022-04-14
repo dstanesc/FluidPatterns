@@ -1,4 +1,4 @@
-import { Workspace } from "@dstanesc/fluid-util";
+import { TrackedWorkspace } from "@dstanesc/tracker-util";
 import { PropertyFactory, NodeProperty, Int32Property, ArrayProperty, NamedProperty, NamedNodeProperty, StringProperty }
     from "@fluid-experimental/property-properties";
 import { DataBinder, UpgradeType } from "@fluid-experimental/property-binder";
@@ -8,7 +8,7 @@ import { CommentThreadBinding } from "./commentThreadBinding";
 
 
 
-export function retrieveArrayProperty(workspace: Workspace): ArrayProperty {
+export function retrieveArrayProperty(workspace: TrackedWorkspace): ArrayProperty {
     const commentArrayProperty: ArrayProperty = workspace.rootProperty.resolvePath("commentArray.comments")! as ArrayProperty
     return commentArrayProperty;
 }
@@ -20,7 +20,7 @@ export function retrieveCommentTextProperty(arrayProperty: ArrayProperty, index:
 }
 
 export function createCommentProperty(text: string): NamedProperty {
-    const diceProperty = PropertyFactory.create<NamedProperty>("hex:comment-1.0.0", undefined, {"text": text});
+    const diceProperty = PropertyFactory.create<NamedProperty>("hex:comment-1.0.0", undefined, { "text": text });
     return diceProperty;
 }
 
@@ -29,7 +29,7 @@ export function createCommentThreadProperty(): NamedNodeProperty {
     return commentThreadProperty;
 }
 
-export function initPropertyTree(containerId: string | undefined, workspace: Workspace, commentThreadDisplay: CommentThreadDisplay) {
+export function initPropertyTree(containerId: string | undefined, workspace: TrackedWorkspace, commentThreadDisplay: CommentThreadDisplay) {
     if (containerId === undefined) {
         const commentArray: NamedNodeProperty = createCommentThreadProperty();
         const rootProp: NodeProperty = workspace.rootProperty;
@@ -39,12 +39,12 @@ export function initPropertyTree(containerId: string | undefined, workspace: Wor
         const commentArrayProperty: ArrayProperty = retrieveArrayProperty(workspace);
         for (let i = 0; i < commentArrayProperty.length; i++) {
             const commentTextProperty: StringProperty = retrieveCommentTextProperty(commentArrayProperty, i);
-            commentThreadDisplay(commentValues => [...commentValues, {"text":commentTextProperty.getValue()}]);
+            commentThreadDisplay(commentValues => [...commentValues, { "text": commentTextProperty.getValue() }]);
         }
     }
 }
 
-export function configureBinding(dataBinder: DataBinder, workspace: Workspace, diceArrayDisplay: CommentThreadDisplay) {
+export function configureBinding(dataBinder: DataBinder, workspace: TrackedWorkspace, diceArrayDisplay: CommentThreadDisplay) {
     dataBinder.defineRepresentation("view", "hex:commentThread-1.0.0", (property) => {
         return new CommentThreadController(diceArrayDisplay);
     });

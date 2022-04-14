@@ -21,6 +21,19 @@ import { copy as deepClone } from "fastest-json-copy";
 import { Workspace, BoundWorkspace, initializeBoundWorkspace, registerSchema } from "@dstanesc/fluid-util";
 
 import {
+  TrackerWorkspace,
+  TrackedWorkspace,
+  createOneToOneTracking,
+  createTrackedWorkspace,
+  createTrackerWorkspace,
+  saveTracking,
+  track,
+  ChangeEntry,
+  Tracker,
+  TrackedPropertyTree
+} from "@dstanesc/tracker-util";
+
+import {
   retrieveMapProperty,
   createContainerProperty,
   containerMapSchema,
@@ -54,7 +67,9 @@ import { addSummarizeHook } from './summarizeHook';
 import { constants } from 'os';
 
 
-const plexusServiceName: string = "local-plexus-service"
+const plexusServiceName: string = "local-plexus-service";
+
+const trackerServiceAlias: string = "local-tracker-service";
 
 /*
  * Cell react component, the atomic dice view
@@ -94,10 +109,13 @@ export default function App() {
   const [text, setText] = useState("");
 
   // Comment workspace 
-  let commentWorkspace = useRef<Workspace>(null);
+  let commentWorkspace = useRef<TrackedWorkspace>(null);
 
   // Plexus workspace 
   let plexusWorkspace = useRef<Workspace>(null);
+
+  // Tracker workspace
+  let trackerWorkspace = useRef<TrackerWorkspace>(null);
 
   const commentContainerId = window.location.hash.substring(1) || undefined;
 
@@ -109,8 +127,8 @@ export default function App() {
 
   useEffect(() => {
     initPlexusWorkspace()
-      .then(() => initCommentWorkspace())
-      .then(() =>  addSummarizeHook(plexusWorkspace.current, commentWorkspace.current))
+      .then(() => initTrackerWorkspace())
+      .then(() => initCommentWorkspace(trackerWorkspace.current))
       .then(() => registerContainerWithPlexus(plexusWorkspace.current, commentWorkspace.current));
   }, []); // [] to be executed only once
 
@@ -136,33 +154,48 @@ export default function App() {
     plexusWorkspace.current = myPlexusWorkspace;
   }
 
-  async function initCommentWorkspace() {
+  async function initCommentWorkspace(trackerWorkspace: TrackerWorkspace) {
 
     // Register the templates used to instantiate properties.
     registerSchema(commentSchema);
     registerSchema(commentThreadSchema);
 
     // Initialize the workspace
-    const boundWorkspace: BoundWorkspace = await initializeBoundWorkspace(commentContainerId);
+    const trackedWorkspace: TrackedWorkspace = await createTrackedWorkspace(commentContainerId);
 
-    const myCommentWorkspace: Workspace = boundWorkspace.workspace;
+    if(!commentContainerId){
 
-    const commentDataBinder: DataBinder = boundWorkspace.dataBinder;
+      saveTracking(trackedWorkspace, trackerWorkspace);
+    }
+
+    track(trackedWorkspace, trackerWorkspace);
+
+    const commentDataBinder: DataBinder = trackedWorkspace.dataBinder;
 
     // Configure binding
-    configureCommentBinding(commentDataBinder, myCommentWorkspace, setComments);
+    configureCommentBinding(commentDataBinder, trackedWorkspace, setComments);
 
     //Initialize the property tree
-    initPropertyTree(commentContainerId, myCommentWorkspace, setComments);
+    initPropertyTree(commentContainerId, trackedWorkspace, setComments);
 
     // Make workspace available
-    commentWorkspace.current = myCommentWorkspace;
+    commentWorkspace.current = trackedWorkspace;
 
     // Everything good, update browser location with container identifier
-    window.location.hash = myCommentWorkspace.containerId;
+    window.location.hash = trackedWorkspace.containerId;
   }
 
-  const registerContainerWithPlexus = (myPlexusWorkspace: Workspace, myCommentWorkspace: Workspace) => {
+  async function initTrackerWorkspace() {
+
+    const trackerContainerId: string | undefined = await checkPlexusNameservice(trackerServiceAlias);
+
+    const trackerWorkspaceFound: TrackerWorkspace = await createTrackerWorkspace(trackerContainerId);
+
+    trackerWorkspace.current = trackerWorkspaceFound;
+
+  }
+
+  const registerContainerWithPlexus = (myPlexusWorkspace: Workspace, myCommentWorkspace: TrackedWorkspace) => {
     const registryLog: MapProperty = retrieveMapProperty(myPlexusWorkspace, Topics.REGISTRY_LOG);
     const commentContainerId = myCommentWorkspace.containerId;
     const containerProperty: NamedProperty = createContainerProperty(commentContainerId);

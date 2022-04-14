@@ -21,6 +21,19 @@ import {
 
 } from "@dstanesc/plexus-util";
 
+import {
+  TrackerWorkspace,
+  TrackedWorkspace,
+  createOneToOneTracking,
+  createTrackedWorkspace,
+  createTrackerWorkspace,
+  saveTracking,
+  track,
+  ChangeEntry,
+  Tracker,
+  TrackedPropertyTree
+} from "@dstanesc/tracker-util";
+
 import { BoundWorkspace, initializeBoundWorkspace, registerSchema } from "@dstanesc/fluid-util";
 import { DataBinder } from "@fluid-experimental/property-binder";
 import { Workspace } from "@dstanesc/fluid-util";
@@ -31,10 +44,27 @@ import { IPropertyTreeMessage, IRemotePropertyTreeMessage, SerializedChangeSet, 
 import jp from "jsonpath";
 import { Client } from "@elastic/elasticsearch";
 import { QueryResult } from "@dstanesc/plexus-util/dist/plexusApi";
+import { ChangeSet } from "@fluid-experimental/property-changeset";
+import _ from "lodash"
 
-const plexusServiceAlias: string = "local-plexus-service"
+
+const plexusServiceAlias: string = "local-plexus-service";
+
+const trackerServiceAlias: string = "local-tracker-service";
 
 const elasticSearchClient = new Client({ node: 'http://elastic:9200' });
+
+let registry: Map<string, PlexusModel> = new Map<string, PlexusModel>();
+
+let operationLog: Map<string, PlexusModel> = new Map<string, PlexusModel>();
+
+let queryLog: Map<string, PlexusModel> = new Map<string, PlexusModel>();
+
+let plexusWorkspace: Workspace;
+
+let tracker: Tracker;
+
+let trackerCursor: number = 0;
 
 interface ElasticDocument {
   containerId: string;
@@ -43,7 +73,6 @@ interface ElasticDocument {
   commentText: string;
 }
 
-let registry: Map<string, PlexusModel> = new Map<string, PlexusModel>();
 
 const updateRegistry = (fn: any) => {
   const plexusListenerResult: PlexusListenerResult = fn(registry);
@@ -53,7 +82,6 @@ const updateRegistry = (fn: any) => {
   })
 }
 
-let operationLog: Map<string, PlexusModel> = new Map<string, PlexusModel>();
 
 const operationLogged = (fn: any) => {
   const plexusListenerResult: PlexusListenerResult = fn(operationLog);
@@ -72,7 +100,6 @@ const operationLogged = (fn: any) => {
   }
 }
 
-let queryLog: Map<string, PlexusModel> = new Map<string, PlexusModel>();
 
 const queryReceived = (fn: any) => {
   const plexusListenerResult: PlexusListenerResult = fn(queryLog);
@@ -86,8 +113,6 @@ const queryReceived = (fn: any) => {
     console.log(`Could not find queryLog plexusModel for ${plexusListenerResult.operationType}`)
   }
 }
-
-let plexusWorkspace: Workspace;
 
 const sendQueryResult = (uid: string, queryText: string) => {
   const queryResultLog: MapProperty = retrieveMapProperty(plexusWorkspace, Topics.QUERY_RESULT_LOG);
@@ -202,9 +227,19 @@ const answerQueries = () => {
   });
 }
 
-
-
-
+const poll = () => {
+  if (tracker.length() > 0) {
+    for (let index = trackerCursor; index < tracker.length(); index++) {
+      const changeEntry: ChangeEntry = tracker.getChangeAt(index);
+      const changeSet: ChangeSet = changeEntry.changeset;
+      const containerId: string = changeEntry.trackedContainerId;
+      const lastSeq: number = changeEntry.lastSeq;
+      const serializedChangeSet: SerializedChangeSet = changeSet.getSerializedChangeSet();
+      console.log(`ChangeEntry received, cursor=${index}, container=${containerId}, lastSeq=${lastSeq}, changeSet=${JSON.stringify(serializedChangeSet, null, 2)}`);
+      trackerCursor = index + 1;
+    }
+  }
+}
 
 const initAgent = async () => {
 
@@ -224,10 +259,10 @@ const initAgent = async () => {
   registerSchema(queryResultSchema);
 
 
-  let containerId: string | undefined = await checkPlexusNameservice(plexusServiceAlias);
+  const plexusContainerId: string | undefined = await checkPlexusNameservice(plexusServiceAlias);
 
   // Initialize the workspace
-  const boundWorkspace: BoundWorkspace = await initializeBoundWorkspace(containerId);
+  const boundWorkspace: BoundWorkspace = await initializeBoundWorkspace(plexusContainerId);
 
   const workspace: Workspace = boundWorkspace.workspace;
 
@@ -239,24 +274,39 @@ const initAgent = async () => {
   configureBinding(dataBinder, workspace, updateRegistry, "hex:containerMap-1.0.0", "registry");
 
   // Configure operation binding
-  configureBinding(dataBinder, workspace, operationLogged, "hex:operationMap-1.0.0", "operationLog");
+  // configureBinding(dataBinder, workspace, operationLogged, "hex:operationMap-1.0.0", "operationLog");
 
   // Configure query binding
   configureBinding(dataBinder, workspace, queryReceived, "hex:queryMap-1.0.0", "queryLog");
 
   console.log(`Binding configured`);
 
-  if (!containerId) {
+  if (!plexusContainerId) {
 
     // Initialize plexus property tree
     initPropertyTree(undefined, workspace, { registryListener: updateRegistry, operationLogListener: operationLogged, queryListener: queryReceived, queryResultListener: queryResultReceived });
 
     console.log(`Property tree initialized`);
 
-    console.log(`Posting ${workspace.containerId} to the nameservice ..`);
+    console.log(`Posting ${plexusServiceAlias}=${workspace.containerId} to the nameservice ..`);
 
     await updatePlexusNameservice(plexusServiceAlias, workspace.containerId);
   }
+
+  const trackerContainerId: string | undefined = await checkPlexusNameservice(trackerServiceAlias);
+
+  const trackerWorkspace: TrackerWorkspace = await createTrackerWorkspace(trackerContainerId);
+
+  tracker = trackerWorkspace.tree;
+
+  if (!trackerContainerId) {
+
+    console.log(`Posting ${trackerServiceAlias}=${trackerWorkspace.containerId} to the nameservice ..`);
+
+    await updatePlexusNameservice(trackerServiceAlias, trackerWorkspace.containerId);
+  }
+
+  setInterval(poll, 3000);
 
   setInterval(answerQueries, 3000);
 
