@@ -1,4 +1,4 @@
-import { Workspace } from "@dstanesc/fluid-util";
+import { SimpleWorkspace } from "@dstanesc/fluid-util2";
 import { PropertyFactory, NodeProperty, Int32Property, ArrayProperty, NamedProperty, NamedNodeProperty, StringProperty, MapProperty }
     from "@fluid-experimental/property-properties";
 import { DataBinder, UpgradeType } from "@fluid-experimental/property-binder";
@@ -65,7 +65,7 @@ export async function checkPlexusNameservice(plexusService: string){
 //     return topicArrayProperty;
 // }
 
-export function retrieveMapProperty(workspace: Workspace, topic: string): MapProperty {
+export function retrieveMapProperty(workspace: SimpleWorkspace, topic: string): MapProperty {
     const topicMapProperty: MapProperty = workspace.rootProperty.resolvePath(`${topic}.data`)! as MapProperty
     return topicMapProperty;
 }
@@ -94,7 +94,7 @@ export function retrieveMappedIdProperty(mapProperty: MapProperty, key: string):
     return nestedIdProperty;
 }
 
-export function dispatchNestedTextProperty(workspace: Workspace, topic: string, callback: PlexusListener) {
+export function dispatchNestedTextProperty(workspace: SimpleWorkspace, topic: string, callback: PlexusListener) {
     if (callback) {
         const mapProperty: MapProperty = retrieveMapProperty(workspace, topic);
         const keys: string[] = mapProperty.getIds();
@@ -189,7 +189,7 @@ export function createInt32ArrayProperty(): NamedNodeProperty {
     return offsetArrayProperty;
 }
 
-export function initPropertyTree(containerId: string | undefined, workspace: Workspace, plexusListeners: PlexusListeners) {
+export function initPropertyTree(containerId: string | undefined, workspace: SimpleWorkspace, plexusListeners: PlexusListeners) {
     if (containerId === undefined) {
         const registryArray: NamedNodeProperty = createContainerMapProperty();
         const operationArray: NamedNodeProperty = createOperationMapProperty();
@@ -209,7 +209,7 @@ export function initPropertyTree(containerId: string | undefined, workspace: Wor
     }
 }
 
-export function configureBinding(dataBinder: DataBinder, workspace: Workspace, listener: PlexusListener, arrayTypeId: string, bindingType: string) {
+export function configureBinding(dataBinder: DataBinder, workspace: SimpleWorkspace, listener: PlexusListener, arrayTypeId: string, bindingType: string) {
     dataBinder.defineRepresentation(bindingType, arrayTypeId, (property) => {
         return new PlexusMapController(listener);
     });

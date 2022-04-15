@@ -1,5 +1,6 @@
 
 import { Workspace } from "@dstanesc/fluid-util";
+import { SimpleWorkspace } from "@dstanesc/fluid-util2";
 import { IPropertyTreeMessage, IRemotePropertyTreeMessage, SerializedChangeSet, SharedPropertyTree } from "@fluid-experimental/property-dds";
 
 import {
@@ -11,7 +12,7 @@ import {
 
 import { MapProperty, NamedProperty } from "@fluid-experimental/property-properties";
 
-export function addSummarizeHook(plexusWorkspace: Workspace, commentWorkspace: Workspace) {
+export function addSummarizeHook(plexusWorkspace: SimpleWorkspace, commentWorkspace: Workspace) {
 
     const origPrune = (SharedPropertyTree as any).prune as any;
 
@@ -42,7 +43,7 @@ export function addSummarizeHook(plexusWorkspace: Workspace, commentWorkspace: W
         minimumSequenceNumber: number,
         remoteChanges: IRemotePropertyTreeMessage[],
         unrebasedRemoteChanges: Record<string, IRemotePropertyTreeMessage>,
-        plexusWorkspace: Workspace,
+        plexusWorkspace: SimpleWorkspace,
         commentWorkspace: Workspace
     ) => {
 

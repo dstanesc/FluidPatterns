@@ -1,4 +1,4 @@
-import { Workspace } from "@dstanesc/fluid-util";
+
 import { PropertyFactory, NodeProperty, Int32Property, ArrayProperty, NamedProperty, NamedNodeProperty, StringProperty, MapProperty }
     from "@fluid-experimental/property-properties";
 import { DataBinder, UpgradeType } from "@fluid-experimental/property-binder";
@@ -6,7 +6,7 @@ import { AssemblyController } from "./assemblyController";
 import { AssemblyComponent, AssemblyListener } from "./assemblyListener";
 import { AssemblyBinding } from "./assemblyBinding";
 import { copy as deepCopy } from "fastest-json-copy";
-import { SimpleWorkspace } from "./workspace";
+import { SimpleWorkspace } from "@dstanesc/fluid-util2";
 
 // Palette
 // #eeff41 (yellow green)

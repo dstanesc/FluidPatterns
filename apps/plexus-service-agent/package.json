@@ -14,8 +14,7 @@
       "watch": "^1.0.2"
     },
     "dependencies": {
-      "@dstanesc/fluid-util": "^0.1.0",
-      "@dstanesc/comment-util": "^0.1.0",
+      "@dstanesc/fluid-util2": "^0.1.0",
       "@dstanesc/plexus-util": "^0.1.0",
       "@tsconfig/node16":"^1.0.2",
       "@types/figlet":"1.5.4",

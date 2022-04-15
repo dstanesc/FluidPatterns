@@ -35,11 +35,40 @@ import { DataBinder } from "@fluid-experimental/property-binder";
 import { copy as deepClone } from "fastest-json-copy";
 
 import {
+    TrackerWorkspace,
+    TrackedWorkspace,
+    createOneToOneTracking,
+    createTrackedWorkspace,
+    createTrackerWorkspace,
+    saveTracking,
+    track,
+    ChangeEntry,
+    Tracker,
+    TrackedPropertyTree
+} from "@dstanesc/tracker-util";
+
+import {
+    retrieveMapProperty,
+    createContainerProperty,
+    containerMapSchema,
+    containerSchema,
+    operationMapSchema,
+    operationSchema,
+    queryMapSchema,
+    queryResultMapSchema,
+    queryResultSchema,
+    querySchema,
+    Topics,
+    appendQueryProperty,
+    configureBinding as configurePlexusBinding,
+    checkPlexusNameservice
+  } from "@dstanesc/plexus-util";
+
+import {
     registerSchema,
     createSimpleWorkspace,
-    SimpleWorkspace,
-    ReadyLogger
-} from "./workspace";
+    SimpleWorkspace
+} from "@dstanesc/fluid-util2";
 
 import { assemblyComponentSchema } from "./assemblyComponent-1.0.0";
 
@@ -83,6 +112,9 @@ function Rectangle(props: any) {
     );
 }
 
+const plexusServiceName: string = "local-plexus-service";
+
+const trackerServiceAlias: string = "local-tracker-service";
 
 export default function App() {
 
@@ -92,7 +124,7 @@ export default function App() {
 
     const containerId = window.location.hash.substring(1) || undefined;
 
-    const workspace = useRef<SimpleWorkspace>(null);
+    const workspace = useRef<TrackedWorkspace>(null);
 
     const [localComponents, setLocalComponents] = useState<AssemblyComponent[]>([]);
 
@@ -134,7 +166,8 @@ export default function App() {
     const [annoComponent, setAnnoComponent] = useState<AssemblyComponent>();
 
     useEffect(() => {
-        initLocalAssemblyWorkspace()
+        initTrackerWorkspace()
+            .then((trackerWorkspace) => initLocalAssemblyWorkspace(trackerWorkspace))
             .then((localWorkspace) => initRemoteAssemblyWorkspace(localWorkspace));
     }, []); // [] to be executed only once
 
@@ -157,32 +190,75 @@ export default function App() {
         setDisplayData(compareTable(localComponents, remoteComponents));
     }, [localComponents, remoteComponents]);
 
-    async function initLocalAssemblyWorkspace(): Promise<SimpleWorkspace> {
 
+    // async function initPlexusWorkspace() {
+
+    //     registerSchema(operationSchema);
+    //     registerSchema(operationMapSchema);
+    //     registerSchema(containerSchema);
+    //     registerSchema(containerMapSchema);
+    //     registerSchema(queryMapSchema);
+    //     registerSchema(queryResultMapSchema);
+    //     registerSchema(querySchema);
+    //     registerSchema(queryResultSchema);
+    
+    //     const configuredPlexusContainerId: string = await checkPlexusNameservice(plexusServiceName);
+    
+    //     // Initialize the workspace
+    //     const boundWorkspace: BoundWorkspace = await initializeBoundWorkspace(configuredPlexusContainerId);
+    
+    //     const myPlexusWorkspace: Workspace = boundWorkspace.workspace;
+    
+    //     // Make workspace available
+    //     plexusWorkspace.current = myPlexusWorkspace;
+    //   }
+
+
+    async function initLocalAssemblyWorkspace(trackerWorkspace: TrackerWorkspace): Promise<SimpleWorkspace> {
 
         registerSchema(assemblyComponentSchema);
         registerSchema(assemblySchema);
 
-        const simpleWorkspace: SimpleWorkspace = await createSimpleWorkspace(containerId);
-        const myDataBinder: DataBinder = simpleWorkspace.dataBinder;
+        const trackedWorkspace: TrackedWorkspace = await createTrackedWorkspace(containerId);
 
-        configureAssemblyBinding(myDataBinder, simpleWorkspace, "local", setLocalComponents);
-        initPropertyTree(containerId === undefined, simpleWorkspace, setLocalComponents);
+        if (!containerId) {
 
-        workspace.current = simpleWorkspace;
-        window.location.hash = simpleWorkspace.containerId;
+            saveTracking(trackedWorkspace, trackerWorkspace);
+        }
 
-        return simpleWorkspace;
+        track(trackedWorkspace, trackerWorkspace);
+
+        const myDataBinder: DataBinder = trackedWorkspace.dataBinder;
+
+        configureAssemblyBinding(myDataBinder, trackedWorkspace, "local", setLocalComponents);
+
+        initPropertyTree(containerId === undefined, trackedWorkspace, setLocalComponents);
+
+        workspace.current = trackedWorkspace;
+
+        window.location.hash = trackedWorkspace.containerId;
+
+        return trackedWorkspace;
     }
 
     async function initRemoteAssemblyWorkspace(localWorkspace: SimpleWorkspace): Promise<SimpleWorkspace> {
 
-        const simpleWorkspace: SimpleWorkspace = await createSimpleWorkspace(localWorkspace.containerId);
+        const simpleWorkspace: SimpleWorkspace = await createTrackedWorkspace(localWorkspace.containerId);
 
         initPropertyTree(false, simpleWorkspace, setRemoteComponents);
+        
         configureAssemblyBinding(simpleWorkspace.dataBinder, simpleWorkspace, "remote", setRemoteComponents);
 
         return simpleWorkspace;
+    }
+
+    async function initTrackerWorkspace() {
+
+        const trackerContainerId: string | undefined = await checkPlexusNameservice(trackerServiceAlias);
+
+        const trackerWorkspaceFound: TrackerWorkspace = await createTrackerWorkspace(trackerContainerId);
+
+        return trackerWorkspaceFound;
     }
 
     async function createBaseline() {

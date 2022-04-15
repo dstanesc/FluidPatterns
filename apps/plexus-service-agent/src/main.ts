@@ -34,7 +34,7 @@ import {
   TrackedPropertyTree
 } from "@dstanesc/tracker-util";
 
-import { BoundWorkspace, initializeBoundWorkspace, registerSchema } from "@dstanesc/fluid-util";
+import { SimpleWorkspace, createSimpleWorkspace, registerSchema } from "@dstanesc/fluid-util2";
 import { DataBinder } from "@fluid-experimental/property-binder";
 import { Workspace } from "@dstanesc/fluid-util";
 import figlet from "figlet";
@@ -60,7 +60,7 @@ let operationLog: Map<string, PlexusModel> = new Map<string, PlexusModel>();
 
 let queryLog: Map<string, PlexusModel> = new Map<string, PlexusModel>();
 
-let plexusWorkspace: Workspace;
+let plexusWorkspace: SimpleWorkspace;
 
 let tracker: Tracker;
 
@@ -262,35 +262,33 @@ const initAgent = async () => {
   const plexusContainerId: string | undefined = await checkPlexusNameservice(plexusServiceAlias);
 
   // Initialize the workspace
-  const boundWorkspace: BoundWorkspace = await initializeBoundWorkspace(plexusContainerId);
+  const simpleWorkspace: SimpleWorkspace = await createSimpleWorkspace(plexusContainerId);
 
-  const workspace: Workspace = boundWorkspace.workspace;
+  const dataBinder: DataBinder = simpleWorkspace.dataBinder;
 
-  const dataBinder: DataBinder = boundWorkspace.dataBinder;
-
-  plexusWorkspace = workspace;
+  plexusWorkspace = simpleWorkspace;
 
   // Configure registry binding
-  configureBinding(dataBinder, workspace, updateRegistry, "hex:containerMap-1.0.0", "registry");
+  configureBinding(dataBinder, simpleWorkspace, updateRegistry, "hex:containerMap-1.0.0", "registry");
 
   // Configure operation binding
   // configureBinding(dataBinder, workspace, operationLogged, "hex:operationMap-1.0.0", "operationLog");
 
   // Configure query binding
-  configureBinding(dataBinder, workspace, queryReceived, "hex:queryMap-1.0.0", "queryLog");
+  configureBinding(dataBinder, simpleWorkspace, queryReceived, "hex:queryMap-1.0.0", "queryLog");
 
   console.log(`Binding configured`);
 
   if (!plexusContainerId) {
 
     // Initialize plexus property tree
-    initPropertyTree(undefined, workspace, { registryListener: updateRegistry, operationLogListener: operationLogged, queryListener: queryReceived, queryResultListener: queryResultReceived });
+    initPropertyTree(undefined, simpleWorkspace, { registryListener: updateRegistry, operationLogListener: operationLogged, queryListener: queryReceived, queryResultListener: queryResultReceived });
 
     console.log(`Property tree initialized`);
 
-    console.log(`Posting ${plexusServiceAlias}=${workspace.containerId} to the nameservice ..`);
+    console.log(`Posting ${plexusServiceAlias}=${simpleWorkspace.containerId} to the nameservice ..`);
 
-    await updatePlexusNameservice(plexusServiceAlias, workspace.containerId);
+    await updatePlexusNameservice(plexusServiceAlias, simpleWorkspace.containerId);
   }
 
   const trackerContainerId: string | undefined = await checkPlexusNameservice(trackerServiceAlias);
@@ -310,7 +308,7 @@ const initAgent = async () => {
 
   setInterval(answerQueries, 3000);
 
-  return boundWorkspace;
+  return simpleWorkspace;
 }
 
 

@@ -18,7 +18,7 @@ import { IPropertyTreeMessage, IRemotePropertyTreeMessage, SharedPropertyTree } 
 
 import { copy as deepClone } from "fastest-json-copy";
 
-import { Workspace, BoundWorkspace, initializeBoundWorkspace, registerSchema } from "@dstanesc/fluid-util";
+import { SimpleWorkspace, createSimpleWorkspace, registerSchema } from "@dstanesc/fluid-util2";
 
 import {
   TrackerWorkspace,
@@ -112,7 +112,7 @@ export default function App() {
   let commentWorkspace = useRef<TrackedWorkspace>(null);
 
   // Plexus workspace 
-  let plexusWorkspace = useRef<Workspace>(null);
+  let plexusWorkspace = useRef<SimpleWorkspace>(null);
 
   // Tracker workspace
   let trackerWorkspace = useRef<TrackerWorkspace>(null);
@@ -146,12 +146,10 @@ export default function App() {
     const configuredPlexusContainerId: string = await checkPlexusNameservice(plexusServiceName);
 
     // Initialize the workspace
-    const boundWorkspace: BoundWorkspace = await initializeBoundWorkspace(configuredPlexusContainerId);
-
-    const myPlexusWorkspace: Workspace = boundWorkspace.workspace;
+    const simpleWorkspace: SimpleWorkspace = await createSimpleWorkspace(configuredPlexusContainerId);
 
     // Make workspace available
-    plexusWorkspace.current = myPlexusWorkspace;
+    plexusWorkspace.current = simpleWorkspace;
   }
 
   async function initCommentWorkspace(trackerWorkspace: TrackerWorkspace) {
@@ -195,7 +193,7 @@ export default function App() {
 
   }
 
-  const registerContainerWithPlexus = (myPlexusWorkspace: Workspace, myCommentWorkspace: TrackedWorkspace) => {
+  const registerContainerWithPlexus = (myPlexusWorkspace: SimpleWorkspace, myCommentWorkspace: TrackedWorkspace) => {
     const registryLog: MapProperty = retrieveMapProperty(myPlexusWorkspace, Topics.REGISTRY_LOG);
     const commentContainerId = myCommentWorkspace.containerId;
     const containerProperty: NamedProperty = createContainerProperty(commentContainerId);

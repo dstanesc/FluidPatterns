@@ -18,7 +18,7 @@ import { IPropertyTreeMessage, IRemotePropertyTreeMessage, SharedPropertyTree } 
 
 import { copy as deepClone } from "fastest-json-copy";
 
-import { Workspace, BoundWorkspace, initializeBoundWorkspace, registerSchema } from "@dstanesc/fluid-util";
+import { SimpleWorkspace, createSimpleWorkspace, registerSchema } from "@dstanesc/fluid-util2";
 
 import {
   retrieveMapProperty,
@@ -111,7 +111,7 @@ export default function App() {
   const [searchText, setSearchText] = useState("");
 
   // Plexus workspace 
-  let plexusWorkspace = useRef<Workspace>(null);
+  let plexusWorkspace = useRef<SimpleWorkspace>(null);
 
   const [searchShow, setSearchShow] = useState(false);
 
@@ -139,18 +139,15 @@ export default function App() {
     const configuredPlexusContainerId: string = await checkPlexusNameservice(plexusServiceName);
 
     // Initialize the workspace
-    const boundWorkspace: BoundWorkspace = await initializeBoundWorkspace(configuredPlexusContainerId);
+    const simpleWorkspace: SimpleWorkspace = await createSimpleWorkspace(configuredPlexusContainerId);
 
-    const myPlexusWorkspace: Workspace = boundWorkspace.workspace;
-
-    const myPlexusBinder: DataBinder = boundWorkspace.dataBinder;
+    const myPlexusBinder: DataBinder = simpleWorkspace.dataBinder;
 
     // Configure query result binding
-    configurePlexusBinding(myPlexusBinder, myPlexusWorkspace, queryResultReceived, "hex:queryResultMap-1.0.0", "queryResultLog");
-
+    configurePlexusBinding(myPlexusBinder, simpleWorkspace, queryResultReceived, "hex:queryResultMap-1.0.0", "queryResultLog");
 
     // Make workspace available
-    plexusWorkspace.current = myPlexusWorkspace;
+    plexusWorkspace.current = simpleWorkspace;
   }
 
   const queryResultReceived = (fn: any) => {
