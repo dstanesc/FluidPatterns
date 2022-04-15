@@ -1,0 +1,16 @@
+
+.diff {
+    margin-top: 0%;
+    margin-left: 220%;
+}
+
+
+.load {
+    margin-top: 0%;
+    margin-left: 120%;
+}
+
+.row-highlight {
+    background-color: rgba(255, 0, 0, 0.263);
+    /* opacity: 80%; */
+}
