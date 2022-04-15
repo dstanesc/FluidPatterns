@@ -31,6 +31,7 @@ import DialogTitle from '@mui/material/DialogTitle';
 import './App.css';
 
 import { DataBinder } from "@fluid-experimental/property-binder";
+import { ITelemetryLogger, ITelemetryBaseLogger, ITelemetryBaseEvent } from "@fluidframework/common-definitions";
 
 import { copy as deepClone } from "fastest-json-copy";
 
@@ -112,6 +113,27 @@ function Rectangle(props: any) {
     );
 }
 
+function sleep(ms: number): Promise<void> {
+    return new Promise((r) => setTimeout(r, ms));
+}
+
+export class SummaryTrigger implements ITelemetryBaseLogger {
+    
+    callback: Function;
+
+    constructor(callback: Function) {
+        this.callback = callback;
+    }
+
+    send(event: ITelemetryBaseEvent) {
+        console.log(`Custom telemetry object array: ${JSON.stringify(event, null, 2)}`);
+        if (event.eventName === "fluid:telemetry:Summarizer:Running:Summarize_end") 
+        {
+            this.callback();
+        }
+    }
+}
+
 const plexusServiceName: string = "local-plexus-service";
 
 const trackerServiceAlias: string = "local-tracker-service";
@@ -168,7 +190,10 @@ export default function App() {
     useEffect(() => {
         initTrackerWorkspace()
             .then((trackerWorkspace) => initLocalAssemblyWorkspace(trackerWorkspace))
-            .then((localWorkspace) => initRemoteAssemblyWorkspace(localWorkspace));
+            .then((localWorkspace) => {
+                sleep(2000);
+                initRemoteAssemblyWorkspace(localWorkspace);
+            });
     }, []); // [] to be executed only once
 
 
@@ -189,29 +214,6 @@ export default function App() {
     useEffect(() => {
         setDisplayData(compareTable(localComponents, remoteComponents));
     }, [localComponents, remoteComponents]);
-
-
-    // async function initPlexusWorkspace() {
-
-    //     registerSchema(operationSchema);
-    //     registerSchema(operationMapSchema);
-    //     registerSchema(containerSchema);
-    //     registerSchema(containerMapSchema);
-    //     registerSchema(queryMapSchema);
-    //     registerSchema(queryResultMapSchema);
-    //     registerSchema(querySchema);
-    //     registerSchema(queryResultSchema);
-    
-    //     const configuredPlexusContainerId: string = await checkPlexusNameservice(plexusServiceName);
-    
-    //     // Initialize the workspace
-    //     const boundWorkspace: BoundWorkspace = await initializeBoundWorkspace(configuredPlexusContainerId);
-    
-    //     const myPlexusWorkspace: Workspace = boundWorkspace.workspace;
-    
-    //     // Make workspace available
-    //     plexusWorkspace.current = myPlexusWorkspace;
-    //   }
 
 
     async function initLocalAssemblyWorkspace(trackerWorkspace: TrackerWorkspace): Promise<SimpleWorkspace> {
@@ -648,7 +650,7 @@ export default function App() {
                                 control={
                                     <Switch checked={visible.annotations} name="annotations" onChange={handleVisibility} />
                                 }
-                                label="Annotations"
+                                label="Local Anno"
                             />
                             <FormControlLabel
                                 control={
