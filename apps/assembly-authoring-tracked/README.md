@@ -1,4 +1,4 @@
-# Indexed Assembly Authoring
+# Search Enabled Assembly Authoring
 
 # Getting Started
 
@@ -24,19 +24,53 @@ npm install --legacy-peer-deps
 npm run build
 ```
 
+# Run
 
-## Run
+> Note: Starting order is relevant.
 
-Terminal 1
+1. Start _Plexus Fulltext Indexing Service_ 
 
 ```sh
-npx tinylicious
+cd FluidPatterns
+docker-compose up
 ```
 
-Terminal 2
+2. Start _Plexus Nameservice_
+
+```sh
+cd FluidPatterns/apps/plexus-nameservice-agent
+npm start
+```
+
+3. Start _Plexus Service_
+
+```sh
+cd FluidPatterns/apps/plexus-service-agent
+npm start
+```
+
+4. Start _Assembly Authoring Application_
 
 ```sh
 cd FluidPatterns/apps/assembly-authoring-tracked
-npm install -g serve
-serve -s build # for perf concerns avoid starting in dev mode (npm start)
+npm start
 ```
+
+5. Start _Assembly Search Application_
+
+```sh
+cd FluidPatterns/apps/comment-search
+npm start
+```
+
+## Disclaimer
+
+This project has adopted the [Microsoft Open Source Code of Conduct](https://opensource.microsoft.com/codeofconduct/).
+For more information see the [Code of Conduct FAQ](https://opensource.microsoft.com/codeofconduct/faq/) or contact
+[opencode@microsoft.com](mailto:opencode@microsoft.com) with any additional questions or comments.
+
+This project may contain Microsoft trademarks or logos for Microsoft projects, products, or services. Use of these
+trademarks or logos must follow Microsoft’s [Trademark & Brand Guidelines](https://www.microsoft.com/trademarks). Use of
+Microsoft trademarks or logos in modified versions of this project must not cause confusion or imply Microsoft
+sponsorship.
+
