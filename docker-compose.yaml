@@ -14,7 +14,18 @@ services:
       - 9300:9300
     networks:
       - plexus-network
-             
+
+  kibana:
+    image: docker.elastic.co/kibana/kibana:7.10.0
+    environment:
+      - ELASTICSEARCH_HOSTS=http://elastic:9200
+    networks:
+      - plexus-network
+    depends_on:
+      - elastic
+    ports:
+      - 5601:5601
+
 volumes:
   plexusdata:
     name: plexusdata

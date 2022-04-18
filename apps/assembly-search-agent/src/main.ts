@@ -117,9 +117,9 @@ const insertElasticSearch = (elasticDocument: ElasticDocument) => {
     index: "plexus-materialized-view",
     id: elasticDocument.id
   }).then(exists => {
-    console.log(`Exists check =${JSON.stringify(exists, null, 2)}`);
+    //console.log(`Exists check =${JSON.stringify(exists, null, 2)}`);
     if (!exists.body) {
-      console.log(`Actually indexing`);
+      console.log(`Document not found, actually indexing`);
       elasticSearchClient.index(toIndex);
     }
   });
@@ -139,9 +139,9 @@ const modifyElasticSearch = (elasticDocument: ElasticDocument) => {
     index: "plexus-materialized-view",
     id: elasticDocument.id
   }).then(exists => {
-    console.log(`Exists check =${JSON.stringify(exists, null, 2)}`);
-    if (!exists.body) {
-      console.log(`Actually updating`);
+    //console.log(`Exists check =${JSON.stringify(exists, null, 2)}`);
+    if (exists.body) {
+      console.log(`Document found, actually updating`);
       elasticSearchClient.update(toIndex);
     }
   });
@@ -212,23 +212,31 @@ const answerQueries = () => {
 }
 
 const poll = () => {
+
   if (tracker.length() > 0) {
-    for (let index = trackerCursor; index < tracker.length(); index++) {
-      const changeEntry: ChangeEntry = tracker.getChangeAt(index);
+    
+    for (let offset = trackerCursor; offset < tracker.length(); offset++) {
+      
+      const changeEntry: ChangeEntry = tracker.getChangeAt(offset);
       const changeSet: ChangeSet = changeEntry.changeset;
       const containerId: string = changeEntry.trackedContainerId;
       const lastSeq: number = changeEntry.lastSeq;
       const serializedChangeSet: SerializedChangeSet = changeSet.getSerializedChangeSet();
-      console.log(`ChangeEntry received, cursor=${index}, container=${containerId}, lastSeq=${lastSeq}, changeSet=${JSON.stringify(serializedChangeSet, null, 2)}`);
-      trackerCursor = index + 1;
+      
+      console.log(`ChangeEntry received, cursor=${offset}, container=${containerId}, lastSeq=${lastSeq}, changeSet=${JSON.stringify(serializedChangeSet, null, 2)}`);
+      
+      trackerCursor = offset + 1;
+      
       const { "inserted": inserted, "modified": modified } = parseChangeSet(serializedChangeSet);
 
-      inserted.forEach(comp => {
-
+      inserted.forEach(component => {
+        const elasticDocument: ElasticDocument = { "containerId": containerId, "sequenceNumber": lastSeq, ...component };
+        insertElasticSearch(elasticDocument);
       });
 
-      modified.forEach(comp => {
-
+      modified.forEach(component => {
+        const elasticDocument: ElasticDocument = { "containerId": containerId, "sequenceNumber": lastSeq, ...component };
+        modifyElasticSearch(elasticDocument);
       });
     }
   }
