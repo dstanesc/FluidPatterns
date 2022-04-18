@@ -1,4 +1,4 @@
-# Indexed/Tracked concurrent editing
+# Indexed Assembly Authoring
 
 # Getting Started
 
@@ -36,7 +36,7 @@ npx tinylicious
 Terminal 2
 
 ```sh
-cd FluidPatterns/apps/concurrent-editing-notification-tracked
+cd FluidPatterns/apps/assembly-authoring-tracked
 npm install -g serve
 serve -s build # for perf concerns avoid starting in dev mode (npm start)
 ```

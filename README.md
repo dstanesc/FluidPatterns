@@ -39,19 +39,20 @@ npm run build
 
 >Note: Work in progress!!! Current status is __draft__.
 
-Main documentation [page](./apps/comment-authoring/README.md)
+Main documentation [page](./apps/assembly-authoring-tracked/)
 
 ### Packages
 
 - Apps
   - [Plexus Nameservice Agent](./apps/plexus-nameservice-agent/)
   - [Plexus Service Agent](./apps/plexus-service-agent/)
-  - [Comment Authoring](./apps/comment-authoring/)
-  - [Comment Search](./apps/comment-search/)
+  - [Assembly Authoring](./apps/assembly-authoring-tracked/)
+  - [Assembly Search](./apps/comment-search/)
 
 - Libs
-  - [Comment Util](./libs/comment-util/)
+  - [Comment Util](./libs/assembly-util/)
   - [Plexus Util](./libs/plexus-util/)
+  - [Fluid Util 2](./libs/fluid-util2/)
 
 ## Schema Patterns
 
