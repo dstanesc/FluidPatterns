@@ -41,8 +41,8 @@ export function parseChangeSet(changeSet: SerializedChangeSet) {
                 // alternative to optional chaining https://2ality.com/2019/07/optional-chaining.html
                 "annotation": _.get(body, 'String.annotation.value'),
                 "fill": _.get(body, 'String.fill.value'),
-                "x": _.get(body, 'Int32.x?.value'),
-                "y": _.get(body, 'Int32.y?.value'),
+                "x": _.get(body, 'Int32.x.value'),
+                "y": _.get(body, 'Int32.y.value'),
                 "width": _.get(body, 'Int32.width.value'),
                 "height": _.get(body, 'Int32.height.value')
             };

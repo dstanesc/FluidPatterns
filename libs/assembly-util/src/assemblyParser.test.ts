@@ -106,6 +106,42 @@ const SECOND_UPDATE = {
     }
 }
 
+const THIRD_UPDATE = {
+    "modify": {
+        "hex:assembly-1.0.0": {
+            "assembly": {
+                "map<hex:assemblyComponent-1.0.0>": {
+                    "components": {
+                        "modify": {
+                            "hex:assemblyComponent-1.0.0": {
+                                "rect1": {
+                                    "Int32": {
+                                        "x": {
+                                            "value": 614,
+                                            "oldValue": 409
+                                        },
+                                        "y": {
+                                            "value": 116,
+                                            "oldValue": 129
+                                        }
+                                    },
+                                    "String": {
+                                        "annotation": {
+                                            "value": "yello fella",
+                                            "oldValue": ""
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+
 describe("Parser test", function () {
 
     const cleanUp = () => {
@@ -136,10 +172,10 @@ describe("Parser test", function () {
             "width": 112,
             "height": 100
         });
-        
+
     });
 
-    test("parse modify", () => {
+    test("parse second modify", () => {
 
         const { "inserted": inserted, "modified": modified } = parseChangeSet(SECOND_UPDATE);
 
@@ -148,6 +184,21 @@ describe("Parser test", function () {
         expect(modified[0]).toEqual({
             "id": "rect1",
             "annotation": "This is the yellow component"
+        });
+    });
+
+
+    test("parse third modify", () => {
+
+        const { "inserted": inserted, "modified": modified } = parseChangeSet(THIRD_UPDATE);
+
+        expect(inserted).toEqual([]);
+
+        expect(modified[0]).toEqual({
+            "id": "rect1",
+            "annotation": "yello fella",
+            "x": 614,
+            "y": 116
         });
     });
 
