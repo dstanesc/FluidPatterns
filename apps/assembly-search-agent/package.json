@@ -1,5 +1,5 @@
 {
-    "name": "@dstanesc/plexus-service-agent",
+    "name": "@dstanesc/assembly-search-agent",
     "version": "0.1.0",
     "description": "Materialized View Agent",
     "homepage": "https://fluidframework.com",

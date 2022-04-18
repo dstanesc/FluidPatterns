@@ -9,12 +9,6 @@ import { v4 as uuidv4 } from 'uuid';
 import { SerializedChangeSet } from "@fluid-experimental/property-changeset";
 import axios from "axios";
 
-export interface LoggedOperation {
-    containerId: string;
-    changeSet: SerializedChangeSet;
-    guid: string
-    sequenceNumber: number;
-}
 
 export interface QueryResult {
     index: number;
@@ -28,7 +22,6 @@ export interface QueryResult {
 
 export enum Topics {
     REGISTRY_LOG = "registryLog",
-    OPERATION_LOG = "operationLog",
     QUERY_LOG = "queryLog",
     QUERY_RESULT_LOG = "queryResultLog",
 }
@@ -60,27 +53,12 @@ export async function checkPlexusNameservice(plexusService: string){
     }
   }
 
-// export function retrieveArrayProperty(workspace: Workspace, topic: string): ArrayProperty {
-//     const topicArrayProperty: ArrayProperty = workspace.rootProperty.resolvePath(`${topic}.data`)! as ArrayProperty
-//     return topicArrayProperty;
-// }
 
 export function retrieveMapProperty(workspace: SimpleWorkspace, topic: string): MapProperty {
     const topicMapProperty: MapProperty = workspace.rootProperty.resolvePath(`${topic}.data`)! as MapProperty
     return topicMapProperty;
 }
 
-// export function retrieveNestedTextProperty(arrayProperty: ArrayProperty, index: number): StringProperty {
-//     const nestedProperty = arrayProperty.get(index) as NamedProperty;
-//     const nestedTextProperty: StringProperty = nestedProperty.get("text") as StringProperty;
-//     return nestedTextProperty;
-// }
-
-// export function retrieveNestedIdProperty(arrayProperty: ArrayProperty, index: number): StringProperty {
-//     const nestedProperty = arrayProperty.get(index) as NamedProperty;
-//     const nestedTextProperty: StringProperty = nestedProperty.get("id") as StringProperty;
-//     return nestedTextProperty;
-// }
 
 export function retrieveMappedTextProperty(mapProperty: MapProperty, key: string): StringProperty {
     const nestedProperty = mapProperty.getValue(key) as NamedProperty;
@@ -129,11 +107,6 @@ export function createContainerProperty(uid: String): NamedProperty {
     return containerProperty;
 }
 
-export function createOperationProperty(uid: String, text: string): NamedProperty {
-    const operationProperty = PropertyFactory.create<NamedProperty>("hex:operation-1.0.0", undefined, { "id": uid, "text": text });
-    return operationProperty;
-}
-
 export function createQueryProperty(text: string): NamedProperty {
     const uid = uuidv4();
     const queryProperty = PropertyFactory.create<NamedProperty>("hex:query-1.0.0", undefined, { "id": uid, "text": text });
@@ -164,10 +137,6 @@ export function createContainerMapProperty(): NamedNodeProperty {
     return containerArrayProperty;
 }
 
-export function createOperationMapProperty(): NamedNodeProperty {
-    const changeArrayProperty: NamedNodeProperty = PropertyFactory.create<NamedNodeProperty>("hex:operationMap-1.0.0");
-    return changeArrayProperty;
-}
 
 export function createQueryMapProperty(): NamedNodeProperty {
     const queryMapProperty: NamedNodeProperty = PropertyFactory.create<NamedNodeProperty>("hex:queryMap-1.0.0");
@@ -192,18 +161,15 @@ export function createInt32ArrayProperty(): NamedNodeProperty {
 export function initPropertyTree(containerId: string | undefined, workspace: SimpleWorkspace, plexusListeners: PlexusListeners) {
     if (containerId === undefined) {
         const registryArray: NamedNodeProperty = createContainerMapProperty();
-        const operationArray: NamedNodeProperty = createOperationMapProperty();
         const queryArray: NamedNodeProperty = createQueryMapProperty();
         const queryResultArray: NamedNodeProperty = createQueryResultMapProperty();
         const rootProp: NodeProperty = workspace.rootProperty;
         rootProp.insert(Topics.REGISTRY_LOG, registryArray);
-        rootProp.insert(Topics.OPERATION_LOG, operationArray);
         rootProp.insert(Topics.QUERY_LOG, queryArray);
         rootProp.insert(Topics.QUERY_RESULT_LOG, queryResultArray);
         workspace.commit();
     } else {
         dispatchNestedTextProperty(workspace, Topics.REGISTRY_LOG, plexusListeners.registryListener);
-        dispatchNestedTextProperty(workspace, Topics.OPERATION_LOG, plexusListeners.operationLogListener);
         dispatchNestedTextProperty(workspace, Topics.QUERY_LOG, plexusListeners.queryListener);
         dispatchNestedTextProperty(workspace, Topics.QUERY_RESULT_LOG, plexusListeners.queryResultListener);
     }

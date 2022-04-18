@@ -25,8 +25,6 @@ import {
   createContainerProperty,
   containerMapSchema,
   containerSchema,
-  operationMapSchema,
-  operationSchema,
   queryMapSchema,
   queryResultMapSchema,
   queryResultSchema,
@@ -127,8 +125,6 @@ export default function App() {
 
   async function initPlexusWorkspace() {
 
-    registerSchema(operationSchema);
-    registerSchema(operationMapSchema);
     registerSchema(containerSchema);
     registerSchema(containerMapSchema);
     registerSchema(queryMapSchema);

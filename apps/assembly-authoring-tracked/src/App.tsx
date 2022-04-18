@@ -53,8 +53,6 @@ import {
     createContainerProperty,
     containerMapSchema,
     containerSchema,
-    operationMapSchema,
-    operationSchema,
     queryMapSchema,
     queryResultMapSchema,
     queryResultSchema,

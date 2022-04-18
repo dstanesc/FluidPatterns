@@ -6,15 +6,12 @@ import {
   Topics,
   containerMapSchema,
   containerSchema,
-  operationMapSchema,
-  operationSchema,
   queryMapSchema,
   queryResultMapSchema,
   queryResultSchema,
   querySchema,
   PlexusModel,
   PlexusListenerResult,
-  LoggedOperation,
   checkPlexusNameservice,
   updatePlexusNameservice,
   appendQueryResultProperty
@@ -81,26 +78,6 @@ const updateRegistry = (fn: any) => {
   })
 }
 
-const operationLogged = (fn: any) => {
-}
-
-// const operationLogged = (fn: any) => {
-//   const plexusListenerResult: PlexusListenerResult = fn(operationLog);
-//   operationLog = plexusListenerResult.result;
-//   const plexusModel: PlexusModel = plexusListenerResult.increment;
-//   if (plexusModel) {
-//     const guid: string = plexusModel.id;
-//     const jsonString = plexusModel.text;
-//     //console.log(`key=${guid} entry=\n${jsonString}`);
-//     const loggedOperation: LoggedOperation = JSON.parse(jsonString);
-//     console.log(`loggedOperation from containerId=${loggedOperation.containerId} sequenceNumber=${loggedOperation.sequenceNumber} entry=${jsonString}`);
-//     (async () => await indexElasticSearch(loggedOperation))(); //IIFE
-
-//   } else {
-//     console.log(`Could not find operationLog plexusModel for ${plexusListenerResult.operationType}`)
-//   }
-// }
-
 
 const queryReceived = (fn: any) => {
   const plexusListenerResult: PlexusListenerResult = fn(queryLog);
@@ -152,6 +129,22 @@ const modifyElasticSearch = (elasticDocument: ElasticDocument) => {
 
   console.log(`Modifying elastic document ${JSON.stringify(elasticDocument, null, 2)}`);
 
+  const toIndex = {
+    index: "plexus-materialized-view",
+    id: elasticDocument.id,
+    body: elasticDocument
+  };
+
+  elasticSearchClient.exists({
+    index: "plexus-materialized-view",
+    id: elasticDocument.id
+  }).then(exists => {
+    console.log(`Exists check =${JSON.stringify(exists, null, 2)}`);
+    if (!exists.body) {
+      console.log(`Actually updating`);
+      elasticSearchClient.update(toIndex);
+    }
+  });
 }
 
 const answerQueries = () => {
@@ -230,11 +223,11 @@ const poll = () => {
       trackerCursor = index + 1;
       const { "inserted": inserted, "modified": modified } = parseChangeSet(serializedChangeSet);
 
-      inserted.forEach( comp => {
+      inserted.forEach(comp => {
 
       });
 
-      modified.forEach( comp => {
+      modified.forEach(comp => {
 
       });
     }
@@ -249,8 +242,6 @@ const initAgent = async () => {
 
   console.log(out);
 
-  registerSchema(operationSchema);
-  registerSchema(operationMapSchema);
   registerSchema(containerSchema);
   registerSchema(containerMapSchema);
   registerSchema(queryMapSchema);
@@ -271,9 +262,6 @@ const initAgent = async () => {
   // Configure registry binding
   configureBinding(dataBinder, simpleWorkspace, updateRegistry, "hex:containerMap-1.0.0", "registry");
 
-  // Configure operation binding
-  // configureBinding(dataBinder, workspace, operationLogged, "hex:operationMap-1.0.0", "operationLog");
-
   // Configure query binding
   configureBinding(dataBinder, simpleWorkspace, queryReceived, "hex:queryMap-1.0.0", "queryLog");
 
@@ -282,7 +270,7 @@ const initAgent = async () => {
   if (!plexusContainerId) {
 
     // Initialize plexus property tree
-    initPropertyTree(undefined, simpleWorkspace, { registryListener: updateRegistry, operationLogListener: operationLogged, queryListener: queryReceived, queryResultListener: queryResultReceived });
+    initPropertyTree(undefined, simpleWorkspace, { registryListener: updateRegistry, queryListener: queryReceived, queryResultListener: queryResultReceived });
 
     console.log(`Property tree initialized`);
 

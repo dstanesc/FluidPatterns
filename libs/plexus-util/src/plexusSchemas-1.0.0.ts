@@ -25,14 +25,6 @@ export const containerSchema = {
     ],
 };
 
-export const operationSchema = {
-    typeid: "hex:operation-1.0.0",
-    inherits: "NamedProperty",
-    properties: [
-        { id: "id", typeid: "String" },
-        { id: "text", typeid: "String" },
-    ],
-};
 
 export const stringArraySchema =  {
     typeid: "hex:stringArray-1.0.0",
@@ -71,21 +63,5 @@ export const containerMapSchema =  {
     inherits: "NamedNodeProperty",
     properties: [
         { id: "data", typeid: "hex:container-1.0.0", context: "map" },
-    ],
-};
-
-export const operationMapSchema =  {
-    typeid: "hex:operationMap-1.0.0",
-    inherits: "NamedNodeProperty",
-    properties: [
-        { id: "data", typeid: "hex:operation-1.0.0", context: "map" },
-    ],
-};
-
-export const operationArraySchema =  {
-    typeid: "hex:operationArray-1.0.0",
-    inherits: "NamedNodeProperty",
-    properties: [
-        { id: "data", typeid: "hex:operation-1.0.0", context: "array" },
     ],
 };
