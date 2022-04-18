@@ -35,6 +35,7 @@ import {
 } from "@dstanesc/tracker-util";
 
 import { SimpleWorkspace, createSimpleWorkspace, registerSchema } from "@dstanesc/fluid-util2";
+import { AssemblyComponent, parseChangeSet } from "@dstanesc/assembly-util";
 import { DataBinder } from "@fluid-experimental/property-binder";
 import { Workspace } from "@dstanesc/fluid-util";
 import figlet from "figlet";
@@ -66,11 +67,9 @@ let tracker: Tracker;
 
 let trackerCursor: number = 0;
 
-interface ElasticDocument {
+interface ElasticDocument extends AssemblyComponent {
   containerId: string;
-  commentId: string;
   sequenceNumber: number;
-  commentText: string;
 }
 
 
@@ -82,23 +81,25 @@ const updateRegistry = (fn: any) => {
   })
 }
 
-
 const operationLogged = (fn: any) => {
-  const plexusListenerResult: PlexusListenerResult = fn(operationLog);
-  operationLog = plexusListenerResult.result;
-  const plexusModel: PlexusModel = plexusListenerResult.increment;
-  if (plexusModel) {
-    const guid: string = plexusModel.id;
-    const jsonString = plexusModel.text;
-    //console.log(`key=${guid} entry=\n${jsonString}`);
-    const loggedOperation: LoggedOperation = JSON.parse(jsonString);
-    console.log(`loggedOperation from containerId=${loggedOperation.containerId} sequenceNumber=${loggedOperation.sequenceNumber} entry=${jsonString}`);
-    (async () => await indexElasticSearch(loggedOperation))(); //IIFE
-
-  } else {
-    console.log(`Could not find operationLog plexusModel for ${plexusListenerResult.operationType}`)
-  }
 }
+
+// const operationLogged = (fn: any) => {
+//   const plexusListenerResult: PlexusListenerResult = fn(operationLog);
+//   operationLog = plexusListenerResult.result;
+//   const plexusModel: PlexusModel = plexusListenerResult.increment;
+//   if (plexusModel) {
+//     const guid: string = plexusModel.id;
+//     const jsonString = plexusModel.text;
+//     //console.log(`key=${guid} entry=\n${jsonString}`);
+//     const loggedOperation: LoggedOperation = JSON.parse(jsonString);
+//     console.log(`loggedOperation from containerId=${loggedOperation.containerId} sequenceNumber=${loggedOperation.sequenceNumber} entry=${jsonString}`);
+//     (async () => await indexElasticSearch(loggedOperation))(); //IIFE
+
+//   } else {
+//     console.log(`Could not find operationLog plexusModel for ${plexusListenerResult.operationType}`)
+//   }
+// }
 
 
 const queryReceived = (fn: any) => {
@@ -125,35 +126,19 @@ const queryResultReceived = (fn: any) => {
 }
 
 
-const indexElasticSearch = (loggedOperation: LoggedOperation) => {
+const insertElasticSearch = (elasticDocument: ElasticDocument) => {
 
-  const containerId = loggedOperation.containerId;
-  const changeSet: SerializedChangeSet = loggedOperation.changeSet;
-  const commentId: string = loggedOperation.guid;
-  const sequenceNumber: number = loggedOperation.sequenceNumber;
-  const insert = jp.query(changeSet, '$..String')[0];
-  const commentText = insert.text;
-
-  console.log(`Indexing request received for ${commentText}`);
-
-  const elasticDocument: ElasticDocument = {
-    "containerId": containerId,
-    "commentId": commentId,
-    "sequenceNumber": sequenceNumber,
-    "commentText": commentText
-  };
-
-  console.log(`Indexing ${JSON.stringify(elasticDocument, null, 2)}`);
+  console.log(`Inserting elastic document ${JSON.stringify(elasticDocument, null, 2)}`);
 
   const toIndex = {
     index: "plexus-materialized-view",
-    id: commentId,
+    id: elasticDocument.id,
     body: elasticDocument
   };
 
   elasticSearchClient.exists({
     index: "plexus-materialized-view",
-    id: commentId
+    id: elasticDocument.id
   }).then(exists => {
     console.log(`Exists check =${JSON.stringify(exists, null, 2)}`);
     if (!exists.body) {
@@ -161,6 +146,12 @@ const indexElasticSearch = (loggedOperation: LoggedOperation) => {
       elasticSearchClient.index(toIndex);
     }
   });
+}
+
+const modifyElasticSearch = (elasticDocument: ElasticDocument) => {
+
+  console.log(`Modifying elastic document ${JSON.stringify(elasticDocument, null, 2)}`);
+
 }
 
 const answerQueries = () => {
@@ -237,6 +228,15 @@ const poll = () => {
       const serializedChangeSet: SerializedChangeSet = changeSet.getSerializedChangeSet();
       console.log(`ChangeEntry received, cursor=${index}, container=${containerId}, lastSeq=${lastSeq}, changeSet=${JSON.stringify(serializedChangeSet, null, 2)}`);
       trackerCursor = index + 1;
+      const { "inserted": inserted, "modified": modified } = parseChangeSet(serializedChangeSet);
+
+      inserted.forEach( comp => {
+
+      });
+
+      modified.forEach( comp => {
+
+      });
     }
   }
 }

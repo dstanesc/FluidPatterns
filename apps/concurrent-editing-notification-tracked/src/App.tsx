@@ -71,19 +71,19 @@ import {
     SimpleWorkspace
 } from "@dstanesc/fluid-util2";
 
-import { assemblyComponentSchema } from "./assemblyComponent-1.0.0";
+import { assemblyComponentSchema } from "@dstanesc/assembly-util";
 
-import { assemblySchema } from "./assembly-1.0.0";
+import { assemblySchema } from "@dstanesc/assembly-util";
 
 import {
     configureAssemblyBinding,
     initPropertyTree,
     retrieveAssemblyMapProperty,
     updateAssemblyComponentProperty
-} from './assemblyApi';
+} from '@dstanesc/assembly-util';
 
-import { AssemblyComponent } from './assemblyListener';
-import { assembly, Compare, compareTable, Conflict, conflicts, index, isModified } from './assemblyDiff';
+import { AssemblyComponent } from '@dstanesc/assembly-util';
+import { assembly, Compare, compareTable, Conflict, conflicts, index, isModified } from '@dstanesc/assembly-util';
 import _, { merge } from "lodash"
 
 

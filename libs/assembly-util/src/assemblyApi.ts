@@ -3,7 +3,7 @@ import { PropertyFactory, NodeProperty, Int32Property, ArrayProperty, NamedPrope
     from "@fluid-experimental/property-properties";
 import { DataBinder, UpgradeType } from "@fluid-experimental/property-binder";
 import { AssemblyController } from "./assemblyController";
-import { AssemblyComponent, AssemblyListener } from "./assemblyListener";
+import { AssemblyListener } from "./assemblyListener";
 import { AssemblyBinding } from "./assemblyBinding";
 import { copy as deepCopy } from "fastest-json-copy";
 import { SimpleWorkspace } from "@dstanesc/fluid-util2";
@@ -60,6 +60,22 @@ export const initialData = [
 ];
 
 
+export interface AssemblyComponent {
+
+    id: string;
+
+    fill: string;
+
+    x: number;
+
+    y: number;
+
+    width: number;
+
+    height: number;
+
+    annotation: string;
+}
 
 
 export function enrich(toEnrich: AssemblyComponent): AssemblyComponent {

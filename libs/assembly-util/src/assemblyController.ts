@@ -1,5 +1,6 @@
 import { AssemblyChange } from "./assemblyChange";
-import { AssemblyListener, AssemblyComponent } from "./assemblyListener";
+import { AssemblyListener } from "./assemblyListener";
+import { AssemblyComponent } from "./assemblyApi";
 import { copy as deepCopy } from "fastest-json-copy";
 import { enrich } from "./assemblyApi";
 

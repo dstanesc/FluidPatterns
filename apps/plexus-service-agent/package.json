@@ -16,6 +16,7 @@
     "dependencies": {
       "@dstanesc/fluid-util2": "^0.1.0",
       "@dstanesc/plexus-util": "^0.1.0",
+      "@dstanesc/assembly-util": "^0.1.0",
       "@tsconfig/node16":"^1.0.2",
       "@types/figlet":"1.5.4",
       "@types/uuid":"^8.3.4",

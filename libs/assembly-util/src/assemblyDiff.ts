@@ -1,5 +1,5 @@
 import _ from "lodash"
-import { AssemblyComponent } from "./assemblyListener";
+import { AssemblyComponent } from "./assemblyApi"
 
 
 export interface Compare {

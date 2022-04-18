@@ -5,7 +5,7 @@ import { Utils } from "@fluid-experimental/property-changeset";
 import { SerializedChangeSet } from "@fluid-experimental/property-dds";
 import { AssemblyController } from "./assemblyController";
 import { AssemblyChange } from "./assemblyChange";
-import { AssemblyComponent } from "./assemblyListener";
+import { AssemblyComponent } from "./assemblyApi";
 
 export class AssemblyBinding extends DataBinding {
 

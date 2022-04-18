@@ -1,5 +1,5 @@
 import { Utils } from "@fluid-experimental/property-changeset";
-import { AssemblyComponent } from "./assemblyListener";
+import { AssemblyComponent } from "./assemblyApi";
 
 
 export class AssemblyChange {
