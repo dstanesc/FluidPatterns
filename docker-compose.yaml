@@ -6,25 +6,49 @@ services:
     image: docker.elastic.co/elasticsearch/elasticsearch:7.10.1
     environment:
       - discovery.type=single-node
+      - http.port=9200
+      - http.cors.enabled=true
+      - http.cors.allow-origin=http://localhost:8080,http://127.0.0.1:8080,http://elasticvue:8080 
+      - http.cors.allow-headers=X-Requested-With,X-Auth-Token,Content-Type,Content-Length,Authorization
+      - http.cors.allow-credentials=true
+      - bootstrap.memory_lock=true
       - "ES_JAVA_OPTS=-Xms4g -Xmx4g"
     volumes:
       - plexusdata:/usr/share/elasticsearch/data
     ports:
       - 9200:9200
       - 9300:9300
+    ulimits:
+      memlock:
+          soft: -1
+          hard: -1
     networks:
       - plexus-network
 
-  kibana:
-    image: docker.elastic.co/kibana/kibana:7.10.0
-    environment:
-      - ELASTICSEARCH_HOSTS=http://elastic:9200
-    networks:
-      - plexus-network
+  # kibana:
+  #   image: docker.elastic.co/kibana/kibana:7.10.0
+  #   environment:
+  #     - ELASTICSEARCH_HOSTS=http://elastic:9200
+  #   networks:
+  #     - plexus-network
+  #   depends_on:
+  #     - elastic
+  #   ports:
+  #     - 5601:5601
+
+  # dejavu:
+  #   image: appbaseio/dejavu:3.6.0
+  #   ports:
+  #     - '1358:1358'
+  #   links:
+  #     - elastic
+
+  elasticvue:
+    image: cars10/elasticvue
+    ports:
+      - '8080:8080'
     depends_on:
       - elastic
-    ports:
-      - 5601:5601
 
 volumes:
   plexusdata:

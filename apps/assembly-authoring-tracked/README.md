@@ -30,7 +30,7 @@ Add elastic, kibana entries to `/etc/hosts`
 
 ```sh
 127.0.0.1       localhost
-127.0.1.1       elastic kibana
+127.0.1.1       elastic elasticvue
 ```
 
 # Run
