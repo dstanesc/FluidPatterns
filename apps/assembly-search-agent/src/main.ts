@@ -132,16 +132,18 @@ const modifyElasticSearch = (elasticDocument: ElasticDocument) => {
   const toIndex = {
     index: "plexus-materialized-view",
     id: elasticDocument.id,
-    body: elasticDocument
+    body: {
+      doc: elasticDocument
+    }
   };
 
   elasticSearchClient.exists({
     index: "plexus-materialized-view",
     id: elasticDocument.id
   }).then(exists => {
-    //console.log(`Exists check =${JSON.stringify(exists, null, 2)}`);
+    console.log(`Exists check =${JSON.stringify(exists, null, 2)}`);
     if (exists.body) {
-      console.log(`Document found, actually updating`);
+      console.log(`Document found, actually updating \n${JSON.stringify(toIndex, null, 2)}`);
       elasticSearchClient.update(toIndex);
     }
   });
@@ -158,7 +160,7 @@ const answerQueries = () => {
       body: {
         query: {
           match: {
-            commentText: query.text
+            annotation: query.text
           }
         }
       }
