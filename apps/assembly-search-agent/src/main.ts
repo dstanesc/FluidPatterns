@@ -291,7 +291,7 @@ const initAgent = async () => {
 
   const trackerWorkspace: TrackerWorkspace = await createTrackerWorkspace(trackerContainerId);
 
-  tracker = trackerWorkspace.tree;
+  tracker = trackerWorkspace.tracker;
 
   if (!trackerContainerId) {
 

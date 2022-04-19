@@ -45,9 +45,9 @@ export default function App() {
 
     async function initWorkspace() {
 
-      const trackedTracker = createOneToOneTracking(containerId);
-      const tracked = await (await trackedTracker).tracked;
-      const tracker = await (await trackedTracker).tracker;
+      const trackedTracker = await createOneToOneTracking(containerId);
+      const tracked = await trackedTracker.tracked;
+      const tracker = await trackedTracker.tracker;
 
       // Update location
       if (tracked.containerId)
@@ -106,7 +106,7 @@ export default function App() {
       <button onClick={() => {   
     
 
-    const lastSquashedSeq=log.tree.getSeqAt(log.tree.length()-1);
+    const lastSquashedSeq=log.tracker.getSeqAt(log.tracker.length()-1);
     const remoteChanges = workspace.tree.remoteChanges;
     let firstUnsquashedRemoteIndex=-1;
     for(let i=0;i<remoteChanges.length;i++){
@@ -140,14 +140,14 @@ export default function App() {
         } 
         if(myPos!==-1 && myPos!==0) {
          
-          for(let i=log.tree.length()-1;i>=0;i--){
-            const currentHistSeq=log.tree.getSeqAt(i);
+          for(let i=log.tracker.length()-1;i>=0;i--){
+            const currentHistSeq=log.tracker.getSeqAt(i);
             if(myPos>=currentHistSeq){
-              const inverse = log.tree.getChangeAt(i).changeset;
+              const inverse = log.tracker.getChangeAt(i).changeset;
               inverse.toInverseChangeSet();
               const changes = inverse._changes;
               workspace.tree.root.applyChangeSet(changes);
-              const newPos = i===0?0:log.tree.getSeqAt(i-1);
+              const newPos = i===0?0:log.tracker.getSeqAt(i-1);
               console.log("miso13 newPos " + newPos);
               setPos(newPos);              
               break;
@@ -169,13 +169,13 @@ export default function App() {
           const rootProp: NodeProperty = log.rootProperty;
           
           let isApplied = false;
-          for(let i=0;i<log.tree.length();i++){
-            const currentHistSeq=log.tree.getSeqAt(i);
+          for(let i=0;i<log.tracker.length();i++){
+            const currentHistSeq=log.tracker.getSeqAt(i);
             if(pos<currentHistSeq){
-              const changeset =log.tree.getChangeAt(i).changeset;
+              const changeset =log.tracker.getChangeAt(i).changeset;
               const changes = changeset._changes;
               workspace.tree.root.applyChangeSet(changes);
-              const newPos = log.tree.getSeqAt(i);
+              const newPos = log.tracker.getSeqAt(i);
               console.log("miso15 newPos " + newPos);
               setPos(newPos);    
               isApplied = true;          
@@ -183,7 +183,7 @@ export default function App() {
             }
           }
           if(!isApplied){
-            const lastSquashedSeq=log.tree.getSeqAt(log.tree.length()-1);
+            const lastSquashedSeq=log.tracker.getSeqAt(log.tracker.length()-1);
             const remoteChanges = workspace.tree.remoteChanges;
             let firstUnsquashedRemoteIndex=-1
             for(let i=0;i<remoteChanges.length;i++){
@@ -226,7 +226,7 @@ export default function App() {
 
       <button onClick={() => {    
         const rootProp: NodeProperty = log.rootProperty;
-        const hist = log.tree.list();
+        const hist = log.tracker.list();
         for(let i=0;i < hist.length; i++){
           console.log("--------SQUASHED--------------");
           console.log("------------------------------------");

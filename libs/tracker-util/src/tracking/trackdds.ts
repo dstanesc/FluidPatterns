@@ -28,7 +28,7 @@ export interface Tracker {
 export class TrackedPropertyTree extends SharedPropertyTree {
 
     
-    private static _tracker: Map<string,Tracker>=new Map<string,Tracker>();
+    private static _trackers: Map<string,Tracker[]>=new Map<string,Tracker[]>();
     
     public static readonly TRACKER_INFO_PROP_PATH = "Tracker_DDS"    
     public static readonly MY_ID_PROP_PATH = "MyId"
@@ -47,11 +47,20 @@ export class TrackedPropertyTree extends SharedPropertyTree {
 		return new TrackedPropertyTreeFactory();
 	}
 
-    public getTrackerInfo(): string|undefined {
+    public getTrackerInfo(): string[]|undefined {
         let trackerContainerProp = this.root.resolvePath(TrackedPropertyTree.TRACKER_INFO_PROP_PATH);
         let trackerContainerInfo = trackerContainerProp?
-            (trackerContainerProp as StringProperty).value:undefined;
-        return trackerContainerInfo;
+            (trackerContainerProp as StringArrayProperty):undefined;
+         let ret:string[]=[];
+         if(trackerContainerProp){
+            let trackerContainerPropArray = (trackerContainerProp as StringArrayProperty);
+            for(let i=0;i<trackerContainerPropArray.length;i++){
+                ret.push(trackerContainerPropArray.get(i));
+            }
+         }
+         else {
+             return undefined;
+         }
     }
     
 
@@ -67,16 +76,21 @@ export class TrackedPropertyTree extends SharedPropertyTree {
 
 
     public static registerTrackerMethod(containerId, tracker){
-        TrackedPropertyTree._tracker.set(containerId,tracker);
+        let trackers=TrackedPropertyTree._trackers.get(containerId);
+        if(trackers===undefined){
+            trackers=[];
+            TrackedPropertyTree._trackers.set(containerId,trackers);
+        }
+        trackers.push(tracker);
     }
 
-    public init(trackerInfo: string, containerId: string){
+    public saveTracking(onetrackerInfo: string, containerId: string){
         let trackerInfoProp: StringProperty = this.root.resolvePath(TrackedPropertyTree.TRACKER_INFO_PROP_PATH);
         if(!trackerInfoProp){
           trackerInfoProp =  PropertyFactory.create("String","single") as StringProperty;
           this.root.insert(TrackedPropertyTree.TRACKER_INFO_PROP_PATH,trackerInfoProp);
         }
-        trackerInfoProp.value = trackerInfo;
+        trackerInfoProp.value = onetrackerInfo;
         let myIdProp: StringProperty = this.root.resolvePath(TrackedPropertyTree.MY_ID_PROP_PATH);
         if(!myIdProp){
             myIdProp =  PropertyFactory.create("String","single") as StringProperty;
@@ -102,7 +116,10 @@ export class TrackedPropertyTree extends SharedPropertyTree {
         ); 
 
         if(prop.myId){
-            TrackedPropertyTree._tracker.get(prop.myId).processChanges(prop,origResult.remoteChanges);
+            const trackers = TrackedPropertyTree._trackers.get(prop.myId);
+            if(trackers){
+                trackers.forEach((tracker)=>tracker.processChanges(prop,origResult.remoteChanges));
+            }            
         }    
         return origResult;
     }
