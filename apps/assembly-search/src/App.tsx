@@ -53,7 +53,7 @@ import {
 import { UserComment } from '@dstanesc/comment-util';
 import { QueryResult } from '@dstanesc/plexus-util/dist/plexusApi';
 import { Link } from 'react-router-dom';
-
+import { parse, SearchParserResult, SearchParserOptions, SearchParserOffset, ISearchParserDictionary } from 'search-query-parser';
 
 const plexusServiceName: string = "local-plexus-service"
 
@@ -74,7 +74,7 @@ function Result(props: any) {
     const authoringLink = `http://localhost:3003/#${props.queryResult.containerId}`;
     window.open(authoringLink)
   };
-  
+
   return (
     <div className="anno">
       <span>ContainerId: <Button onClick={goAuthor} className="anno">{props.queryResult.containerId}</Button></span><br />
@@ -174,8 +174,12 @@ export default function App() {
 
   const sendQuery = (queryText: string) => {
     setSearchShow(false);
+    const languageSpec =  {keywords: ["id", "color"], ranges: ['x', 'y', 'width', 'height'], "offsets":false, "tokenize":false, "alwaysArray":false}
+    const parsedQuery = parse(queryText, languageSpec);
+    const parsedQueryString = JSON.stringify(parsedQuery, null, 2);
+    console.log(`Parsed query:\n${parsedQueryString}`);
     const queryLog: MapProperty = retrieveMapProperty(plexusWorkspace.current, Topics.QUERY_LOG);
-    queryId.current = appendQueryProperty(queryText, queryLog);
+    queryId.current = appendQueryProperty(parsedQueryString, queryLog);
     queryResults.current = [];
     plexusWorkspace.current.commit();
   }
@@ -208,7 +212,7 @@ export default function App() {
           value={searchText}
           color="success"
           onChange={e => setSearchText(e.target.value)}
-        /> <br/>
+        /> <br />
         <Button variant="contained" size="large" color="success" onClick={handleSendQuery}>
           Search
         </Button>
