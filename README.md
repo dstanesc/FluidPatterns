@@ -35,7 +35,7 @@ npm run build
 - [Lightweight Concurrent Editing Notification](./apps/concurrent-editing-notification-light/)
 - [Concurrent Editing Notification](./apps/concurrent-editing-notification/)
 
-## Materialized View Support
+## Search Support
 
 >Note: Work in progress!!! Current status is __draft__.
 
@@ -45,12 +45,12 @@ Main documentation [page](./apps/assembly-authoring-tracked/)
 
 - Apps
   - [Plexus Nameservice Agent](./apps/plexus-nameservice-agent/)
-  - [Plexus Service Agent](./apps/plexus-service-agent/)
+  - [Assembly Search Agent](./apps/assembly-search-agent/)
   - [Assembly Authoring](./apps/assembly-authoring-tracked/)
-  - [Assembly Search](./apps/comment-search/)
+  - [Assembly Search](./apps/assembly-search/)
 
 - Libs
-  - [Comment Util](./libs/assembly-util/)
+  - [Assembly Util](./libs/assembly-util/)
   - [Plexus Util](./libs/plexus-util/)
   - [Fluid Util 2](./libs/fluid-util2/)
 
