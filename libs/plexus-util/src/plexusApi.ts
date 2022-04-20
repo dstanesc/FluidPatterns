@@ -17,41 +17,42 @@ export interface QueryResult {
     commentId: string;
     sequenceNumber: number;
     commentText: string
-    
+
 }
 
 export enum Topics {
     REGISTRY_LOG = "registryLog",
     QUERY_LOG = "queryLog",
     QUERY_RESULT_LOG = "queryResultLog",
+    OFFSETS = "offsets"
 }
 
-export async function checkPlexusNameservice(plexusService: string){
+export async function checkPlexusNameservice(plexusService: string) {
 
     try {
-      console.log(`Check plexus container available for ${plexusService}`);
-      const resp = await axios.get(`http://localhost:3030/${plexusService}`);
-      console.log(`${resp.data}`);
-      return resp.data;
+        console.log(`Check plexus container available for ${plexusService}`);
+        const resp = await axios.get(`http://localhost:3030/${plexusService}`);
+        console.log(`${resp.data}`);
+        return resp.data;
     } catch (err) {
-      // Handle Error Here
-      //console.error(err);
-      console.log(`Plexus container NOT available`);
-      return undefined;
+        // Handle Error Here
+        //console.error(err);
+        console.log(`Plexus container NOT available`);
+        return undefined;
     }
-  }
-  
-  export async function updatePlexusNameservice(plexusService: string, containerId: string){
+}
+
+export async function updatePlexusNameservice(plexusService: string, containerId: string) {
     try {
-      const resp = await axios.put(`http://localhost:3030/${plexusService}/id/${containerId}`);
-      console.log(`${resp.data}`);
-      return resp.data;
+        const resp = await axios.put(`http://localhost:3030/${plexusService}/id/${containerId}`);
+        console.log(`${resp.data}`);
+        return resp.data;
     } catch (err) {
-      // Handle Error Here
-      console.error(err);
-      return undefined;
+        // Handle Error Here
+        console.error(err);
+        return undefined;
     }
-  }
+}
 
 
 export function retrieveMapProperty(workspace: SimpleWorkspace, topic: string): MapProperty {
@@ -59,6 +60,26 @@ export function retrieveMapProperty(workspace: SimpleWorkspace, topic: string): 
     return topicMapProperty;
 }
 
+export function retrieveMappedInt32(mapProperty: MapProperty, key: string): number {
+    const nestedProperty = mapProperty.getValue(key) as Int32Property;
+    return nestedProperty.getValue();
+}
+
+export function getOffset(workspace: SimpleWorkspace, key: string): number {
+    const offsetMapProperty: MapProperty = retrieveMapProperty(workspace, Topics.OFFSETS);
+    return retrieveMappedInt32(offsetMapProperty, key);
+}
+
+export function setOffset(workspace: SimpleWorkspace, key: string, offset: number){
+    const offsetMapProperty: MapProperty = retrieveMapProperty(workspace, Topics.OFFSETS);
+    const nestedProperty = offsetMapProperty.get(key) as Int32Property;
+    if(nestedProperty){
+        nestedProperty.setValue(offset);
+    } else {
+        const newNestedProperty =  PropertyFactory.create<Int32Property>("Int32", undefined, offset);
+        offsetMapProperty.set(key, newNestedProperty);
+    }
+}
 
 export function retrieveMappedTextProperty(mapProperty: MapProperty, key: string): StringProperty {
     const nestedProperty = mapProperty.getValue(key) as NamedProperty;
@@ -82,11 +103,11 @@ export function dispatchNestedTextProperty(workspace: SimpleWorkspace, topic: st
             const nestedIdProperty: StringProperty = nestedProperty.get("id") as StringProperty;
             const id = nestedIdProperty.getValue();
             const text = nestedTextProperty.getValue();
-            const plexusModel = {"key":id, "id": id, "text": text };
-            callback(plexusModelMap => { 
-                const resultMap = new Map<string, PlexusModel>(plexusModelMap); 
-                resultMap.set(id, plexusModel); 
-                return {"operationType": "insert", "result" :resultMap, "increment": plexusModel};; 
+            const plexusModel = { "key": id, "id": id, "text": text };
+            callback(plexusModelMap => {
+                const resultMap = new Map<string, PlexusModel>(plexusModelMap);
+                resultMap.set(id, plexusModel);
+                return { "operationType": "insert", "result": resultMap, "increment": plexusModel };;
             });
         });
     }
@@ -158,15 +179,22 @@ export function createInt32ArrayProperty(): NamedNodeProperty {
     return offsetArrayProperty;
 }
 
+export function createInt32MapProperty(): NamedNodeProperty {
+    const offsetMapProperty: NamedNodeProperty = PropertyFactory.create<NamedNodeProperty>("hex:int32Map-1.0.0");
+    return offsetMapProperty;
+}
+
 export function initPropertyTree(containerId: string | undefined, workspace: SimpleWorkspace, plexusListeners: PlexusListeners) {
     if (containerId === undefined) {
         const registryArray: NamedNodeProperty = createContainerMapProperty();
         const queryArray: NamedNodeProperty = createQueryMapProperty();
         const queryResultArray: NamedNodeProperty = createQueryResultMapProperty();
+        const offsetMapProperty: NamedNodeProperty = createInt32MapProperty();
         const rootProp: NodeProperty = workspace.rootProperty;
         rootProp.insert(Topics.REGISTRY_LOG, registryArray);
         rootProp.insert(Topics.QUERY_LOG, queryArray);
         rootProp.insert(Topics.QUERY_RESULT_LOG, queryResultArray);
+        rootProp.insert(Topics.OFFSETS, offsetMapProperty);
         workspace.commit();
     } else {
         dispatchNestedTextProperty(workspace, Topics.REGISTRY_LOG, plexusListeners.registryListener);

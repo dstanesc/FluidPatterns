@@ -10,12 +10,14 @@ import {
   queryResultMapSchema,
   queryResultSchema,
   querySchema,
+  int32MapSchema,
   PlexusModel,
   PlexusListenerResult,
   checkPlexusNameservice,
   updatePlexusNameservice,
-  appendQueryResultProperty
-
+  appendQueryResultProperty,
+  getOffset,
+  setOffset
 } from "@dstanesc/plexus-util";
 
 import {
@@ -49,6 +51,8 @@ import _ from "lodash"
 const plexusServiceAlias: string = "local-plexus-service";
 
 const trackerServiceAlias: string = "local-tracker-service";
+
+const searchAgentIdentity: string = "elastic-indexing-service-1";
 
 const elasticSearchClient = new Client({ node: 'http://elastic:9200' });
 
@@ -216,19 +220,19 @@ const answerQueries = () => {
 const poll = () => {
 
   if (tracker.length() > 0) {
-    
+
     for (let offset = trackerCursor; offset < tracker.length(); offset++) {
-      
+
       const changeEntry: ChangeEntry = tracker.getChangeAt(offset);
       const changeSet: ChangeSet = changeEntry.changeset;
       const containerId: string = changeEntry.trackedContainerId;
       const lastSeq: number = changeEntry.lastSeq;
       const serializedChangeSet: SerializedChangeSet = changeSet.getSerializedChangeSet();
-      
+
       console.log(`ChangeEntry received, cursor=${offset}, container=${containerId}, lastSeq=${lastSeq}, changeSet=${JSON.stringify(serializedChangeSet, null, 2)}`);
-      
+
       trackerCursor = offset + 1;
-      
+
       const { "inserted": inserted, "modified": modified } = parseChangeSet(serializedChangeSet);
 
       inserted.forEach(component => {
@@ -252,6 +256,7 @@ const initAgent = async () => {
 
   console.log(out);
 
+  registerSchema(int32MapSchema);
   registerSchema(containerSchema);
   registerSchema(containerMapSchema);
   registerSchema(queryMapSchema);
@@ -310,9 +315,22 @@ const initAgent = async () => {
 }
 
 
-initAgent().then(boundWorkspace => {
+const initOffset = (plexusWorkspace: SimpleWorkspace) => {
 
-  const dataBinder = boundWorkspace.dataBinder;
+  try {
+    trackerCursor = getOffset(plexusWorkspace, searchAgentIdentity);
+    console.log(`Offset retrieved and set to ${trackerCursor}`);
+  } catch (error) {
+    setOffset(plexusWorkspace, searchAgentIdentity, 0);
+    plexusWorkspace.commit;
+    console.log(`Offset initialized to 0`);
+  }
+}
+
+
+initAgent().then(plexusWorkspace => {
+
+  initOffset(plexusWorkspace);
 
   const out = figlet.textSync('Fluid Plexus Started', {
     font: 'Standard'

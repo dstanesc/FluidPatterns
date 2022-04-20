@@ -29,6 +29,7 @@ import {
   queryResultMapSchema,
   queryResultSchema,
   querySchema,
+  int32MapSchema,
   Topics,
   appendQueryProperty,
   configureBinding as configurePlexusBinding,
@@ -124,7 +125,7 @@ export default function App() {
   }, []); // [] to be executed only once
 
   async function initPlexusWorkspace() {
-
+    registerSchema(int32MapSchema);
     registerSchema(containerSchema);
     registerSchema(containerMapSchema);
     registerSchema(queryMapSchema);
