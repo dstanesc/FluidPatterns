@@ -10,16 +10,6 @@ import { SerializedChangeSet } from "@fluid-experimental/property-changeset";
 import axios from "axios";
 
 
-export interface QueryResult {
-    index: number;
-    score: number;
-    containerId: string;
-    commentId: string;
-    sequenceNumber: number;
-    commentText: string
-
-}
-
 export enum Topics {
     REGISTRY_LOG = "registryLog",
     QUERY_LOG = "queryLog",

@@ -38,35 +38,11 @@ import {
   PlexusListenerResult
 } from "@dstanesc/plexus-util";
 
-import { commentSchema } from "@dstanesc/comment-util";
-
-import { commentThreadSchema } from "@dstanesc/comment-util";
-
-import {
-  retrieveArrayProperty as retrieveCommentArrayProperty,
-  retrieveCommentTextProperty,
-  createCommentProperty,
-  initPropertyTree,
-  configureBinding as configureCommentBinding
-} from "@dstanesc/comment-util";
-
-import { UserComment } from '@dstanesc/comment-util';
-import { QueryResult } from '@dstanesc/plexus-util/dist/plexusApi';
-import { Link } from 'react-router-dom';
+import { AssemblyQueryResult } from '@dstanesc/assembly-util';
 import { parse, SearchParserResult, SearchParserOptions, SearchParserOffset, ISearchParserDictionary } from 'search-query-parser';
 
 const plexusServiceName: string = "local-plexus-service"
 
-
-
-// QueryResult {
-//   index: number;
-//   score: number;
-//   containerId: string;
-//   commentId: string;
-//   sequenceNumber: number;
-//   commentText: string
-// }
 
 function Result(props: any) {
 
@@ -78,13 +54,16 @@ function Result(props: any) {
   return (
     <div className="anno">
       <span>ContainerId: <Button onClick={goAuthor} className="anno">{props.queryResult.containerId}</Button></span><br />
-      <span>CommentId: {props.queryResult.commentId}</span><br />
+      <span>ComponentId: {props.queryResult.id}</span><br />
       <span>Index: {props.queryResult.index}</span><br />
       <span>SequentialNo:{props.queryResult.sequenceNumber}</span><br />
       <span>Score: {props.queryResult.score}</span><br />
-      <button className="comment">
-        {props.queryResult.commentText}
-      </button>
+      <span>Annotation: {props.queryResult.annotation}</span><br />
+      <span>Fill: {props.queryResult.fill}</span><br />
+      <span>x: {props.queryResult.x}</span><br />
+      <span>y: {props.queryResult.y}</span><br />
+      <span>width: {props.queryResult.width}</span><br />
+      <span>height: {props.queryResult.height}</span><br />
     </div>
   );
 }
@@ -163,7 +142,7 @@ export default function App() {
       .filter(result => result.id === queryId.current)
       .map(result => {
         console.log(`Received query result \n${result.text}`);
-        const queryResult: QueryResult = JSON.parse(result.text);
+        const queryResult: AssemblyQueryResult = JSON.parse(result.text);
         return queryResult;
       });
 
@@ -174,7 +153,7 @@ export default function App() {
 
   const sendQuery = (queryText: string) => {
     setSearchShow(false);
-    const languageSpec =  {keywords: ["id", "color"], ranges: ['x', 'y', 'width', 'height'], "offsets":false, "tokenize":false, "alwaysArray":false}
+    const languageSpec =  {keywords: ["id", "fill"], ranges: ['x', 'y', 'width', 'height'], "offsets":false, "tokenize":false, "alwaysArray":false}
     const parsedQuery = parse(queryText, languageSpec);
     const parsedQueryString = JSON.stringify(parsedQuery, null, 2);
     console.log(`Parsed query:\n${parsedQueryString}`);

@@ -33,6 +33,10 @@ import {
   TrackedPropertyTree
 } from "@dstanesc/tracker-util";
 
+import {
+  AssemblyQueryResult
+} from "@dstanesc/assembly-util";
+
 import { SimpleWorkspace, createSimpleWorkspace, registerSchema } from "@dstanesc/fluid-util2";
 import { AssemblyComponent, parseChangeSet } from "@dstanesc/assembly-util";
 import { DataBinder } from "@fluid-experimental/property-binder";
@@ -43,7 +47,6 @@ import { v4 as uuidv4 } from 'uuid';
 import { IPropertyTreeMessage, IRemotePropertyTreeMessage, SerializedChangeSet, SharedPropertyTree } from "@fluid-experimental/property-dds";
 import jp from "jsonpath";
 import { Client } from "@elastic/elasticsearch";
-import { QueryResult } from "@dstanesc/plexus-util/dist/plexusApi";
 import { ChangeSet } from "@fluid-experimental/property-changeset";
 import _ from "lodash"
 
@@ -159,51 +162,189 @@ const answerQueries = () => {
 
     console.log(`Answering query ${uid} ${query.text}`);
 
+    const parsedQuery = JSON.parse(query.text);
+
+    // {
+    //   "anno": "yello fella",
+    //   "color": "blue",
+    //   "id": "rect1",
+    //   "x": {
+    //     "from": "100",
+    //     "to": "200"
+    //   },
+    //   "y": {
+    //     "from": "100",
+    //     "to": "200"
+    //   },
+    //   "width": {
+    //     "from": "100",
+    //     "to": "200"
+    //   },
+    //   "height": {
+    //     "from": "100",
+    //     "to": "200"
+    //   },
+    //   "exclude": {}
+    // }
+
+    console.log(`Parsed Query\n${query.text}`);
+
+    let queryMust = [];
+
+    if (typeof parsedQuery === "object" && parsedQuery !== null) {
+      // is JSON
+
+      if (parsedQuery.text) {
+        queryMust.push({ "match": { "annotation": parsedQuery.text } });
+      }
+
+      if (parsedQuery.id) {
+        queryMust.push({ "term": { "id": parsedQuery.id } });
+      }
+
+      if (parsedQuery.fill) {
+        queryMust.push({ "term": { "fill": parsedQuery.fill } });
+      }
+
+      if (parsedQuery.x) {
+        queryMust.push({ "range": { "x": { "gte": parsedQuery.x.from, "lte": parsedQuery.x.to } } });
+      }
+
+      if (parsedQuery.y) {
+        queryMust.push({ "range": { "y": { "gte": parsedQuery.y.from, "lte": parsedQuery.y.to } } });
+      }
+
+      if (parsedQuery.width) {
+        queryMust.push({ "range": { "width": { "gte": parsedQuery.width.from, "lte": parsedQuery.width.to } } });
+      }
+
+      if (parsedQuery.height) {
+        queryMust.push({ "range": { "height": { "gte": parsedQuery.height.from, "lte": parsedQuery.height.to } } });
+      }
+    } else {
+      // is text
+      queryMust.push({ "match": { "annotation": parsedQuery } });
+    }
+
+    // {
+    //   "query": {
+    //     "bool": {
+    //       "must": [
+    //         {
+    //           "match": {
+    //             "annotation": "yello"
+    //           }
+    //         },
+    //         {
+    //           "term": {
+    //             "id": "rect1"
+    //           }
+    //         },
+    //         {
+    //           "range": {
+    //             "x": {
+    //               "gte": 100,
+    //               "lte": 500
+    //             }
+    //           }
+    //         },
+    //         {
+    //           "range": {
+    //             "y": {
+    //               "gte": 10,
+    //               "lte": 500
+    //             }
+    //           }
+    //         },
+    //         {
+    //           "range": {
+    //             "width": {
+    //               "lte": 500
+    //             }
+    //           }
+    //         },
+    //         {
+    //           "range": {
+    //             "height": {
+    //               "gte": 100
+    //             }
+    //           }
+    //         }
+    //       ]
+    //     }
+    //   }
+    // }
+
+    const queryMustString = JSON.stringify(queryMust, null, 2);
+
+    console.log(`Elastic Query\n${queryMustString}`);
+
     const { body } = await elasticSearchClient.search({
       index: 'plexus-materialized-view',
       body: {
         query: {
-          match: {
-            annotation: query.text
+          bool: {
+            must: queryMust
           }
         }
       }
     });
 
-
+    // {
+    //   "took": 4,
+    //   "timed_out": false,
+    //   "_shards": {
+    //     "total": 1,
+    //     "successful": 1,
+    //     "skipped": 0,
+    //     "failed": 0
+    //   },
     //   "hits": {
     //     "total": {
-    //       "value": 2,
+    //       "value": 1,
     //       "relation": "eq"
     //     },
-    //     "max_score": 0.5981865,
+    //     "max_score": 5.568616,
     //     "hits": [
     //       {
     //         "_index": "plexus-materialized-view",
     //         "_type": "_doc",
-    //         "_id": "0e5b78b9-c7b6-413b-b9fb-4196a29c3ebe",
-    //         "_score": 0.5981865,
+    //         "_id": "rect1",
+    //         "_score": 5.568616,
     //         "_source": {
-    //           "containerId": "1eecdc4d-71c4-4b1c-927a-864d05b64e43",
-    //           "commentId": "0e5b78b9-c7b6-413b-b9fb-4196a29c3ebe",
-    //           "sequenceNumber": 17,
-    //           "commentText": "We should try again and again"
+    //           "containerId": "936db22d-ed9e-47a3-896b-5c9a882185ec",
+    //           "sequenceNumber": 10,
+    //           "id": "rect1",
+    //           "annotation": "Yello fella",
+    //           "fill": "#eeff41",
+    //           "x": 451,
+    //           "y": 69,
+    //           "width": 105,
+    //           "height": 124
     //         }
     //       }
     //     ]
     //   }
     // }
+
     const resultArray = body.hits.hits;
 
     resultArray.forEach((result, i) => {
+
       const source = result._source;
-      const queryResult: QueryResult = {
+
+      const queryResult: AssemblyQueryResult = {
         index: i,
         score: result._score,
         containerId: source.containerId,
-        commentId: source.commentId,
         sequenceNumber: source.sequenceNumber,
-        commentText: source.commentText
+        id: source.id,
+        annotation: source.annotation,
+        fill: source.fill,
+        x: source.x,
+        y: source.y,
+        width: source.width,
+        height: source.height
       };
 
       const queryResultString = JSON.stringify(queryResult, null, 2);
@@ -213,6 +354,7 @@ const answerQueries = () => {
       sendQueryResult(uid, queryResultString);
 
     });
+
     queryLog.delete(uid);
   });
 }
