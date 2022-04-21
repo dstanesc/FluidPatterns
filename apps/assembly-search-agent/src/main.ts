@@ -109,6 +109,10 @@ const queryResultReceived = (fn: any) => {
   // ignore callback
 }
 
+const getUniqueIdentity = (elasticDocument: ElasticDocument) => {
+
+  return elasticDocument.containerId + "--" +elasticDocument.id;
+}
 
 const insertElasticSearch = (elasticDocument: ElasticDocument) => {
 
@@ -116,13 +120,13 @@ const insertElasticSearch = (elasticDocument: ElasticDocument) => {
 
   const toIndex = {
     index: "plexus-materialized-view",
-    id: elasticDocument.id,
+    id: getUniqueIdentity(elasticDocument),
     body: elasticDocument
   };
 
   elasticSearchClient.exists({
     index: "plexus-materialized-view",
-    id: elasticDocument.id
+    id: getUniqueIdentity(elasticDocument)
   }).then(exists => {
     //console.log(`Exists check =${JSON.stringify(exists, null, 2)}`);
     if (!exists.body) {
@@ -138,7 +142,7 @@ const modifyElasticSearch = (elasticDocument: ElasticDocument) => {
 
   const toIndex = {
     index: "plexus-materialized-view",
-    id: elasticDocument.id,
+    id: getUniqueIdentity(elasticDocument),
     body: {
       doc: elasticDocument
     }
@@ -146,7 +150,7 @@ const modifyElasticSearch = (elasticDocument: ElasticDocument) => {
 
   elasticSearchClient.exists({
     index: "plexus-materialized-view",
-    id: elasticDocument.id
+    id: getUniqueIdentity(elasticDocument)
   }).then(exists => {
     console.log(`Exists check =${JSON.stringify(exists, null, 2)}`);
     if (exists.body) {
@@ -360,6 +364,8 @@ const answerQueries = () => {
 }
 
 const poll = () => {
+
+  console.log(`Polling cursor=${trackerCursor} length=${tracker.length()}`);
 
   if (tracker.length() > 0) {
 
