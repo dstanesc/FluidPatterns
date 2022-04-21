@@ -65,7 +65,6 @@ import {
 
 import {
     registerSchema,
-    createSimpleWorkspace,
     SimpleWorkspace
 } from "@dstanesc/fluid-util2";
 

@@ -51,20 +51,39 @@ function Result(props: any) {
     window.open(authoringLink)
   };
 
+  const imgDivStyle = {
+    width: props.queryResult.width + 'px',
+    height: props.queryResult.height + 'px',
+    // border: '4px solid',
+    background: props.queryResult.fill,
+    borderRadius: "10px",
+    cursor: "pointer",
+    boxShadow: "10px 10px 10px"
+  }
+
+  const dataDivStyle = {
+
+  }
+
   return (
-    <div className="anno">
-      <span>ContainerId: <Button onClick={goAuthor} className="anno">{props.queryResult.containerId}</Button></span><br />
-      <span>ComponentId: {props.queryResult.id}</span><br />
-      <span>Index: {props.queryResult.index}</span><br />
-      <span>SequentialNo:{props.queryResult.sequenceNumber}</span><br />
-      <span>Score: {props.queryResult.score}</span><br />
-      <span>Annotation: {props.queryResult.annotation}</span><br />
-      <span>Fill: {props.queryResult.fill}</span><br />
-      <span>x: {props.queryResult.x}</span><br />
-      <span>y: {props.queryResult.y}</span><br />
-      <span>width: {props.queryResult.width}</span><br />
-      <span>height: {props.queryResult.height}</span><br />
-    </div>
+    <table className="anno">
+      <tbody>
+        <tr><td colSpan={2}><b>ContainerId:</b> <Button onClick={goAuthor} className="anno">{props.queryResult.containerId}</Button></td></tr>
+        <tr><td><div style={imgDivStyle} onClick={goAuthor}></div></td>
+          <td><div style={dataDivStyle}>
+            <span><b>ComponentId:</b> {props.queryResult.id}</span><br />
+            <span><b>Index:</b> {props.queryResult.index}</span><br />
+            <span><b>SequentialNo:</b>{props.queryResult.sequenceNumber}</span><br />
+            <span><b>Score:</b> {props.queryResult.score}</span><br />
+            <span><b>Annotation:</b> {props.queryResult.annotation}</span><br />
+            <span><b>Fill:</b> {props.queryResult.fill}</span><br />
+            <span><b>x:</b> {props.queryResult.x}</span><br />
+            <span><b>y:</b> {props.queryResult.y}</span><br />
+            <span><b>width:</b> {props.queryResult.width}</span><br />
+            <span><b>height:</b> {props.queryResult.height}</span><br />
+          </div></td></tr>
+      </tbody>
+    </table>
   );
 }
 
@@ -153,7 +172,7 @@ export default function App() {
 
   const sendQuery = (queryText: string) => {
     setSearchShow(false);
-    const languageSpec =  {keywords: ["id", "fill"], ranges: ['x', 'y', 'width', 'height'], "offsets":false, "tokenize":false, "alwaysArray":false}
+    const languageSpec = { keywords: ["id", "fill"], ranges: ['x', 'y', 'width', 'height'], "offsets": false, "tokenize": false, "alwaysArray": false }
     const parsedQuery = parse(queryText, languageSpec);
     const parsedQueryString = JSON.stringify(parsedQuery, null, 2);
     console.log(`Parsed query:\n${parsedQueryString}`);
@@ -168,6 +187,12 @@ export default function App() {
     sendQuery(searchText);
   };
 
+  const handleEnterKey = (event) => {
+    if (event.key === 'Enter') {
+      handleSendQuery();
+    }
+  };
+
   function showResults() {
 
     if (searchShow) {
@@ -180,21 +205,24 @@ export default function App() {
   return (
     <div>
       <br /><br /><br />
-      <div className="center">
+      <div className="left">
         <TextField
           autoFocus
           margin="normal"
           id="text"
-          label="Enter your search here"
+          label="Assembly Component Search"
           type="text"
           variant="outlined"
           value={searchText}
-          color="success"
+          color="primary"
           onChange={e => setSearchText(e.target.value)}
-        /> <br />
-        <Button variant="contained" size="large" color="success" onClick={handleSendQuery}>
+          onKeyUp={handleEnterKey}
+          InputProps={{ style: { fontSize: 32 } }}
+          InputLabelProps={{ style: { fontSize: 18 } }}
+        />
+        {/* <Button variant="contained" size="large" color="success" onClick={handleSendQuery}>
           Search
-        </Button>
+        </Button> */}
       </div>
       <br /><br /><br />
       {showResults()}

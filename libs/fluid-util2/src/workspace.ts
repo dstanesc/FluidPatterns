@@ -81,7 +81,7 @@ export async function createSimpleWorkspace(containerId: string | undefined, log
         containerId = await containerAndServices.container.attach();
     } else {
         containerAndServices = await client.getContainer(containerId, containerSchema);
-        waitForFullyLoaded("root", containerAndServices.container);
+        waitForFullyLoaded(containerAndServices.container);
     }
 
     const sharedTree = containerAndServices.container.initialObjects.tree as SharedPropertyTree;
@@ -94,21 +94,21 @@ export async function createSimpleWorkspace(containerId: string | undefined, log
 }
 
 
-function waitForFullyLoaded(userId: string, container: IFluidContainer) {
-    // Ensure container data available
-    const sharedTree = container.initialObjects.tree as SharedPropertyTree;
-    sharedTree.commit({ userId, timestamp: Date.now() }, true);
-    return new Promise((resolve) =>
-        container.once("saved", () => resolve(undefined))
-    );
-}
-
-
-// function waitForFullyLoaded(container: IFluidContainer) {
-//     if (container.connected) {
-//         return;
-//     }
+// function waitForFullyLoaded(userId: string, container: IFluidContainer) {
+//     // Ensure container data available
+//     const sharedTree = container.initialObjects.tree as SharedPropertyTree;
+//     sharedTree.commit({ userId, timestamp: Date.now() }, true);
 //     return new Promise((resolve) =>
-//         container.once("connected", () => resolve(undefined))
+//         container.once("saved", () => resolve(undefined))
 //     );
 // }
+
+
+function waitForFullyLoaded(container: IFluidContainer) {
+    if (container.connected) {
+        return;
+    }
+    return new Promise((resolve) =>
+        container.once("connected", () => resolve(undefined))
+    );
+}

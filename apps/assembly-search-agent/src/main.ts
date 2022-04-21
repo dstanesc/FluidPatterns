@@ -412,6 +412,8 @@ const initAgent = async () => {
   // Initialize the workspace
   const simpleWorkspace: SimpleWorkspace = await createSimpleWorkspace(plexusContainerId);
 
+  console.log(`Plexus workspace created`);
+
   const dataBinder: DataBinder = simpleWorkspace.dataBinder;
 
   plexusWorkspace = simpleWorkspace;
@@ -436,9 +438,15 @@ const initAgent = async () => {
     await updatePlexusNameservice(plexusServiceAlias, simpleWorkspace.containerId);
   }
 
+  console.log(`Check Plexus Nameservice for ${trackerServiceAlias}`);
+
   const trackerContainerId: string | undefined = await checkPlexusNameservice(trackerServiceAlias);
 
+  console.log(`Found trackerContainerId is ${trackerContainerId}`);
+
   const trackerWorkspace: TrackerWorkspace = await createTrackerWorkspace(trackerContainerId);
+
+  console.log(`TrackerWorkspace created for ${trackerWorkspace.containerId}`);
 
   tracker = trackerWorkspace.tree;
 

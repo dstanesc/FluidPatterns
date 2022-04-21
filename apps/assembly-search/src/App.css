@@ -2,7 +2,7 @@
 
 .anno {
     font-size: 20px; 
-    color: black; 
+    color: rgba(0, 0, 0, 0.8); 
     margin: 8px 8px;
 }
 .comment {
@@ -21,4 +21,9 @@
 .center {
     margin: auto;
     width: 50%;
+}
+
+.left {
+    width: 100%;
+    padding-left: 20px;
 }
