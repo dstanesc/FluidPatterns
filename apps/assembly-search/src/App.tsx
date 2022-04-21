@@ -47,7 +47,7 @@ const plexusServiceName: string = "local-plexus-service"
 function Result(props: any) {
 
   const goAuthor = () => {
-    const authoringLink = `http://localhost:3003/#${props.queryResult.containerId}`;
+    const authoringLink = `http://localhost:3003/?highlight=${props.queryResult.id}#${props.queryResult.containerId}`;
     window.open(authoringLink)
   };
 
@@ -62,7 +62,7 @@ function Result(props: any) {
   }
 
   const dataDivStyle = {
-
+    paddingLeft: "30px"
   }
 
   return (

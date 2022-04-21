@@ -61,7 +61,7 @@ import {
     appendQueryProperty,
     configureBinding as configurePlexusBinding,
     checkPlexusNameservice
-  } from "@dstanesc/plexus-util";
+} from "@dstanesc/plexus-util";
 
 import {
     registerSchema,
@@ -106,6 +106,7 @@ function Rectangle(props: any) {
             onMouseEnter={props.onMouseEnter}
             onMouseLeave={props.onMouseLeave}
             onClick={props.onClick}
+            opacity={props.opacity}
         />
     );
 }
@@ -115,7 +116,7 @@ function sleep(ms: number): Promise<void> {
 }
 
 export class SummaryTrigger implements ITelemetryBaseLogger {
-    
+
     callback: Function;
 
     constructor(callback: Function) {
@@ -124,8 +125,7 @@ export class SummaryTrigger implements ITelemetryBaseLogger {
 
     send(event: ITelemetryBaseEvent) {
         console.log(`Custom telemetry object array: ${JSON.stringify(event, null, 2)}`);
-        if (event.eventName === "fluid:telemetry:Summarizer:Running:Summarize_end") 
-        {
+        if (event.eventName === "fluid:telemetry:Summarizer:Running:Summarize_end") {
             this.callback();
         }
     }
@@ -143,6 +143,8 @@ export default function App() {
 
     const containerId = window.location.hash.substring(1) || undefined;
 
+    const queryParamsString = window.location.search;
+
     const workspace = useRef<TrackedWorkspace>(null);
 
     const [localComponents, setLocalComponents] = useState<AssemblyComponent[]>([]);
@@ -154,7 +156,7 @@ export default function App() {
     const [visible, setVisible] = useState({
         local: true,
         localChanges: false,
-        annotations: false,
+        annotations: true,
         merge: false,
         remote: false,
         remoteChanges: false,
@@ -173,6 +175,8 @@ export default function App() {
     const [mergeComponents, setMergeComponents] = useState<Conflict[]>([]);
 
     const [displayData, setDisplayData] = useState<Map<string, Compare[]>>(new Map());
+
+    const urlSearchParams = new URLSearchParams(queryParamsString);
 
 
     /*
@@ -245,7 +249,7 @@ export default function App() {
         const simpleWorkspace: SimpleWorkspace = await createTrackedWorkspace(localWorkspace.containerId);
 
         initPropertyTree(false, simpleWorkspace, setRemoteComponents);
-        
+
         configureAssemblyBinding(simpleWorkspace.dataBinder, simpleWorkspace, "remote", setRemoteComponents);
 
         return simpleWorkspace;
@@ -443,6 +447,7 @@ export default function App() {
                         return pointer;
                     }
 
+                    let highlight = urlSearchParams.has("highlight") ? { stroke: "black", strokeWidth: 4 } : {};
 
                     let decoration = remoteChanges.has(rect.id) ? { stroke: "blue", strokeWidth: 4 } : {};
 
@@ -450,8 +455,9 @@ export default function App() {
                         decoration.stroke = "red";
                     }
 
-                    const decorated = Object.assign(decoration, rect);
+                    const decorated = _.isEmpty(highlight) ? Object.assign(decoration, rect) : urlSearchParams.get("highlight") === rect.id ? Object.assign(highlight, rect) : Object.assign(decoration, rect);
 
+                    const opacityValue = _.isEmpty(highlight) ? 1 : urlSearchParams.get("highlight") === rect.id ? 1 : 0.5;
 
                     return (
                         <Group>
@@ -471,6 +477,7 @@ export default function App() {
                                     container.style.cursor = "default";
                                 }}
                                 onClick={showAnnotationDialog}
+                                opacity={opacityValue}
                             />
                             <Label
                                 visible={visible.annotations && rect.annotation.length > 0}
