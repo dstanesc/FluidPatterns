@@ -27,7 +27,7 @@ npm run build
 
 ## Configure
 
-Add elastic, kibana entries to `/etc/hosts`
+Add elastic, elasticvue entries to `/etc/hosts`
 
 ```sh
 127.0.0.1       localhost
@@ -47,7 +47,7 @@ npx tinylicious
 2. Start _Elastic Search Database_ 
 
 ```sh
-cd FluidPatterns
+cd FluidPatterns/apps/assembly-search-agent
 docker-compose up
 ```
 
