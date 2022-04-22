@@ -1,0 +1,61 @@
+
+
+.evolvable {
+    min-height: 50%; 
+    font-size: 16px; 
+    color: red; 
+    text-align: left; 
+    cursor: pointer; 
+}
+
+
+.evotable{
+    min-height: 100%; 
+    min-width: 10%;
+    font-size: 20px; 
+    color: darkblue;     
+    text-align: left; 
+    cursor: pointer; 
+    border-color: black;
+}
+
+.commit {
+    min-height: 50%; 
+    font-size: 50px; 
+    color: darkblue;
+    text-align: left; 
+    cursor: pointer; 
+    border: 1px solid;
+}
+
+th, .attrcell, .typecell {    
+    border: 3px solid;
+    border-color: black;
+    min-width: 40px;
+  }
+
+  button {    
+    font-size: 20px; 
+    font-weight: bold;
+    color: darkblue;
+  }  
+
+  .attrcell {
+    color: darkblue;   
+    text-align: left; 
+      
+  }  
+
+  .typecell {
+    min-width: 60px;
+    font-size: 60px; 
+    font-weight: bold;
+    color: red;   
+    text-align: center; 
+      
+  }  
+
+  th {    
+    color: darkcyan; 
+    text-align: center; 
+  }  
