@@ -467,9 +467,9 @@ const initAgent = async () => {
     await updatePlexusNameservice(trackerServiceAlias, trackerWorkspace.containerId);
   }
 
-  setInterval(poll, 3000);
+  setInterval(poll, 1000);
 
-  setInterval(answerQueries, 3000);
+  setInterval(answerQueries, 1000);
 
   return simpleWorkspace;
 }
