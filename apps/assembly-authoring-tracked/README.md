@@ -107,7 +107,7 @@ Collaborative authoring session outcome is continously persisted.
 
 # Search Langauge
 
-Search is possible when sessions are active (interactive search) and also long after their completion (analytics, forensics, etc. - assembly / compoenet versioning is for sure the next important ingidient but out of scope for current investigation).  For simplicity and expressiveness our demo offers however a mini search language allowing:
+Search is possible when sessions are active (interactive search) and also long after their completion (analytics, forensics, etc. - assembly / componenet versioning is for sure the next important ingidient but out of scope for the current investigation).  For simplicity and expressiveness our demo offers however a mini search language allowing:
 
 __Range filters__ for  `x, y, width, height`, eg.:
 
