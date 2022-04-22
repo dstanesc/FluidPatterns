@@ -11,30 +11,18 @@ import { EvolvableRenderer } from './evolvableRenderer';
 import { Evolvable } from './evolvable';
 import { EvolvableBinding } from './evolvableBinding';
 import {  Int32Property, NodeProperty, PropertyFactory, StringProperty, ValueProperty } from '@fluid-experimental/property-properties';
-import { createOneToOneTracking, TrackerWorkspace, TrackedWorkspace, SimpleWorkspace, DualWorkspace } from "./tracking/workspaces";
-import { ChangeSet } from '@fluid-experimental/property-changeset';
-import { IRemotePropertyTreeMessage } from '@fluid-experimental/property-dds';
-import {loggerToMonitoringContext} from '@fluidframework/telemetry-utils'
-import { ITelemetryBaseEvent, ITelemetryBaseLogger } from '@fluidframework/azure-client';
+import { createSimpleWorkspace, SimpleWorkspace} from "./tracking/workspaces";
+import { IPropertyTreeMessage, IRemotePropertyTreeMessage, SharedPropertyTree } from '@fluid-experimental/property-dds';
 
 
-function cloneChange(changeSet): ChangeSet {
-  return new ChangeSet(JSON.parse(JSON.stringify(changeSet)));
-}
+
+
 
 export default function App() {
 
   const [localMap, setLocalMap] = useState(new Map<string,any>()) ;
 
-  const [workspace, setWorkspace] = useState<TrackedWorkspace>();
-
-  const [log, setLog] = useState<TrackerWorkspace>();
-
-  const [pos, setPos] = useState<number>(-1);
-
-  const [intervalId, setIntervalId] = useState<any>();
-
-  const [toRender, setToRender] = useState<number>(0);
+  const [workspace, setWorkspace] = useState<SimpleWorkspace>();
 
 
   const containerId = window.location.hash.substring(1) || undefined;
@@ -49,214 +37,123 @@ export default function App() {
 
     async function initWorkspace() {
     window.sessionStorage.setItem("Fluid.ContainerRuntime.MaxOpSizeInBytes","-1");
+     
 
       
-      const trackedTracker = await createOneToOneTracking(containerId);
-      const tracked = await trackedTracker.tracked;
-      const tracker = await trackedTracker.tracker;
+      const myWorkspace = await createSimpleWorkspace(containerId);
+
+      const oldPrune = SharedPropertyTree.prune;
+      const myPrune = (minimumSequenceNumber: number,
+        remoteChanges: IPropertyTreeMessage[],
+        unrebasedRemoteChanges: Record<string, IRemotePropertyTreeMessage>) => {
+        console.log("Pruning Started : " + remoteChanges.length);
+        const result=oldPrune(minimumSequenceNumber,remoteChanges,unrebasedRemoteChanges);
+        console.log("Pruning Ended : " + result.remoteChanges.length);
+        return result;
+      }
+      SharedPropertyTree.prune=myPrune;
+      
 
       // Update location
-      if (tracked.containerId)
-        window.location.hash = tracked.containerId;
+      if (myWorkspace.containerId)
+        window.location.hash = myWorkspace.containerId;
 
-      const dataBinder: DataBinder = tracked.dataBinder;
+      const dataBinder: DataBinder = myWorkspace.dataBinder;
 
       // Configure binding
-      configureBinding(dataBinder, tracked, setLocalMap);
+      configureBinding(dataBinder, myWorkspace, setLocalMap);
 
 
       // save workspace to react state
-      setWorkspace(tracked);
-      setLog(tracker);
-      initialize100(containerId,tracked.rootProperty,tracked);
+      setWorkspace(myWorkspace);
+      initialize100(containerId,myWorkspace.rootProperty,myWorkspace);
     }
     initWorkspace();    
 
   }, []);
 
 
-  const roll = () => {
-    const map = new Map<string, any>();
-    const numA: number = parseInt(workspace.tree.root.resolvePath("evolvable.numA").value);
-    if(numA>=999999){
-      map.set("numA","0");
-    }
-    else {
-      map.set("numA",(numA + 1).toString());
-    }    
-    updateProperty(workspace,map);
-  }
-
-
-  const updateProperty = (workspace: TrackedWorkspace, value: Map<string,any>) => {
-    if (workspace) {
-      value.forEach((value,key) => {
-        const prop = workspace.rootProperty.resolvePath("evolvable." +  key);
-        if(prop !== undefined){
-          if(prop instanceof ValueProperty || prop instanceof StringProperty){
-            prop.value = value; 
-          }
-        }
-      });
-      workspace.commit();
-    }
-  }
-
   return (
 
     
 
     <div className="App">
-    <h1>Squashing Example</h1>
-    <br></br>
-      <button onClick={() => {   
+    <h1>Operation Size Example</h1>
+
+    <button disabled={checkBigEnabled()} onClick={() => {
+
+const myItem1=window.sessionStorage.getItem("Fluid.ContainerRuntime.MaxOpSizeInBytes")
+console.log("miso 3");
+console.log(myItem1);
+
+        window.sessionStorage.setItem("Fluid.ContainerRuntime.MaxOpSizeInBytes","-1");
+        const myItem2=window.sessionStorage.getItem("Fluid.ContainerRuntime.MaxOpSizeInBytes")
+        console.log("miso 4");
+        console.log(myItem2);
+
+
+        roll(workspace);
+     }
+  }>{"Big ON"}</button>
     
 
-    const lastSquashedSeq=log.tracker.getSeqAt(log.tracker.length()-1);
-    const remoteChanges = workspace.tree.remoteChanges;
-    let firstUnsquashedRemoteIndex=-1;
-    for(let i=0;i<remoteChanges.length;i++){
-      const currentSeqNr = (remoteChanges[i] as IRemotePropertyTreeMessage).sequenceNumber;
-      if(lastSquashedSeq<currentSeqNr){
-        firstUnsquashedRemoteIndex=i;
-        break;
-      }
-    }
+    <button disabled={!checkBigEnabled()} onClick={() => {
+        const myItem3=window.sessionStorage.getItem("Fluid.ContainerRuntime.MaxOpSizeInBytes")
+        console.log("miso 1");
+        console.log(myItem3);
+
+       window.sessionStorage.removeItem("Fluid.ContainerRuntime.MaxOpSizeInBytes");
+
+        const myItem4=window.sessionStorage.getItem("Fluid.ContainerRuntime.MaxOpSizeInBytes")
+        console.log("miso 2");
+        console.log(myItem4);
+        roll(workspace);
+     }
+  }>{"Big OFF"}</button>
+
+<br></br><br></br>
     
-    let myPos = pos;
-        console.log("miso12 " + myPos);
-        if(myPos===0){
-        }
-        else
-        if(myPos===-1){
-          if(firstUnsquashedRemoteIndex===-1){
-            myPos=lastSquashedSeq;
-          }
-          else {
-            const firstChange = cloneChange(remoteChanges[firstUnsquashedRemoteIndex].changeSet);
-            for(let i=firstUnsquashedRemoteIndex+1;i<remoteChanges.length;i++){
-              const nextChange = cloneChange(remoteChanges[i].changeSet);        
-              firstChange.applyChangeSet(nextChange);
-            }
-            firstChange.toInverseChangeSet();
-            const changes = firstChange._changes;
-            workspace.tree.root.applyChangeSet(changes);
-            setPos((remoteChanges[firstUnsquashedRemoteIndex] as IRemotePropertyTreeMessage).sequenceNumber);            
-          }
-        } 
-        if(myPos!==-1 && myPos!==0) {
-         
-          for(let i=log.tracker.length()-1;i>=0;i--){
-            const currentHistSeq=log.tracker.getSeqAt(i);
-            if(myPos>=currentHistSeq){
-              const inverse = log.tracker.getChangeAt(i).changeset;
-              inverse.toInverseChangeSet();
-              const changes = inverse._changes;
-              workspace.tree.root.applyChangeSet(changes);
-              const newPos = i===0?0:log.tracker.getSeqAt(i-1);
-              console.log("miso13 newPos " + newPos);
-              setPos(newPos);              
-              break;
-            }
-          }
-        }
 
-      }      
-      }>{"<"}</button>
+  <input type="checkbox" id="commitSizeCheckbox1" name="commitSize" checked={readCommitSize(workspace)===768000} 
+  onChange={()=>setCommitSizeCheckbox(workspace,768000)}></input>
+  <b>768000B</b>
+
+  
+  <input type="checkbox" id="commitSizeCheckbox1" name="commitSize" checked={readCommitSize(workspace)===768001} 
+  onChange={()=>setCommitSizeCheckbox(workspace,768001)}></input>
+  <b>768001B</b>
+
+  
+  <input type="checkbox" id="commitSizeCheckbox1" name="commitSize" checked={readCommitSize(workspace)===oneMb} 
+  onChange={()=>setCommitSizeCheckbox(workspace,oneMb)}></input>
+<b>1MB</b>
 
 
 
-<button onClick={() => {   
-        const myPos = pos;
-        console.log("miso14 " + myPos);
-        if(pos===-1){
-        } 
-        else {
-          const rootProp: NodeProperty = log.rootProperty;
-          
-          let isApplied = false;
-          for(let i=0;i<log.tracker.length();i++){
-            const currentHistSeq=log.tracker.getSeqAt(i);
-            if(pos<currentHistSeq){
-              const changeset =log.tracker.getChangeAt(i).changeset;
-              const changes = changeset._changes;
-              workspace.tree.root.applyChangeSet(changes);
-              const newPos = log.tracker.getSeqAt(i);
-              console.log("miso15 newPos " + newPos);
-              setPos(newPos);    
-              isApplied = true;          
-              break;
-            }
-          }
-          if(!isApplied){
-            const lastSquashedSeq=log.tracker.getSeqAt(log.tracker.length()-1);
-            const remoteChanges = workspace.tree.remoteChanges;
-            let firstUnsquashedRemoteIndex=-1
-            for(let i=0;i<remoteChanges.length;i++){
-              const currentSeqNr = (remoteChanges[i] as IRemotePropertyTreeMessage).sequenceNumber;
-              if(lastSquashedSeq<currentSeqNr){
-                firstUnsquashedRemoteIndex=i;
-                break;
-              }
-            }
-            if(firstUnsquashedRemoteIndex===-1){
-              setPos(-1);
-            }
-            else {
-              const firstChange = cloneChange(remoteChanges[firstUnsquashedRemoteIndex].changeSet);
-              for(let i=firstUnsquashedRemoteIndex+1;i<remoteChanges.length;i++){
-                const nextChange = cloneChange(remoteChanges[i].changeSet);        
-                firstChange.applyChangeSet(nextChange);
-              }
-              const changes = firstChange._changes;
-              workspace.tree.root.applyChangeSet(changes);
-              setPos(-1);
-            }            
-          }
-        }
+<input type="checkbox" id="commitSizeCheckbox2" name="commitSize" checked={readCommitSize(workspace)===2*oneMb} 
+    onChange={()=>setCommitSizeCheckbox(workspace,2*oneMb)}></input>
+<b>2MB</b>
 
-      }      
-      }>{">"}</button>
+ 
+  <input type="checkbox" id="commitSizeCheckbox1" name="commitSize" checked={readCommitSize(workspace)===10*oneMb} 
+  onChange={()=>setCommitSizeCheckbox(workspace,10*oneMb)}></input>
+ <b>10MB</b>
 
 
-<button onClick={() => {   
-      const h=setInterval(()=>roll(),1);
-      setIntervalId(h);
-      }      
-      }>{"Drive"}</button>
+  <input type="checkbox" id="commitSizeCheckbox1" name="commitSize" checked={readCommitSize(workspace)===20*oneMb} 
+  onChange={()=>setCommitSizeCheckbox(workspace,20*oneMb)}></input>
+<b>20MB</b>
 
-<button onClick={() => {   
-      clearInterval(intervalId)
-      }      
-      }>{"Stop"}</button>
 
-      <button onClick={() => {    
-        const rootProp: NodeProperty = log.rootProperty;
-        const hist = log.tracker.list();
-        for(let i=0;i < hist.length; i++){
-          console.log("--------SQUASHED--------------");
-          console.log("------------------------------------");
-          console.log(hist[i].lastSeq);
-          console.log("------------------------------------");
-          console.log(JSON.stringify(cloneChange(hist[i].changeset).getSerializedChangeSet()));
-          console.log("------------------------------------");
-        }
-        const myRemoteChanges = workspace.tree.remoteChanges;
-        for(let i=0;i < myRemoteChanges.length; i++){
-          console.log("---------CURRENT-----------------");
-          console.log((myRemoteChanges[i] as IRemotePropertyTreeMessage).sequenceNumber);
-          console.log("------------------------------------");
-          console.log(JSON.stringify(cloneChange(myRemoteChanges[i].changeSet).getSerializedChangeSet()));
-          console.log("------------------------------------");
-        }
-        
-      }      
-      }>{"Debug"}</button>
+  <input type="checkbox" id="commitSizeCheckbox1" name="commitSize" checked={readCommitSize(workspace)===100*oneMb} 
+  onChange={()=>setCommitSizeCheckbox(workspace,100*oneMb)}></input>
+<b>100MB</b>
 
-<br></br>
 
+
+<br></br><br></br>
 <input type="text" id="commitSize" name="commitSize" value={readCommitSize(workspace)} 
-    onChange={()=>setCommitSize(workspace,setToRender,toRender)}></input>
+    onChange={()=>setCommitSize(workspace)}></input>
 
 
 
@@ -264,29 +161,104 @@ export default function App() {
    const myInput = document.getElementById("commitSize") as HTMLInputElement;
    genBig(workspace,parseInt(myInput.value));     }
   }>{"BigCommit"}</button>
-
-
-
-
        <br></br><br></br><br></br>
- 
-      <h2>Odometer</h2>
+      <h2>Property Sizes</h2>
       <div >
-        {renderLocalMap(localMap)}
+        {renderPropSize(workspace)}
       </div>
-      <div >
-        {propSize(workspace)}
-      </div>
-      <br></br><br></br><br></br>
-      <button className="commit" onClick={() => roll()}>
-        Roll
-      </button>
     </div>
   );
 }
 
 
-function computePropSize(workspace: TrackedWorkspace){
+
+// By default, we should reject any op larger than 768KB,
+// in order to account for some extra overhead from serialization
+// to not reach the 1MB limits in socket.io and Kafka.
+const defaultMaxOpSizeInBytes = 768000;
+
+const oneMb = 1024*1024;
+const oneKb = 1024;
+
+
+function checkBigEnabled(): boolean{
+  const bigState = window.sessionStorage.getItem("Fluid.ContainerRuntime.MaxOpSizeInBytes");
+  const isBig = bigState === "-1";
+  return isBig;
+}
+
+function readCommitSize(workspace){
+  if(!workspace) return -1;
+  const rootProp: NodeProperty = workspace.rootProperty;
+  let commitSizeProp = rootProp.resolvePath("commitSize") as Int32Property;
+  if(!commitSizeProp){
+    commitSizeProp=PropertyFactory.create("Int32");
+    rootProp.insert("commitSize",commitSizeProp);
+    commitSizeProp.value=2*oneMb;    
+  }  
+  console.log("read " + commitSizeProp.value);
+  const size = commitSizeProp.value;
+  return commitSizeProp.value;  
+}
+
+function setCommitSize(workspace){
+  if(!workspace) return -1;
+  const rootProp: NodeProperty = workspace.rootProperty;
+  let commitSizeProp = rootProp.resolvePath("commitSize") as Int32Property;
+  if(!commitSizeProp){
+    commitSizeProp=PropertyFactory.create("Int32");
+    rootProp.insert("commitSize",commitSizeProp);
+       
+  }  
+  const myInput = document.getElementById("commitSize") as HTMLInputElement;
+  commitSizeProp.value=myInput.value;
+  roll(workspace);
+}
+
+function setCommitSizeCheckbox(workspace, size:number){
+  if(!workspace) return -1;
+  const rootProp: NodeProperty = workspace.rootProperty;
+  let commitSizeProp = rootProp.resolvePath("commitSize") as Int32Property;
+  if(!commitSizeProp){
+    commitSizeProp=PropertyFactory.create("Int32");
+    rootProp.insert("commitSize",commitSizeProp);
+       
+  }  
+  commitSizeProp.value=size.toString();
+  roll(workspace);
+}
+
+
+
+
+const roll = (workspace) => {
+  const map = new Map<string, any>();
+  const numA: number = parseInt(workspace.tree.root.resolvePath("evolvable.numA").value);
+  if(numA>=999999){
+    map.set("numA","0");
+  }
+  else {
+    map.set("numA",(numA + 1).toString());
+  }    
+  updateProperty(workspace,map);
+}
+
+
+const updateProperty = (workspace: SimpleWorkspace, value: Map<string,any>) => {
+  if (workspace) {
+    value.forEach((value,key) => {
+      const prop = workspace.rootProperty.resolvePath("evolvable." +  key);
+      if(prop !== undefined){
+        if(prop instanceof ValueProperty || prop instanceof StringProperty){
+          prop.value = value; 
+        }
+      }
+    });
+    workspace.commit();
+  }
+}
+
+function computePropSize(workspace: SimpleWorkspace){
   const bigProp = workspace.tree.root.resolvePath("big") as NodeProperty;
   if(bigProp){
     let size = 0;
@@ -303,46 +275,40 @@ function computePropSize(workspace: TrackedWorkspace){
 }
 
 
-function propSize(workspace: TrackedWorkspace){  
+function renderPropSizeTableContent(workspace: SimpleWorkspace){
+  const reactElem: any[] = [];
+  const bigProp = workspace.tree.root.resolvePath("big") as NodeProperty;
+  if(bigProp){
+    let size = 0;
+    const dynamicIds = bigProp.getDynamicIds()
+    dynamicIds.forEach((propId)=>{
+      const strprop = bigProp.resolvePath(propId) as StringProperty;
+      reactElem.push(
+        <tr><td className="propcell">{propId}</td><td className="sizecell">{strprop.value.length}</td></tr>
+      )
+    })
+  }
+  return reactElem
+}
+
+
+function renderPropSize(workspace: SimpleWorkspace){  
   const reactElem: any[] = [];
   if(!workspace) return reactElem;
+
   reactElem.push((
-  <table className="evotable">
-  <tr><td>Tree Size</td><td>{computePropSize(workspace)}</td></tr>  
-  </table>
+    <table className="evotable">
+    <tr><th>Property</th><th>Size</th></tr>  
+    { renderPropSizeTableContent(workspace)}
+    <tr><td className="totalpropcell">Total</td><td className="totalsizecell">{computePropSize(workspace)}</td></tr>  
+    </table>
   ));
   return reactElem;
 }
 
-function readCommitSize(workspace){
-  if(!workspace) return -1;
-  const rootProp: NodeProperty = workspace.rootProperty;
-  let commitSizeProp = rootProp.resolvePath("commitSize") as Int32Property;
-  if(!commitSizeProp){
-    commitSizeProp=PropertyFactory.create("Int32");
-    rootProp.insert("commitSize",commitSizeProp);
-    commitSizeProp.value=2000000;    
-  }  
-  console.log("read " + commitSizeProp.value);
-  return commitSizeProp.value;  
-}
 
-function setCommitSize(workspace,setToRender,toRender){
-  if(!workspace) return -1;
-  const rootProp: NodeProperty = workspace.rootProperty;
-  let commitSizeProp = rootProp.resolvePath("commitSize") as Int32Property;
-  if(!commitSizeProp){
-    commitSizeProp=PropertyFactory.create("Int32");
-    rootProp.insert("commitSize",commitSizeProp);
-       
-  }  
-  const myInput = document.getElementById("commitSize") as HTMLInputElement;
-  commitSizeProp.value=myInput.value;
-  workspace.commit();
-  console.log("toRender " + toRender);
-  setToRender((toRender+1)%1000);
-  console.log("comitted " + commitSizeProp.value);
-}
+
+
 
 
 function genBig(workspace, size: number){
@@ -360,50 +326,12 @@ function genBig(workspace, size: number){
       str+=Math.floor(10*Math.random()).toString();
     }
     bigStrProp.value=str;
-    workspace.commit();
-}
-
-
-function renderLocalMap(mymap: Map<string,any>){
-  const reactElem: any[] = [];
-  reactElem.push((
-  <table className="evotable">
-  {renderRoot(mymap)}
-  </table>
-  ));
-  return reactElem;
-}
-
-
-function renderRoot(mymap: Map<string,any>){
-  const reactElem: any[] = [];
-  
-  const numA=mymap.get("numA");
-  const a0 = numA%10;
-  const a1 = (Math.floor(numA/10))%10;
-  const a2 = (Math.floor(numA/100))%10;
-  const a3 = (Math.floor(numA/1000))%10;
-  const a4 = (Math.floor(numA/10000))%10;
-  const a5 = (Math.floor(numA/100000))%10;
-  reactElem.push(
-      <tr>
-          <td className="typecell">{a5}</td>
-          <td className="typecell">{a4}</td>
-          <td className="typecell">{a3}</td>
-          <td className="typecell">{a2}</td>
-          <td className="typecell">{a1}</td>
-          <td className="typecell">{a0}</td>
-       </tr>
-    );
-  return reactElem;
+    roll(workspace);
 }
 
 
 
-
-
-
-function initialize100(containerId: string | undefined, rootProp: NodeProperty, workspace: TrackedWorkspace) {
+function initialize100(containerId: string | undefined, rootProp: NodeProperty, workspace: SimpleWorkspace) {
     if(!rootProp.resolvePath("evolvable")){
       rootProp.insert("evolvable", PropertyFactory.create("hex:evolvable-1.0.0", undefined, { "numA": 0}));
       workspace.commit();  
@@ -412,7 +340,7 @@ function initialize100(containerId: string | undefined, rootProp: NodeProperty, 
 
 
 
-function configureBinding(fluidBinder: DataBinder, workspace: TrackedWorkspace, evolvableRenderer: EvolvableRenderer) {
+function configureBinding(fluidBinder: DataBinder, workspace: SimpleWorkspace, evolvableRenderer: EvolvableRenderer) {
   fluidBinder.defineRepresentation("view", "hex:evolvable-1.0.0", (property) => {
     return new Evolvable(property.getTypeid(),evolvableRenderer);
   },{upgradeType: UpgradeType.MINOR});

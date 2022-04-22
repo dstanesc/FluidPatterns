@@ -28,7 +28,7 @@
     border: 1px solid;
 }
 
-th, .attrcell, .typecell {    
+th, .propcell, .sizecell {    
     border: 3px solid;
     border-color: black;
     min-width: 40px;
@@ -40,20 +40,43 @@ th, .attrcell, .typecell {
     color: darkblue;
   }  
 
-  .attrcell {
-    color: darkblue;   
+  .propcell {
+    color: darkblue;  
+    font-weight: bold; 
     text-align: left; 
       
   }  
 
-  .typecell {
-    min-width: 60px;
-    font-size: 60px; 
+  .sizecell {
+    min-width: 40px;
+    font-size: 20px; 
     font-weight: bold;
-    color: red;   
-    text-align: center; 
+    color: darkslateblue;   
+    text-align: right;       
+  }  
+
+
+  .totalpropcell {
+    border: 6px solid;
+    border-color: black;
+    min-width: 200px;
+    color: red;  
+    font-weight: bold; 
+    text-align: left; 
       
   }  
+
+  .totalsizecell {
+    border: 6px solid;
+    border-color: black;
+    min-width: 200px;
+    font-size: 20px; 
+    font-weight: bold;
+    color: red;   
+    text-align: right;       
+  }  
+
+
 
   th {    
     color: darkcyan; 
