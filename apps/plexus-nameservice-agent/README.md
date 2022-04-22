@@ -1,31 +1,8 @@
-# Fluid Container Nameservice 
+# Ad-hoc Plexus Nameservice 
 
+Store and query container identifiers based on friendly names. REST based.
 
-# Getting Started
-
-Needed dependencies
-```
-$ node --version
-v16.13.1
-
-$ npm --version
-8.1.2
-```
-
-Using NVM for node version management
-```sh
-nvm use v16.13.1
-```
-## Build
-
-```sh
-cd FluidPatterns
-npm run clean
-npm install --legacy-peer-deps
-npm run build
-```
-
-
+See [main documentation page](../assembly-authoring-tracked/) for the complete scope.
 
 ## Disclaimer
 
