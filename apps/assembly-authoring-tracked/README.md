@@ -95,21 +95,19 @@ Edit above [diagram](https://sequencediagram.org/index.html#initialData=C4S2BsFM
 Edit above [diagram](https://sequencediagram.org/index.html#initialData=C4S2BsFMAIGVIIYCcDGALaB1A9kg1gGbjYDuAUGQisLtAILggqRkAOyoKI7AdsHIlQYAwo0h8K7JJ24I+0AApQAHgFcAztAByCALaR1kJADcmLKTN78lkNZvjJ09AObjgbDk1nybdgCJ+sGQAJgjACABGCIbQAKLg0ZwUvhoCjhh0rnwAtAB8AFQp6gGwAFwUPNjAMNjGRooqGiWlAPTYBASGwOoAOjwtAI6qRgCeADLYzn2Dw0gjAEoGquDAE87JjfaCTpluADx5Rdp6BkamzKVIkM4g6tVILa7ARcLYfAggPEYAksEbtqkHEIXPtDptjvpDCYzJdrrd7o9IMAACpIKh4Iyvd6fH5-MhHIE7LLAMEA4qBWE3O5GACKsxGACFPsEjBRCSIxHwDkcdJCzjCni83uEcUhfmR2dBRCA3KT-BSrlT7nTRot1MtgEyeCykGQGGY8pLpW5SoZ0hLthyZTlckVmoZtSq5v95bA5YDLSC+KVKqACCMnSN8eDJbsbQTPWHgKUpIZA8GyWlgVGDrl4okmDGjARcLp4xH0l6SbbNvbxMFA2qNeoE67DZ7jd7fSB-ZWlisa0bOcX9RcruqO0A)
 
 
-## Visual Paradigm
-
-### Session 1
+# Visual Paradigm - Session 1
 
 Collaborative authoring session outcome is continously persisted. 
 
 ![Session 1](./img/session-1.png)
 
-### Session n
+# Visual Paradigm - Session n
 
 ![Session n](./img/session-2.png)
 
-### Search & Results
+# Search Langauge
 
-Search is possible when sessions are active (interactive) and also after their completion. A mini search language provides both simplicity and expressive power. For instance our search experiment allows:
+Search is possible when sessions are active (interactive search) and also long after their completion (analytics, forensics, etc. - assembly / compoenet versioning is for sure the next important ingidient but out of scope for current investigation).  For simplicity and expressiveness our demo offers however a mini search language allowing:
 
 __Range filters__ for  `x, y, width, height`, eg.:
 
@@ -135,17 +133,17 @@ __Combined syntax__, eg.:
 width:100-110 height:400-500 beam
 ```
 
-# Search UI
+# Visual Paradigm - Search
 
 ![Search Results](./img/search-results.png)
 
-# Search Result Detail 1
+# Visual Paradigm - Search Result Detail 1
 
 From the search results list the user can rehydrate the full session context (assembly) of the selected component. 
 
 ![Search Result Detail](./img/result-1.png)
 
-# Search Result Detail 2
+# Visual Paradigm - Search Result Detail 2
 
 ![Search Result Detail](./img/result-3.png)
 
