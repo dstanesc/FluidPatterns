@@ -35,17 +35,15 @@ npm run build
 - [Lightweight Concurrent Editing Notification](./apps/concurrent-editing-notification-light/)
 - [Concurrent Editing Notification](./apps/concurrent-editing-notification/)
 
-## Search Support
+## Multi-DDS Search Support
 
->Note: Work in progress!!! Current status is __draft__.
-
-Main documentation [page](./apps/assembly-authoring-tracked/)
+Documentation [page](./apps/assembly-authoring-tracked/)
 
 ### Packages
 
 - Apps
   - [Plexus Nameservice Agent](./apps/plexus-nameservice-agent/)
-  - [Assembly Search Agent](./apps/assembly-search-agent/)
+  - [Assembly Indexing/Search Agent](./apps/assembly-search-agent/)
   - [Assembly Authoring](./apps/assembly-authoring-tracked/)
   - [Assembly Search](./apps/assembly-search/)
 

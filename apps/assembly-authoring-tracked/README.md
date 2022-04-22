@@ -1,6 +1,7 @@
 # Search Enabled Assembly Authoring
 
-# Getting Started
+
+## Getting Started
 
 Needed dependencies
 ```
@@ -33,44 +34,58 @@ Add elastic, kibana entries to `/etc/hosts`
 127.0.1.1       elastic elasticvue
 ```
 
-# Run
+## Run
 
 > Note: Starting order is relevant.
 
-1. Start _Plexus Fulltext Indexing Service_ 
+1. Start Tinylicious
+
+```sh
+npx tinylicious
+```
+
+2. Start _Elastic Search Database_ 
 
 ```sh
 cd FluidPatterns
 docker-compose up
 ```
 
-2. Start _Plexus Nameservice_
+3. Start _Plexus Nameservice_
 
 ```sh
 cd FluidPatterns/apps/plexus-nameservice-agent
 npm start
 ```
 
-3. Start _Plexus Service_
+4. Start _Assembly Indexing/Search Service_
 
 ```sh
-cd FluidPatterns/apps/plexus-service-agent
+cd FluidPatterns/apps/assembly-search-agent
 npm start
 ```
 
-4. Start _Assembly Authoring Application_
+5. Start _Assembly Authoring Application_
 
 ```sh
 cd FluidPatterns/apps/assembly-authoring-tracked
 npm start
 ```
 
-5. Start _Assembly Search Application_
+6. Start _Assembly Search Application_
 
 ```sh
-cd FluidPatterns/apps/comment-search
+cd FluidPatterns/apps/assembly-search
 npm start
 ```
+
+## Authoring Workflow
+
+![Authoring](./img/author.svg)
+
+## Search Workflow
+
+![Searching](./img/search.svg)
 
 ## Disclaimer
 
