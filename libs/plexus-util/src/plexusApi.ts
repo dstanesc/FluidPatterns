@@ -50,25 +50,27 @@ export function retrieveMapProperty(workspace: SimpleWorkspace, topic: string): 
     return topicMapProperty;
 }
 
-export function retrieveMappedInt32(mapProperty: MapProperty, key: string): number {
-    const nestedProperty = mapProperty.getValue(key) as Int32Property;
-    return nestedProperty.getValue();
+export function retrieveMappedInt32(mapProperty: MapProperty, key: string): number | undefined {
+    const nestedProperty = mapProperty.get(key);
+    console.log(`Getting Int32Property ${nestedProperty}`);
+    return nestedProperty ? nestedProperty.value: nestedProperty;
+    //return nestedProperty.getValue();
 }
 
-export function getOffset(workspace: SimpleWorkspace, key: string): number {
-    const offsetMapProperty: MapProperty = retrieveMapProperty(workspace, Topics.OFFSETS);
+export function getOffset(workspace: SimpleWorkspace, key: string): number | undefined{
+    console.log(`Getting offset workspace=${workspace.containerId} key=${key}`);
+    const offsetMapProperty: MapProperty = workspace.rootProperty.resolvePath(Topics.OFFSETS);
+    console.log(`Getting MapProperty ${offsetMapProperty}`);
     return retrieveMappedInt32(offsetMapProperty, key);
 }
 
-export function setOffset(workspace: SimpleWorkspace, key: string, offset: number){
-    const offsetMapProperty: MapProperty = retrieveMapProperty(workspace, Topics.OFFSETS);
-    const nestedProperty = offsetMapProperty.get(key) as Int32Property;
-    if(nestedProperty){
-        nestedProperty.setValue(offset);
-    } else {
-        const newNestedProperty =  PropertyFactory.create<Int32Property>("Int32", undefined, offset);
-        offsetMapProperty.set(key, newNestedProperty);
-    }
+export function setOffset(workspace: SimpleWorkspace, key: string, offset: number) {
+    console.log(`Setting offset workspace=${workspace.containerId} key=${key}`);
+    const offsetMapProperty: MapProperty = workspace.rootProperty.resolvePath(Topics.OFFSETS);
+    console.log(`Setting MapProperty ${offsetMapProperty}`);
+    const offsetProperty = PropertyFactory.create("Int32", undefined, offset);
+    console.log(`Setting Int32Property ${offsetProperty.value}`);
+    offsetMapProperty.set(key, offsetProperty);
 }
 
 export function retrieveMappedTextProperty(mapProperty: MapProperty, key: string): StringProperty {
@@ -174,12 +176,17 @@ export function createInt32MapProperty(): NamedNodeProperty {
     return offsetMapProperty;
 }
 
+export function createOffsetMapProperty(): MapProperty {
+    const offsetMapProperty = PropertyFactory.create("BaseProperty", "map") as MapProperty;
+    return offsetMapProperty;
+}
+
 export function initPropertyTree(containerId: string | undefined, workspace: SimpleWorkspace, plexusListeners: PlexusListeners) {
     if (containerId === undefined) {
         const registryArray: NamedNodeProperty = createContainerMapProperty();
         const queryArray: NamedNodeProperty = createQueryMapProperty();
         const queryResultArray: NamedNodeProperty = createQueryResultMapProperty();
-        const offsetMapProperty: NamedNodeProperty = createInt32MapProperty();
+        const offsetMapProperty: MapProperty = createOffsetMapProperty();
         const rootProp: NodeProperty = workspace.rootProperty;
         rootProp.insert(Topics.REGISTRY_LOG, registryArray);
         rootProp.insert(Topics.QUERY_LOG, queryArray);

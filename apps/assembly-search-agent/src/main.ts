@@ -111,7 +111,7 @@ const queryResultReceived = (fn: any) => {
 
 const getUniqueIdentity = (elasticDocument: ElasticDocument) => {
 
-  return elasticDocument.containerId + "--" +elasticDocument.id;
+  return elasticDocument.containerId + "--" + elasticDocument.id;
 }
 
 const insertElasticSearch = (elasticDocument: ElasticDocument) => {
@@ -367,7 +367,7 @@ const poll = () => {
 
   console.log(`Polling cursor=${trackerCursor} length=${tracker.length()}`);
 
-  if (tracker.length() > 0) {
+  if (tracker.length() && tracker.length() > 0) {
 
     for (let offset = trackerCursor; offset < tracker.length(); offset++) {
 
@@ -377,7 +377,7 @@ const poll = () => {
       const lastSeq: number = changeEntry.lastSeq;
       const serializedChangeSet: SerializedChangeSet = changeSet.getSerializedChangeSet();
 
-      console.log(`ChangeEntry received, cursor=${offset}, container=${containerId}, lastSeq=${lastSeq}, changeSet=${JSON.stringify(serializedChangeSet, null, 2)}`);
+     // console.log(`ChangeEntry received, cursor=${offset}, container=${containerId}, lastSeq=${lastSeq}, changeSet=${JSON.stringify(serializedChangeSet, null, 2)}`);
 
       trackerCursor = offset + 1;
 
@@ -392,6 +392,10 @@ const poll = () => {
         const elasticDocument: ElasticDocument = { "containerId": containerId, "sequenceNumber": lastSeq, ...component };
         modifyElasticSearch(elasticDocument);
       });
+
+      setOffset(plexusWorkspace, searchAgentIdentity, trackerCursor);
+
+      plexusWorkspace.commit();
     }
   }
 }
@@ -472,13 +476,12 @@ const initAgent = async () => {
 
 
 const initOffset = (plexusWorkspace: SimpleWorkspace) => {
-
-  try {
-    trackerCursor = getOffset(plexusWorkspace, searchAgentIdentity);
-    console.log(`Offset retrieved and set to ${trackerCursor}`);
-  } catch (error) {
+  trackerCursor = getOffset(plexusWorkspace, searchAgentIdentity);
+  console.log(`Offset retrieved is ${trackerCursor}`);
+  if (!trackerCursor) {
     setOffset(plexusWorkspace, searchAgentIdentity, 0);
-    plexusWorkspace.commit;
+    plexusWorkspace.commit();
+    trackerCursor = 0;
     console.log(`Offset initialized to 0`);
   }
 }
