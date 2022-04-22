@@ -135,15 +135,17 @@ __Combined syntax__, eg.:
 width:100-110 height:400-500 beam
 ```
 
+# Search UI
+
 ![Search Results](./img/search-results.png)
 
-### Search Result Detail 1
+# Search Result Detail 1
 
 From the search results list the user can rehydrate the full session context (assembly) of the selected component. 
 
 ![Search Result Detail](./img/result-1.png)
 
-### Search Result Detail 2
+# Search Result Detail 2
 
 ![Search Result Detail](./img/result-3.png)
 
