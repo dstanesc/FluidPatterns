@@ -1,5 +1,8 @@
 # Multi-Session Search Enabled Assembly Authoring
 
+Investigate the ability to externalize PropertyDDS domain data in materialized views to serve rich queries. Drawing from the  Event Driven Architecture techings, the materialized views (projections) are eventually consistent, synchronized via a PropertyDDS based, ChangeSet Log - [the Tracker](../../libs/tracker-util). The proposed design is symmetric and highly auditable. The queries and results are based on a dedicated, PropertyDDS based, log and notification infrastructure - [Plexus](../../libs/plexus-util/). 
+
+>Note: This is POC level software, productive instantiations will have to solve additional robustness and scalability aspects.
 
 ## Getting Started
 
@@ -90,6 +93,60 @@ Edit above [diagram](https://sequencediagram.org/index.html#initialData=C4S2BsFM
 ![Searching](./img/search.svg)
 
 Edit above [diagram](https://sequencediagram.org/index.html#initialData=C4S2BsFMAIGVIIYCcDGALaB1A9kg1gGbjYDuAUGQisLtAILggqRkAOyoKI7AdsHIlQYAwo0h8K7JJ24I+0AApQAHgFcAztAByCALaR1kJADcmLKTN78lkNZvjJ09AObjgbDk1nybdgCJ+sGQAJgjACABGCIbQAKLg0ZwUvhoCjhh0rnwAtAB8AFQp6gGwAFwUPNjAMNjGRooqGiWlAPTYBASGwOoAOjwtAI6qRgCeADLYzn2Dw0gjAEoGquDAE87JjfaCTpluADx5Rdp6BkamzKVIkM4g6tVILa7ARcLYfAggPEYAksEbtqkHEIXPtDptjvpDCYzJdrrd7o9IMAACpIKh4Iyvd6fH5-MhHIE7LLAMEA4qBWE3O5GACKsxGACFPsEjBRCSIxHwDkcdJCzjCni83uEcUhfmR2dBRCA3KT-BSrlT7nTRot1MtgEyeCykGQGGY8pLpW5SoZ0hLthyZTlckVmoZtSq5v95bA5YDLSC+KVKqACCMnSN8eDJbsbQTPWHgKUpIZA8GyWlgVGDrl4okmDGjARcLp4xH0l6SbbNvbxMFA2qNeoE67DZ7jd7fSB-ZWlisa0bOcX9RcruqO0A)
+
+
+## Visual Paradigm
+
+### Session 1
+
+Collaborative authoring session outcome is continously persisted. 
+
+![Session 1](./img/session-1.png)
+
+### Session n
+
+![Session n](./img/session-2.png)
+
+### Search & Results
+
+Search is possible when sessions are active (interactive) and also after their completion. A mini search language provides both simplicity and expressive power. For instance our search experiment allows:
+
+__Range filters__ for  `x, y, width, height`, eg.:
+
+```
+width:100-200
+```
+
+__Exact matches__ for `fill, id`, eg.:
+
+```
+id:rect1
+```
+
+__Full text__ search for `annotation` field, eg.:
+
+```
+green beam
+```
+
+__Combined syntax__, eg.:
+
+```
+width:100-110 height:400-500 beam
+```
+
+![Search Results](./img/search-results.png)
+
+### Search Result Detail 1
+
+From the search results list the user can rehydrate the full session context (assembly) of the selected component. 
+
+![Search Result Detail](./img/result-1.png)
+
+### Search Result Detail 2
+
+![Search Result Detail](./img/result-3.png)
+
 
 ## Disclaimer
 
