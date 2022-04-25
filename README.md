@@ -35,22 +35,11 @@ npm run build
 - [Lightweight Concurrent Editing Notification](./apps/concurrent-editing-notification-light/)
 - [Concurrent Editing Notification](./apps/concurrent-editing-notification/)
 
-## Multi-DDS Search Support
 
-Documentation [page](./apps/assembly-authoring-tracked/)
+## Indexing and Search Patterns
 
-### Packages
+[Search Enabled Assembly Authoring](./apps/assembly-authoring-tracked/)
 
-- Apps
-  - [Plexus Nameservice Agent](./apps/plexus-nameservice-agent/)
-  - [Assembly Indexing/Search Agent](./apps/assembly-search-agent/)
-  - [Assembly Authoring](./apps/assembly-authoring-tracked/)
-  - [Assembly Search](./apps/assembly-search/)
-
-- Libs
-  - [Assembly Util](./libs/assembly-util/)
-  - [Plexus Util](./libs/plexus-util/)
-  - [Fluid Util 2](./libs/fluid-util2/)
 
 ## Schema Patterns
 

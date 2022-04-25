@@ -1,8 +1,14 @@
 # Multi-Session Search Enabled Assembly Authoring
 
-Investigate the ability to externalize PropertyDDS domain data in materialized views to serve rich queries. Drawing from the  Event Driven Architecture techings, the materialized views (projections) are eventually consistent, synchronized via a PropertyDDS based, ChangeSet Log - [the Tracker](../../libs/tracker-util). The proposed design is symmetric and highly auditable. The queries and results are based on a dedicated, PropertyDDS based, log and notification infrastructure - [Plexus](../../libs/plexus-util/). 
+Investigate the ability to externalize PropertyDDS data in domain specific materialized views. 
 
->Note: This is POC level software, productive instantiations will have to solve additional robustness and scalability aspects.
+It is our experience that most of the data management use cases are typically I/O bound (however differently on the write and query side) and there is always a denormalization strategy which addresses the performance problems. In a CQRS like pattern the PropertyDDS / SharedPropertyTree (ST) would be the write model, but query cases, for efficiency reasons, would have to be served inevitably by MaterializedViews (MV) derived / projected from the data stored in collections of STs.
+
+Now such MVs would reside outside Fluid and have very different SLAs. There are 3 design aspects we believe to be ubiquitous:
+
+- Fluid Relay (FR) high availability (HA) should be sufficient and the only prerequisite to ensure convergence to (eventual) consistency across collections of STs and including multiple MVs. This needs to happen independent of network outages and even software bugs to be corrected, meaning extremely variable MV availability
+- Efficient (reduced I/O, ideally not diff based) MV incremental updates. One possible pattern is that MVs would own/track internally the version of a synchronized ST state and be able to request the delta/change between its known/old ST state and current ST state. Even more, some data management use-cases need to capture multiple revisions of the data and it is very good possible that a particular MV will have to track ALL changes (rather than the squashed change).
+- Highly scalable and resilient MV indexing (million of STs or partial ST fragments) by design. A (persistent) notification mechanism, accounting for the fact that MVs may be unavailable at the notification time. Only when notified the MVs will request the deltas from a particular ST
 
 ## Getting Started
 
@@ -81,6 +87,39 @@ npm start
 cd FluidPatterns/apps/assembly-search
 npm start
 ```
+
+## Requirement Notes
+
+- Once initialized, any MV be updated incrementally (only). Refreshing full tree data is suboptimal and therefore not desired.
+- The solution has to provide a way to preserve all changes associated with multiple ST containers for a long and deterministic time window.
+- FR high-availability should be sufficient to guarantee the overall availability and zero data loss, including multiple materialized views
+- Guaranteed eventual consistency. It is expected that MVs can go offline for longer (eg. deserialization bugs or upgrade procedures) or shorther (eg. kubernetes restarts) time frames. When returning online, they should catch-up efficiently.
+- The granularity of the changes stored with the change log should be configurable, for instance to match custom data revising policies
+- The emerging system should be fully auditable, for instance able to observe runtime operations, queries or results from production systems
+
+
+## Design Notes
+
+- MVs are synchronized via an ST based change log
+- Change log offsets associated with individual MVs (ie last read offset) is tracked using the ST infrastructure - [the Tracker](../../libs/tracker-util)
+- Queries and results are also regarded as messages transmitted over an ST based query and result log - [Plexus](../../libs/plexus-util/)
+
+### Components
+
+- Apps
+  - [Plexus Nameservice Agent](../plexus-nameservice-agent/)
+  - [Assembly Indexing/Search Agent](../assembly-search-agent/)
+  - [Assembly Authoring](../assembly-authoring-tracked/)
+  - [Assembly Search](../assembly-search/)
+
+- Libs
+  - [Assembly Util](../../libs/assembly-util/)
+  - [Plexus Util](../../libs/plexus-util/)
+  - [Fluid Util 2](../../libs/fluid-util2/)
+
+
+>Disclaimer: This is POC level software
+
 
 ## Authoring Workflow
 
