@@ -93,7 +93,7 @@ npm start
 - Once initialized, any MV be updated incrementally (only). Refreshing full tree data is suboptimal and therefore not desired.
 - The solution has to provide a way to preserve all changes associated with multiple ST containers for a long and deterministic time window.
 - FR high-availability should be sufficient to guarantee the overall availability and zero data loss, including multiple materialized views
-- Guaranteed eventual consistency. It is expected that MVs can go offline for longer (eg. deserialization bugs or upgrade procedures) or shorther (eg. kubernetes restarts) time frames. When returning online, they should catch-up efficiently.
+- Guaranteed eventual consistency. It is expected that MVs can go offline for longer (eg. deserialization bugs or upgrade procedures) or shorter (eg. kubernetes restarts) time frames. When returning online, they should catch-up efficiently.
 - The granularity of the changes stored with the change log should be configurable, for instance to match custom data revising policies
 - The emerging system should be fully auditable, for instance able to observe runtime operations, queries or results from production systems
 
@@ -136,7 +136,7 @@ Edit above [diagram](https://sequencediagram.org/index.html#initialData=C4S2BsFM
 
 # Visual Paradigm - Session 1
 
-Collaborative authoring session outcome is continously persisted. 
+Collaborative authoring session outcome is continuously persisted. 
 
 ![Session 1](./img/session-1.png)
 
@@ -146,7 +146,7 @@ Collaborative authoring session outcome is continously persisted.
 
 # Search Langauge
 
-Search is possible when sessions are active (interactive search) and also long after their completion (analytics, forensics, etc. - assembly / componenet versioning is for sure the next important ingidient but out of scope for the current investigation).  For simplicity and expressiveness our demo offers however a mini search language allowing:
+Search is possible when sessions are active (interactive search) and also long after their completion (analytics, forensics, etc. - assembly / component versioning is for sure the next important ingredient but out of scope for the current investigation).  For simplicity and expressiveness our demo offers however a mini search language allowing:
 
 __Range filters__ for  `x, y, width, height`, eg.:
 
