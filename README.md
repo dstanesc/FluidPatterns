@@ -38,7 +38,7 @@ npm run build
 
 ## Indexing and Search Patterns
 
-[Search Enabled Assembly Authoring](./apps/assembly-authoring-tracked/)
+- [Search Enabled Assembly Authoring](./apps/assembly-authoring-tracked/)
 
 
 ## Schema Patterns
