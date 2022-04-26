@@ -106,8 +106,7 @@ npm start
 
 ### Legend
 
-- ST / Shared Tree / PropertyDDS
-![Shared Tree](./img/sdc.png)
+| ST / Shared Tree / PropertyDDS | ![Shared Tree](./img/sdc.png) |
 
 ### Authoring
 
