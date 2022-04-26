@@ -35,8 +35,15 @@ export default function App() {
 
   useEffect(() => {
 
+    const urlParams = new URLSearchParams(window.location.search);
+    const bigValue = urlParams.get('big');
+    if(bigValue){
+      window.sessionStorage.setItem("Fluid.ContainerRuntime.MaxOpSizeInBytes","-1");
+    }
+
+
     async function initWorkspace() {
-    window.sessionStorage.setItem("Fluid.ContainerRuntime.MaxOpSizeInBytes","-1");
+    
      
 
       
@@ -80,87 +87,66 @@ export default function App() {
     <div className="App">
     <h1>Operation Size Example</h1>
 
-    <button disabled={checkBigEnabled()} onClick={() => {
+    <br></br><br></br>
 
-const myItem1=window.sessionStorage.getItem("Fluid.ContainerRuntime.MaxOpSizeInBytes")
-console.log("miso 3");
-console.log(myItem1);
+    <b className='bigop'>BIG OPERATIONS: </b> 
+    {
+      renderBigEnabled()
+    }
 
-        window.sessionStorage.setItem("Fluid.ContainerRuntime.MaxOpSizeInBytes","-1");
-        const myItem2=window.sessionStorage.getItem("Fluid.ContainerRuntime.MaxOpSizeInBytes")
-        console.log("miso 4");
-        console.log(myItem2);
+    <br></br><br></br><br></br><br></br>
 
-
-        roll(workspace);
-     }
-  }>{"Big ON"}</button>
-    
-
-    <button disabled={!checkBigEnabled()} onClick={() => {
-        const myItem3=window.sessionStorage.getItem("Fluid.ContainerRuntime.MaxOpSizeInBytes")
-        console.log("miso 1");
-        console.log(myItem3);
-
-       window.sessionStorage.removeItem("Fluid.ContainerRuntime.MaxOpSizeInBytes");
-
-        const myItem4=window.sessionStorage.getItem("Fluid.ContainerRuntime.MaxOpSizeInBytes")
-        console.log("miso 2");
-        console.log(myItem4);
-        roll(workspace);
-     }
-  }>{"Big OFF"}</button>
-
-<br></br><br></br>
-    
+    <input type="checkbox" id="commitSizeCheckbox1" name="commitSize" checked={readCommitSize(workspace)===500000} 
+  onChange={()=>setCommitSizeCheckbox(workspace,500000)}></input>
+  <b className="defSizes">500000B</b>    
 
   <input type="checkbox" id="commitSizeCheckbox1" name="commitSize" checked={readCommitSize(workspace)===768000} 
   onChange={()=>setCommitSizeCheckbox(workspace,768000)}></input>
-  <b>768000B</b>
+  <b className="defSizes">768000B</b>
 
   
   <input type="checkbox" id="commitSizeCheckbox1" name="commitSize" checked={readCommitSize(workspace)===768001} 
   onChange={()=>setCommitSizeCheckbox(workspace,768001)}></input>
-  <b>768001B</b>
+  <b className="defSizes">768001B</b>
 
   
   <input type="checkbox" id="commitSizeCheckbox1" name="commitSize" checked={readCommitSize(workspace)===oneMb} 
   onChange={()=>setCommitSizeCheckbox(workspace,oneMb)}></input>
-<b>1MB</b>
+<b className="defSizes">1MB</b>
 
 
 
 <input type="checkbox" id="commitSizeCheckbox2" name="commitSize" checked={readCommitSize(workspace)===2*oneMb} 
     onChange={()=>setCommitSizeCheckbox(workspace,2*oneMb)}></input>
-<b>2MB</b>
+<b className="defSizes">2MB</b>
 
  
   <input type="checkbox" id="commitSizeCheckbox1" name="commitSize" checked={readCommitSize(workspace)===10*oneMb} 
   onChange={()=>setCommitSizeCheckbox(workspace,10*oneMb)}></input>
- <b>10MB</b>
+ <b className="defSizes">10MB</b>
 
 
   <input type="checkbox" id="commitSizeCheckbox1" name="commitSize" checked={readCommitSize(workspace)===20*oneMb} 
   onChange={()=>setCommitSizeCheckbox(workspace,20*oneMb)}></input>
-<b>20MB</b>
+<b className="defSizes">20MB</b>
 
 
   <input type="checkbox" id="commitSizeCheckbox1" name="commitSize" checked={readCommitSize(workspace)===100*oneMb} 
   onChange={()=>setCommitSizeCheckbox(workspace,100*oneMb)}></input>
-<b>100MB</b>
+<b className="defSizes">100MB</b>
 
 
 
 <br></br><br></br>
-<input type="text" id="commitSize" name="commitSize" value={readCommitSize(workspace)} 
+<input className="commitsize" type="text" id="commitSize" name="commitSize" value={readCommitSize(workspace)} 
     onChange={()=>setCommitSize(workspace)}></input>
 
 
 
- <button onClick={() => {
+ <button className="bigcommit" onClick={() => {
    const myInput = document.getElementById("commitSize") as HTMLInputElement;
    genBig(workspace,parseInt(myInput.value));     }
-  }>{"BigCommit"}</button>
+  }>{"Big Commit"}</button>
        <br></br><br></br><br></br>
       <h2>Property Sizes</h2>
       <div >
@@ -185,6 +171,17 @@ function checkBigEnabled(): boolean{
   const bigState = window.sessionStorage.getItem("Fluid.ContainerRuntime.MaxOpSizeInBytes");
   const isBig = bigState === "-1";
   return isBig;
+}
+
+function renderBigEnabled(){
+  const reactElem: any[] = [];
+  if(checkBigEnabled()){
+    reactElem.push(<div id="greencircle"></div>);
+  }
+  else {
+    reactElem.push(<div id="redcircle"></div>);
+  }
+  return reactElem;
 }
 
 function readCommitSize(workspace){
