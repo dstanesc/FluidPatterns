@@ -158,7 +158,7 @@ Collaborative authoring session outcome is continuously persisted.
 
 ![Session n](./img/session-2.png)
 
-# Search Langauge
+# Search Language
 
 Search is possible when sessions are active (interactive search) and also long after their completion (analytics, forensics, etc. - assembly / component versioning is for sure the next important ingredient but out of scope for the current investigation).  For simplicity and expressiveness our demo offers however a mini search language allowing:
 
@@ -197,6 +197,7 @@ From the search results list the user can rehydrate the full session context (as
 ![Search Result Detail](./img/result-1.png)
 
 # Visual Paradigm - Search Result Detail 2
+Just another detail page corresponding to a different result (third in the list above)
 
 ![Search Result Detail](./img/result-3.png)
 
