@@ -192,7 +192,7 @@ width:100-110 height:400-500 beam
 
 # Visual Paradigm - Search Result Detail 1
 
-From the search results list the user can rehydrate the full session context (assembly) of the selected component. 
+From the search results list the user can rehydrate the full session context (assembly) of the selected component. The resulted component can be visually highlighted (notice the dark frame below) in its assembly context.
 
 ![Search Result Detail](./img/result-1.png)
 
