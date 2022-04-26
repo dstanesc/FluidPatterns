@@ -106,6 +106,8 @@ npm start
 
 ### Legend
 
+| What | Symbol |
+| :---: | :---: |
 | ST / Shared Tree / PropertyDDS | ![Shared Tree](./img/sdc.png) |
 
 ### Authoring
