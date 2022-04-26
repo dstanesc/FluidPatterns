@@ -104,6 +104,14 @@ npm start
 - Change log offsets associated with individual MVs (ie last read offset) is tracked using the ST infrastructure - [the Tracker](../../libs/tracker-util)
 - Queries and results are also regarded as messages transmitted over an ST based query and result log - [Plexus](../../libs/plexus-util/)
 
+### Authoring
+
+![Authoring Components](./img/authoring-components.svg)
+
+### Search
+
+![Search Components](./img/search-components.svg)
+
 ### Components
 
 - Apps
