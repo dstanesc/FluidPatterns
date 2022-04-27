@@ -1,6 +1,6 @@
-# Schema Evolution 
+# Fluid Communication Size Limits
 
-Investigates schema evolution patterns
+Investigates fluid communication size limits
 
 # Getting Started
 
