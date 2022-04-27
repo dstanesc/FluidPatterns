@@ -27,21 +27,25 @@ npm run build
 ```
 
 
-## Run
 
 Terminal 1
 
 ```sh
-npx tinylicious
-```
-
-Terminal 2
-
-```sh
-cd FluidPatterns/apps/history-app
+cd FluidPatterns/apps/frs_size_app_seq
 npm start
 ```
 
+
+Usage:
+
+* Url localhost:<port> will disable big operations, operations bigger than 750000B are refused (the limit is 768000 
+but we need to count with some reserve for administrative values). JS console will show exception (use F12 in Chrome)
+* Url localhost:<port>/?big=true will enable big operations, operations of all sizes are processed
+* We can choose the size of the operation by check-boxes
+* To post the operation, the button 'Big Commit' is to be pressed
+* We can see the status of Big Operations availability (red point if not available, green point if available)
+* The info about the number of summarizations is available
+* If we cross about 30MB, the summary will fail. JS console will show exception (use F12 in Chrome). The exception will come some time after the summarization done message
 
 
 ## Disclaimer
