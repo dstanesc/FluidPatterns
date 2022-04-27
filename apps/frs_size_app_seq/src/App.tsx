@@ -12,6 +12,23 @@ import { SharedMap } from "@fluidframework/map";
 
 export default function App() {
 
+  function getColor(value: number): string {
+    const modulo = value % 10;
+    switch(modulo) {
+        case 0: {return "grey"; break;}
+        case 1:{return "blue"; break;}
+        case 2:{return "red"; break;}
+        case 3:{return "yellow"; break;}
+        case 4:{return "darkcyan"; break;}
+        case 5:{return "firebrick"; break;}
+        case 6:{return "orange"; break;}
+        case 7:{return "purple"; break;}
+        case 8:{return "magenta"; break;}
+        case 9:{return "cyan"; break;}
+        default:{return "black"; break;}
+    }
+  }
+
   const doRender = () => {
     let nextToRender = Math.floor(200000000*Math.random());
     setToRender(nextToRender);
@@ -24,6 +41,7 @@ export default function App() {
 
   const [workspace, setWorkspace] = useState<SimpleWorkspace>();
   const [toRender,setToRender] = useState<number>(0);
+  const [sumNr,setSumNr] = useState({nr:0});
 
   const containerId = window.location.hash.substring(1) || undefined;
 
@@ -51,6 +69,8 @@ export default function App() {
       const oldSummarize = SharedMap.prototype.summarize.bind(myWorkspace.tree);    
 
       SharedMap.prototype.summarize = (fullTree: boolean = false, trackState: boolean = false) => {
+        sumNr.nr=sumNr.nr+1;
+        doRender();
         console.log("before summarize");
         const result = oldSummarize(fullTree,trackState);
         console.log("after summarize");
@@ -71,6 +91,7 @@ export default function App() {
 
     <div className="App">
     <h1>Operation Size Example: SharedMap</h1>
+    
 
     <br></br><br></br>
 
@@ -80,6 +101,10 @@ export default function App() {
     }
 
     <br></br><br></br><br></br><br></br>
+
+    <b style={{borderWidth:"8px", borderColor:getColor(sumNr.nr), borderStyle:"solid", fontSize:"20px"}}>NUMBER OF SUMMARIZATIONS: {sumNr.nr} </b> 
+    <br></br><br></br><br></br><br></br>
+
 
     <input type="checkbox" id="commitSizeCheckbox1" name="commitSize" checked={readCommitSize(workspace)===500000} 
   onChange={()=>setCommitSizeCheckbox(workspace,500000)}></input>

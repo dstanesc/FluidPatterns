@@ -20,6 +20,32 @@ import { IPropertyTreeMessage, IRemotePropertyTreeMessage, SharedPropertyTree } 
 
 export default function App() {
 
+
+  const doRender = () => {
+    let nextToRender = Math.floor(200000000*Math.random());
+    setToRender(nextToRender);
+  }
+
+  const [toRender,setToRender] = useState<number>(0);
+  const [sumNr,setSumNr] = useState({nr:0});
+
+  function getColor(value: number): string {
+    const modulo = value % 10;
+    switch(modulo) {
+        case 0: {return "grey"; break;}
+        case 1:{return "blue"; break;}
+        case 2:{return "red"; break;}
+        case 3:{return "yellow"; break;}
+        case 4:{return "darkcyan"; break;}
+        case 5:{return "firebrick"; break;}
+        case 6:{return "orange"; break;}
+        case 7:{return "purple"; break;}
+        case 8:{return "magenta"; break;}
+        case 9:{return "cyan"; break;}
+        default:{return "black"; break;}
+    }
+  }
+
   const [localMap, setLocalMap] = useState(new Map<string,any>()) ;
 
   const [workspace, setWorkspace] = useState<SimpleWorkspace>();
@@ -40,11 +66,15 @@ export default function App() {
     if(bigValue){
       window.sessionStorage.setItem("Fluid.ContainerRuntime.MaxOpSizeInBytes","-1");
     }
-
-
+    else {
+      window.sessionStorage.removeItem("Fluid.ContainerRuntime.MaxOpSizeInBytes");
+    }
+    const batchManagerDisabledKey = "FluidDisableBatchManager";
+    localStorage.setItem(batchManagerDisabledKey,"1");
+    window.localStorage.setItem(batchManagerDisabledKey,"1");
     async function initWorkspace() {
     
-     
+      
 
       
       const myWorkspace = await createSimpleWorkspace(containerId);
@@ -53,6 +83,8 @@ export default function App() {
       const myPrune = (minimumSequenceNumber: number,
         remoteChanges: IPropertyTreeMessage[],
         unrebasedRemoteChanges: Record<string, IRemotePropertyTreeMessage>) => {
+        sumNr.nr=sumNr.nr+1;
+        doRender();          
         console.log("Pruning Started : " + remoteChanges.length);
         const result=oldPrune(minimumSequenceNumber,remoteChanges,unrebasedRemoteChanges);
         console.log("Pruning Ended : " + result.remoteChanges.length);
@@ -85,7 +117,7 @@ export default function App() {
     
 
     <div className="App">
-    <h1>Operation Size Example</h1>
+    <h1>Operation Size Example : Property DDS</h1>
 
     <br></br><br></br>
 
@@ -96,18 +128,22 @@ export default function App() {
 
     <br></br><br></br><br></br><br></br>
 
+    <b style={{borderWidth:"8px", borderColor:getColor(sumNr.nr), borderStyle:"solid", fontSize:"20px"}}>NUMBER OF SUMMARIZATIONS: {sumNr.nr} </b> 
+    <br></br><br></br><br></br><br></br>
+
     <input type="checkbox" id="commitSizeCheckbox1" name="commitSize" checked={readCommitSize(workspace)===500000} 
   onChange={()=>setCommitSizeCheckbox(workspace,500000)}></input>
   <b className="defSizes">500000B</b>    
 
-  <input type="checkbox" id="commitSizeCheckbox1" name="commitSize" checked={readCommitSize(workspace)===768000} 
-  onChange={()=>setCommitSizeCheckbox(workspace,768000)}></input>
-  <b className="defSizes">768000B</b>
+  <input type="checkbox" id="commitSizeCheckbox1" name="commitSize" checked={readCommitSize(workspace)===750000} 
+  onChange={()=>setCommitSizeCheckbox(workspace,750000)}></input>
+  <b className="defSizes">750000B</b>
 
   
   <input type="checkbox" id="commitSizeCheckbox1" name="commitSize" checked={readCommitSize(workspace)===768001} 
   onChange={()=>setCommitSizeCheckbox(workspace,768001)}></input>
   <b className="defSizes">768001B</b>
+
 
   
   <input type="checkbox" id="commitSizeCheckbox1" name="commitSize" checked={readCommitSize(workspace)===oneMb} 
@@ -120,7 +156,12 @@ export default function App() {
     onChange={()=>setCommitSizeCheckbox(workspace,2*oneMb)}></input>
 <b className="defSizes">2MB</b>
 
- 
+
+<input type="checkbox" id="commitSizeCheckbox1" name="commitSize" checked={readCommitSize(workspace)===5000000} 
+  onChange={()=>setCommitSizeCheckbox(workspace,5000000)}></input>
+  <b className="defSizes">5000000B</b>    
+
+
   <input type="checkbox" id="commitSizeCheckbox1" name="commitSize" checked={readCommitSize(workspace)===10*oneMb} 
   onChange={()=>setCommitSizeCheckbox(workspace,10*oneMb)}></input>
  <b className="defSizes">10MB</b>
@@ -134,6 +175,7 @@ export default function App() {
   <input type="checkbox" id="commitSizeCheckbox1" name="commitSize" checked={readCommitSize(workspace)===100*oneMb} 
   onChange={()=>setCommitSizeCheckbox(workspace,100*oneMb)}></input>
 <b className="defSizes">100MB</b>
+
 
 
 
