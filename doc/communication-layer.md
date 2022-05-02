@@ -1,15 +1,15 @@
 # Essential Communication Services
 
 The conceptual umbrella for the Fluid data communication is the [IDocumentService](https://github.com/microsoft/FluidFramework/blob/05620a70827bedf6038ddb3a51697d58e92fd854/common/lib/driver-definitions/src/storage.ts#L261) exposing handles for downstream services such:
-- __storage services__ (`IDocumentStorageService`) - responsible to deliver data snapshots on request, 
-- __delta stream__ (`IDocumentDeltaConnection`) - required to streamline incremental document changes in form of pub/sub interactions
-- __delta storage services__ (`IDocumentDeltaStorageService`) - which provides on-demand access to the stored deltas for a given shared object, essentially required to patch the communication gaps, such undelivered messages
+- __Storage services__ (`IDocumentStorageService`) - responsible to deliver data snapshots on request, 
+- __Delta stream__ (`IDocumentDeltaConnection`) - required to streamline incremental document changes in form of pub/sub interactions
+- __Delta storage services__ (`IDocumentDeltaStorageService`) - which provides on-demand access to the stored deltas for a given shared object, essentially required to patch the communication gaps, such undelivered messages
 
 Underlying transport:
 
-- __storage services__ - HTTP/REST
-- __delta stream__ - TCP/WS
-- __delta storage services__ - HTTP/REST
+- __Storage services__ - Exclusively HTTP/REST
+- __Delta stream__ - TCP/WS or HTTP long-polling
+- __Delta storage services__ - Exclusively HTTP/REST
 
 # Initial Loading
 
@@ -288,7 +288,7 @@ export interface IDocumentStorageService extends Partial<IDisposable> {
 
 # Summarizing
 
-Summaries represent in Fluid snapshots of the data. They are captured by the infrastructure, however client-side. There are two execution flavors of the summarizing functionality: [heuristic-based](https://github.com/microsoft/FluidFramework/blob/89f8a77ca9b6c25c4c1f3067565f72eb616db671/packages/runtime/container-runtime/src/summarizerHeuristics.ts#L52) and [on-demand](https://github.com/microsoft/FluidFramework/blob/89f8a77ca9b6c25c4c1f3067565f72eb616db671/packages/runtime/container-runtime/src/summarizer.ts#L319).
+A summary represents in Fluid multiple data snapshots. They are captured by the infrastructure, however client-side. There are two execution flavors of the summarizing functionality: [heuristic-based](https://github.com/microsoft/FluidFramework/blob/89f8a77ca9b6c25c4c1f3067565f72eb616db671/packages/runtime/container-runtime/src/summarizerHeuristics.ts#L52) and [on-demand](https://github.com/microsoft/FluidFramework/blob/89f8a77ca9b6c25c4c1f3067565f72eb616db671/packages/runtime/container-runtime/src/summarizer.ts#L319).
 
 The functionality and implementation overlaps with the workflow already investigated in the [Initial Loading](#initial-loading) paragraph. The only addition is that summarizing is leveraging also the `write` methods of the interface.
 
@@ -361,3 +361,60 @@ const MaxSnapshotBlobSize = 16 * 1024;
 //    This can be improved in the future, without being format breaking change, as loading sequence
 //    loads all blobs at once and partitioning schema has no impact on that process.
 ```
+
+See also the heuristic summarizer [configuration documentation](https://github.com/microsoft/FluidFramework/blob/c71cb13c0c64d779447edffdb834a05739a0bacb/docs/content/docs/concepts/summarizer.md#summarizer)
+
+# Incremental Updates
+
+The [DocumentDeltaConnection](https://github.com/microsoft/FluidFramework/blob/a16019bb71b67deef3924ab47036d1aa534bafa9/packages/drivers/driver-base/src/documentDeltaConnection.ts#L38) represents a connection to a stream of delta updates. The low level communication is ensured by [socket.io library](https://github.com/socketio/socket.io)
+
+In the case of [FluidHelloWorld](https://github.com/microsoft/FluidHelloWorld), which is based on the SharedMap DDS following notification path is observed (reduced for brevity):
+
+```
+updateDice (app.js:71)
+emit (events.js:153)
+processCore (map.js:289)
+process (sharedObject.js:294)
+process (channelDeltaConnection.js:33)
+processOp (remoteChannelContext.js:46)
+processChannelOp (dataStoreRuntime.js:596)
+processRemoteMessage (container.js:1250)
+processInboundMessage (deltaManager.js:566)
+push (deltaQueue.js:59)
+enqueueMessages (deltaManager.js:517)
+incomingOpHandler (deltaManager.js:49)
+ConnectionManager.opHandler (connectionManager.js:94)
+emit (events.js:153)
+(anonymous) (documentDeltaConnection.js:67)
+Socket.onevent (socket.js:278)
+ws.onmessage (websocket.js:160)
+```
+
+Is probably worth mentioning our understanding that the `DataStore` in Fluid container runtime terminology represents still a data snapshot, more precisely an [ISnapshotTree](https://github.com/microsoft/FluidFramework/blob/a16019bb71b67deef3924ab47036d1aa534bafa9/common/lib/protocol-definitions/src/storage.ts#L88) instantiation.
+
+```ts
+export interface ISnapshotTree {
+    id?: string;
+    blobs: { [path: string]: string };
+    trees: { [path: string]: ISnapshotTree };
+}
+
+```
+
+ Each runtime is associated with multiple [DataStores](https://github.com/microsoft/FluidFramework/blob/05620a70827bedf6038ddb3a51697d58e92fd854/packages/runtime/container-runtime/src/dataStores.ts#L60).
+
+ WebSocket based notification is employed for super-low message delivery latencies (aka speed) but the important question from data consistency standpoint is: 
+ 
+ __What are Fluid's message delivery guarantees? Is it possible that messages are lost during niche situations?__
+
+ Actually FLuidFramework elevates the answer in the [published documentation](https://github.com/microsoft/FluidFramework/blob/42e6f0e949b02c055de7d7f06d148bb18c66336f/docs/content/docs/concepts/tob.md#fluid-data-operations-all-the-way-down) to the DDS data consistency level:
+
+ > __Fluid guarantees eventual consistency via total order broadcast.__ That is, when a DDS is changed locally by a client, that change – that is, the operation – is first sent to the Fluid service, which does three things:
+
+> - Assigns a monotonically increasing sequence number to the operation; this is the “total order” part of total order broadcast.
+> - Broadcasts the operation to all other connected clients; this is the “broadcast” part of total order broadcast.
+> - Stores the operation’s data (see data persistence).
+
+How it is possible to offer this level of uncompromising reliability built on top of an unreliable protocol (ie websocket) will investigate in the section below.
+
+
