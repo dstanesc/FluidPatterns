@@ -409,8 +409,8 @@ export interface ISnapshotTree {
 
  Actually FLuidFramework elevates the answer in the [published documentation](https://github.com/microsoft/FluidFramework/blob/42e6f0e949b02c055de7d7f06d148bb18c66336f/docs/content/docs/concepts/tob.md#fluid-data-operations-all-the-way-down) to the DDS data consistency level:
 
- > __Fluid guarantees eventual consistency via total order broadcast.__ That is, when a DDS is changed locally by a client, that change – that is, the operation – is first sent to the Fluid service, which does three things:
-
+> __Fluid guarantees eventual consistency via total order broadcast.__ That is, when a DDS is changed locally by a client, that change – that is, the operation – is first sent to the Fluid service, which does three things:
+>
 > - Assigns a monotonically increasing sequence number to the operation; this is the “total order” part of total order broadcast.
 > - Broadcasts the operation to all other connected clients; this is the “broadcast” part of total order broadcast.
 > - Stores the operation’s data (see data persistence).
