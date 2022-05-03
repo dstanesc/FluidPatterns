@@ -415,6 +415,154 @@ export interface ISnapshotTree {
 > - Broadcasts the operation to all other connected clients; this is the “broadcast” part of total order broadcast.
 > - Stores the operation’s data (see data persistence).
 
-How it is possible to offer this level of uncompromising reliability built on top of an unreliable protocol (ie websocket) will investigate in the section below.
+We will investigate in the sections  below how it is possible to offer such level of uncompromising reliability built on top of a protocol which offers no delivery guarantees (ie websocket).
 
 
+
+# Quorum and Proposal
+
+The shared protocol is used to establish value consensus across clients associated with a given Fluid session.
+
+A [Quorum](https://github.com/microsoft/FluidFramework/blob/c7c985443a1c25df9d68f06390a32981a8c3c508/server/routerlicious/packages/protocol-base/src/quorum.ts#L346) represents all clients currently within the collaboration window. As well as the values they have agreed upon and any pending proposals.
+
+The QuorumProposals [class](https://github.com/microsoft/FluidFramework/blob/c7c985443a1c25df9d68f06390a32981a8c3c508/server/routerlicious/packages/protocol-base/src/quorum.ts#L137) holds a key/value store.  Proposed values become finalized in the store once all connected clients have agreed on the proposal.
+
+A quorum proposal transitions between four possible states: propose, accept, reject, and commit.
+
+A proposal begins in the propose state. The proposal is sent to the server and receives a sequence number which is
+used to uniquely identify it. Clients within the collaboration window accept the proposal by allowing their
+reference sequence number to go above the sequence number for the proposal. They reject it by submitting a reject
+message prior to sending a reference sequence number above the proposal number. Once the minimum sequence number
+goes above the sequence number for the proposal without any rejections it is considered accepted.
+
+The proposal enters the commit state when the minimum sequence number goes above the sequence number at which it
+became accepted. In the commit state all subsequent messages are guaranteed to have been sent with knowledge of
+the proposal. Between the accept and commit state there may be messages with reference sequence numbers prior to
+the proposal being accepted.
+
+
+# Delta Manager
+
+The [DeltaManager](https://github.com/microsoft/FluidFramework/blob/02a318ea8ff5ca0fae5fce8f5e3060cee6eedffd/packages/loader/container-loader/src/deltaManager.ts#L76) stays at the core of FluidFramework strategy for the __exactly-once__ message delivery guarantee.
+
+According to the internal documentation the `DeltaManager` manages the flow of both inbound and outbound messages. This class ensures that __shared objects receive delta messages in order regardless of possible network conditions or timings causing out of order delivery__.
+
+The essential APIs:
+
+The delta queue
+
+```ts
+/**
+ * Queue of ops to be sent to or processed from storage
+ */
+export interface IDeltaQueue<T> extends IEventProvider<IDeltaQueueEvents<T>>, IDisposable {
+    /**
+     * Pauses processing on the queue
+     * @returns A promise which resolves when processing has been paused.
+     */
+    pause(): Promise<void>;
+
+    /**
+     * Resumes processing on the queue
+     */
+    resume(): void;
+
+    /**
+     * Peeks at the next message in the queue
+     */
+    peek(): T | undefined;
+
+    /**
+     * Returns all the items in the queue as an array. Does not remove them from the queue.
+     */
+    toArray(): T[];
+}
+
+```
+
+The delta manager
+
+```ts
+/**
+ * Manages the transmission of ops between the runtime and storage.
+ */
+export interface IDeltaManager<T, U> extends IEventProvider<IDeltaManagerEvents>, IDeltaSender, IDisposable {
+    /** The queue of inbound delta messages */
+    readonly inbound: IDeltaQueue<T>;
+
+    /** The queue of outbound delta messages */
+    readonly outbound: IDeltaQueue<U[]>;
+
+    /** The queue of inbound delta signals */
+    readonly inboundSignal: IDeltaQueue<ISignalMessage>;
+
+    /** The current minimum sequence number */
+    readonly minimumSequenceNumber: number;
+
+    /** The last sequence number processed by the delta manager */
+    readonly lastSequenceNumber: number;
+
+    /** The last message processed by the delta manager */
+    readonly lastMessage: ISequencedDocumentMessage | undefined;
+
+    /** The latest sequence number the delta manager is aware of */
+    readonly lastKnownSeqNumber: number;
+
+    /** The initial sequence number set when attaching the op handler */
+    readonly initialSequenceNumber: number;
+
+	// ...
+}
+```
+
+The essential tracking in the `DeltaManager`:
+
+- `initSequenceNumber` - The sequence number `DeltaManager` initially loaded from. Exposed by `IDeltaManager` interface as `initialSequenceNumber`.
+
+- `minSequenceNumber` - The minimum sequence number is a sequence seen by all clients, and all clients will specify their reference sequence number as above the minium sequence number. This mean that no new operations can come in that reference anything at or below the minimum sequence number. Exposed by `IDeltaManager` interface as `minimumSequenceNumber`.
+
+- `lastQueuedSequenceNumber` - is the last queued sequence number. If there are gaps in seq numbers, then this number is not updated until we cover that gap, so it increases each time by 1.
+
+- `lastObservedSeqNumber` - is  an estimation of last known sequence number for the container in storage. It's initially populated at web socket connection time (if storage provides that info) and is updated once operations show up. It's never less than lastQueuedSequenceNumber.Exposed by `IDeltaManager` interface as `lastKnownSeqNumber`.
+
+- `lastProcessedSequenceNumber` - shares the semantics of  `lastQueuedSequenceNumber` only that is after processing. Exposed by `IDeltaManager` interface as `lastSequenceNumber`.
+
+
+Based on the sequence number tracking, the `DeltaManager` has the ability to __apply corrections in form of retrieving the missing deltas between the given sequence numbers__. The `from` is typically implied as `lastQueuedSequenceNumber + 1` whereas `to` is supplied as argument to the delta recovery call:
+
+```ts
+private fetchMissingDeltas(reason: string, to?: number){
+	//..
+}
+private async fetchMissingDeltasCore(reason: string, cache: boolean, to?: number) {
+	//..	
+}
+```
+
+The delta queue correction requests are resolved internally by the __Delta storage service__ already identified in the introduction as one of the essential components
+
+# Delta Storage Service
+
+The interface to provide access to stored deltas for a shared object is  [IDeltaStorageService](https://github.com/microsoft/FluidFramework/blob/e85239320a86c29d20c5d322273aee6b4e00af8b/common/lib/driver-definitions/src/storage.ts#L44).
+
+```ts
+export interface IDeltaStorageService {
+    /**
+     * Retrieves all the delta operations within the inclusive sequence number range
+     * @param tenantId - Id of the tenant.
+     * @param id - document id.
+     * @param from - first op to retrieve (inclusive)
+     * @param to - first op not to retrieve (exclusive end)
+     * @param fetchReason - Reason for fetching the messages. Example, gap between seq number
+     *  of Op on wire and known seq number. It should not contain any PII. It can be logged by
+     *  spo which could help in debugging sessions if any issue occurs.
+     */
+    get(
+        tenantId: string,
+        id: string,
+        from: number, // inclusive
+        to: number, // exclusive
+        fetchReason?: string,
+    ): Promise<IDeltasFetchResult>;
+}
+```
