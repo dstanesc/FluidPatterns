@@ -405,7 +405,7 @@ export interface ISnapshotTree {
 
  WebSocket based notification is employed for super-low message delivery latencies (aka speed) but the important question from data consistency standpoint is: 
  
- __What are Fluid's message delivery guarantees? Is it possible that messages are lost during niche situations?__
+ __What are Fluid's message delivery guarantees? Is it possible that committed messages are lost when network, service or hardware failures happen?__
 
  Actually FLuidFramework elevates the answer in the [published documentation](https://github.com/microsoft/FluidFramework/blob/42e6f0e949b02c055de7d7f06d148bb18c66336f/docs/content/docs/concepts/tob.md#fluid-data-operations-all-the-way-down) to the DDS data consistency level:
 
@@ -415,7 +415,7 @@ export interface ISnapshotTree {
 > - Broadcasts the operation to all other connected clients; this is the “broadcast” part of total order broadcast.
 > - Stores the operation’s data (see data persistence).
 
-We will investigate in the sections  below how it is possible to offer such level of uncompromising reliability built on top of a protocol which offers no delivery guarantees (ie websocket).
+We will investigate in the sections  below how it is possible to offer such level of uncompromising reliability built on top of a protocol which offers no delivery guarantees (i.e. websocket).
 
 
 
@@ -449,7 +449,7 @@ According to the internal documentation the `DeltaManager` manages the flow of b
 
 The essential APIs:
 
-The delta queue
+## Delta Queue
 
 ```ts
 /**
@@ -480,7 +480,7 @@ export interface IDeltaQueue<T> extends IEventProvider<IDeltaQueueEvents<T>>, ID
 
 ```
 
-The delta manager
+## Delta Manager
 
 ```ts
 /**
@@ -515,7 +515,7 @@ export interface IDeltaManager<T, U> extends IEventProvider<IDeltaManagerEvents>
 }
 ```
 
-The essential tracking in the `DeltaManager`:
+The essential tracking in the [DeltaManager](https://github.com/microsoft/FluidFramework/blob/02a318ea8ff5ca0fae5fce8f5e3060cee6eedffd/packages/loader/container-loader/src/deltaManager.ts#L76) instantiation of the `IDeltaManager` interface :
 
 - `initSequenceNumber` - The sequence number `DeltaManager` initially loaded from. Exposed by `IDeltaManager` interface as `initialSequenceNumber`.
 
@@ -539,11 +539,11 @@ private async fetchMissingDeltasCore(reason: string, cache: boolean, to?: number
 }
 ```
 
-The delta queue correction requests are resolved internally by the __Delta storage service__ already identified in the introduction as one of the essential components
+The delta queue correction requests are resolved internally by the __Delta Storage Service__ already identified in the introduction as one of the essential components
 
 # Delta Storage Service
 
-The interface to provide access to stored deltas for a shared object is  [IDeltaStorageService](https://github.com/microsoft/FluidFramework/blob/e85239320a86c29d20c5d322273aee6b4e00af8b/common/lib/driver-definitions/src/storage.ts#L44).
+For the contingent behavior, the interface responsible to provide access to the deltas associated with a given `SharedObject` is  [IDeltaStorageService](https://github.com/microsoft/FluidFramework/blob/e85239320a86c29d20c5d322273aee6b4e00af8b/common/lib/driver-definitions/src/storage.ts#L44).
 
 ```ts
 export interface IDeltaStorageService {
@@ -566,3 +566,13 @@ export interface IDeltaStorageService {
     ): Promise<IDeltasFetchResult>;
 }
 ```
+
+The actual implementation [class](https://github.com/microsoft/FluidFramework/blob/3014a37507cf4ae82752b6099ce36eca3578e719/packages/drivers/routerlicious-driver/src/deltaStorageService.ts#L80) simply performs an `HTTP/REST` call to Alfred's [getDeltas endpoint](https://github.com/microsoft/FluidFramework/blob/3014a37507cf4ae82752b6099ce36eca3578e719/server/routerlicious/packages/routerlicious-base/src/alfred/routes/api/deltas.ts#L28).
+
+In current routerlicious instantiation, the deltas are stored and retrieved from a MongoDb database.
+
+# Annexes
+
+## Fluid Relay Topology
+
+![Fluid Relay Topology](./img/Routerlicious-Architecture.svg)
