@@ -26,7 +26,7 @@ fetchSnapshotTree (webpack:///node_modules/@fluidframework/container-loader/lib/
 load (webpack:///node_modules/@fluidframework/container-loader/lib/container.js#828)
 resolve (webpack:///node_modules/@fluidframework/container-loader/lib/loader.js#124)
 ```
-for loading the snapshot tree and multiple :
+for loading the snapshot tree and multiple `getBlob` calls for reading the nested blobs.:
 
 ```
 getBlob (webpack:///node_modules/@fluidframework/server-services-client/lib/historian.js#49)
@@ -40,9 +40,7 @@ load (webpack:///node_modules/@fluidframework/container-loader/lib/container.js#
 resolve (webpack:///node_modules/@fluidframework/container-loader/lib/loader.js#124)
 ```
 
-calls for reading the nested blobs.
-
-The snapshot tree is quite verbose as carries many details of the instantiated container:
+The snapshot tree carries many details of the instantiated container, as revealed by the below sniffed payload:
 
 ```json
 {
@@ -229,7 +227,7 @@ The snapshot tree is quite verbose as carries many details of the instantiated c
 }
 ```
 
-The snapshots are stored in a Git storage service. Furthermore the API offered by the [IDocumentStorageService](https://Github.com/microsoft/FluidFramework/blob/05620a70827bedf6038ddb3a51697d58e92fd854/common/lib/driver-definitions/src/storage.ts#L111) is organically tied to the Git conceptual domain (that is adopts concepts such commits, trees and blobs building-up faithfully on the [Git terminology](https://git-scm.com/book/en/v2/Git-Internals-Git-Objects)).
+The snapshots trees are stored by a Git storage service. Furthermore the API offered by the [IDocumentStorageService](https://Github.com/microsoft/FluidFramework/blob/05620a70827bedf6038ddb3a51697d58e92fd854/common/lib/driver-definitions/src/storage.ts#L111) is organically tied to the Git conceptual domain (that is adopts concepts such commits, trees and blobs building-up faithfully on the [Git terminology](https://git-scm.com/book/en/v2/Git-Internals-Git-Objects)).
 
 The usage of the interface is `read-only`.
 
@@ -288,11 +286,11 @@ export interface IDocumentStorageService extends Partial<IDisposable> {
 
 # Summarizing
 
-A summary represents in Fluid multiple data snapshots. They are captured by the infrastructure, however client-side. There are two execution flavors of the summarizing functionality: [heuristic-based](https://github.com/microsoft/FluidFramework/blob/89f8a77ca9b6c25c4c1f3067565f72eb616db671/packages/runtime/container-runtime/src/summarizerHeuristics.ts#L52) and [on-demand](https://github.com/microsoft/FluidFramework/blob/89f8a77ca9b6c25c4c1f3067565f72eb616db671/packages/runtime/container-runtime/src/summarizer.ts#L319).
+A summary represents in Fluid a consolidation of all operations associated with (or a snapshot of) a given distributed data structure at a precise sequence number. They are captured by the infrastructure, however on the client-side. There are two execution flavors of the summarizing functionality: [heuristic-based](https://github.com/microsoft/FluidFramework/blob/89f8a77ca9b6c25c4c1f3067565f72eb616db671/packages/runtime/container-runtime/src/summarizerHeuristics.ts#L52) and [on-demand](https://github.com/microsoft/FluidFramework/blob/89f8a77ca9b6c25c4c1f3067565f72eb616db671/packages/runtime/container-runtime/src/summarizer.ts#L319).
 
-The functionality and implementation overlaps with the workflow already investigated in the [Initial Loading](#initial-loading) paragraph. The only addition is that summarizing is leveraging also the `write` methods of the interface.
+Similar to [initial loading](#initial-loading), the functionality leverages the [gitManager](https://github.com/microsoft/FluidFramework/blob/9e31a7895e6a7531da1ecebc13a8216b9ffe74ab/server/routerlicious/packages/services-client/src/gitManager.ts#L14) / [historian](https://github.com/microsoft/FluidFramework/blob/9e31a7895e6a7531da1ecebc13a8216b9ffe74ab/server/routerlicious/packages/services-client/src/historian.ts#L33) capabilities.
 
-Summarizing is distributed data structure (DDS) specific. 
+Summarizing implementation is distributed data structure (DDS) specific. 
 
 ```ts
 /**
