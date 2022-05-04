@@ -507,8 +507,8 @@ In current routerlicious instantiation, the deltas are stored and retrieved from
 
 1. Review and monitor data consistency related github issues [eg. is:issue is:open DeltaManager](https://github.com/microsoft/FluidFramework/issues?q=is%3Aissue+is%3Aopen+DeltaManager)
 2. Is the Git file system abstraction a good one-size-fits-all data and metadata storage choice? What are the (simpler) alternatives?
-3. Is the `HTTP/REST` and `TCP/WS` the ideal communication choices? What are the (more efficient) alternatives?
-4. Should agents follow the integration pattern of regular collaboration clients (ie.`HTTP/REST` and `TCP/WS` protocols). One finding in our prior work is that [snapshots are not useful](../apps/assembly-authoring-tracked/) when externalizing data to materialized view agents. Is it possible to employ a more specialized transport to leverage the enterprise LAN (as opposed to WAN) environment in selected cases. Polyglot persistence (programming language incl.) and delivery reliability may benefit from introducing additional, purpose built [communication protocols](https://kafka.apache.org/protocol.html#protocol_philosophy)
+3. Are the `HTTP/REST` and `TCP/WS` the ideal communication choices? What are the (more efficient) alternatives?
+4. Should agents follow the integration pattern of regular collaboration clients (ie.`HTTP/REST` and `TCP/WS` protocols). One finding in our prior work is that [snapshots are not useful](../apps/assembly-authoring-tracked/) when externalizing data to materialized view agents. Is it possible to employ a more specialized delta transport to leverage the enterprise LAN environment benefits in selected cases. Polyglot persistence (programming language incl.) and delivery reliability may profit from introducing additional, purpose built [communication protocols](https://kafka.apache.org/protocol.html#protocol_philosophy).
 
 # Annexes
 
