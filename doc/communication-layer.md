@@ -428,7 +428,8 @@ export interface ISnapshotTree {
  
  __What are Fluid's message delivery guarantees? Is it possible that committed messages are lost when network, service or hardware failures happen?__
 
- Actually FLuidFramework elevates the answer in the [published documentation](https://github.com/microsoft/FluidFramework/blob/42e6f0e949b02c055de7d7f06d148bb18c66336f/docs/content/docs/concepts/tob.md#fluid-data-operations-all-the-way-down) to the DDS data consistency level:
+ Actually FluidFramework elevates the answer in the [published documentation](https://github.com/microsoft/FluidFramework/blob/42e6f0e949b02c055de7d7f06d148bb18c66336f/docs/content/docs/concepts/tob.md#fluid-data-operations-all-the-way-down) to the DDS data consistency level:
+
 
 > __Fluid guarantees eventual consistency via total order broadcast.__ That is, when a DDS is changed locally by a client, that change – that is, the operation – is first sent to the Fluid service, which does three things:
 >
@@ -436,13 +437,14 @@ export interface ISnapshotTree {
 > - Broadcasts the operation to all other connected clients; this is the “broadcast” part of total order broadcast.
 > - Stores the operation’s data (see data persistence).
 
-We will investigate in the sections  below how it is possible to offer such level of uncompromising reliability built on top of a protocol which offers no delivery guarantees (i.e. websocket).
+
+We will investigate in the sections below how it is possible to offer uncompromising reliability when the underlying communication protocol offers no delivery guarantees (i.e. websocket).
 
 
 
 # Quorum and Proposal
 
-The shared protocol is used to establish value consensus across clients associated with a given Fluid session.
+A shared protocol is used to establish value consensus across clients associated with a given Fluid session.
 
 A [Quorum](https://github.com/microsoft/FluidFramework/blob/c7c985443a1c25df9d68f06390a32981a8c3c508/server/routerlicious/packages/protocol-base/src/quorum.ts#L346) represents all clients currently within the collaboration window. As well as the values they have agreed upon and any pending proposals.
 
