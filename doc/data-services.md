@@ -130,7 +130,7 @@ The snapshot tree carries many details of the instantiated container, as reveale
 }
 ```
 
-The blobs are carrying many details, for instance one of them is the actual dice value:
+The blobs deliver specific information, for instance one of them is the actual dice value:
 
 ```json
 POST http://localhost:7070/repos/tinylicious/git/blobs/2596468d73c95dee0c383702be864355415514d5?token=dGlueWxpY2lvdXM%3D
