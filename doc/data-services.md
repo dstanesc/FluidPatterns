@@ -468,12 +468,9 @@ Based on the sequence number tracking, the `DeltaManager` has the ability to __a
 private fetchMissingDeltas(reason: string, to?: number){
 	//..
 }
-private async fetchMissingDeltasCore(reason: string, cache: boolean, to?: number) {
-	//..	
-}
 ```
 
-The delta queue correction requests are resolved internally by the __Delta Storage Service__ already identified in the introduction as one of the essential components
+The delta queue correction requests are resolved internally by the __Delta Storage Service__. 
 
 # Delta Storage Service
 
@@ -501,9 +498,17 @@ export interface IDeltaStorageService {
 }
 ```
 
-The actual implementation [class](https://github.com/microsoft/FluidFramework/blob/3014a37507cf4ae82752b6099ce36eca3578e719/packages/drivers/routerlicious-driver/src/deltaStorageService.ts#L80) simply performs an `HTTP/REST` call to Alfred's [getDeltas endpoint](https://github.com/microsoft/FluidFramework/blob/3014a37507cf4ae82752b6099ce36eca3578e719/server/routerlicious/packages/routerlicious-base/src/alfred/routes/api/deltas.ts#L28).
+The actual [implementation](https://github.com/microsoft/FluidFramework/blob/3014a37507cf4ae82752b6099ce36eca3578e719/packages/drivers/routerlicious-driver/src/deltaStorageService.ts#L80)  performs a `HTTP/REST` call to Alfred's [getDeltas endpoint](https://github.com/microsoft/FluidFramework/blob/3014a37507cf4ae82752b6099ce36eca3578e719/server/routerlicious/packages/routerlicious-base/src/alfred/routes/api/deltas.ts#L28).
 
-In current routerlicious instantiation, the deltas are stored and retrieved from a MongoDb database.
+In current routerlicious instantiation, the deltas are stored and retrieved from a MongoDb database. See also [Fluid Relay Topology](#fluid-relay-topology) in the [Annexes](#annexes) section for a visual representation of the delta storage interaction.
+
+
+# Review Notes
+
+1. Review and monitor data consistency related github issues [eg. is:issue is:open DeltaManager](https://github.com/microsoft/FluidFramework/issues?q=is%3Aissue+is%3Aopen+DeltaManager)
+2. Is the Git file system abstraction a good one-size-fits-all data and metadata storage choice? What are the (simpler) alternatives?
+3. Is the `HTTP/REST` and `TCP/WS` the ideal communication choices? What are the (more efficient) alternatives?
+4. Should agents follow the integration pattern of regular collaboration clients (ie.`HTTP/REST` and `TCP/WS` protocols). One finding in our prior work is that [snapshots are not useful](../apps/assembly-authoring-tracked/) when externalizing data to materialized view agents. Is it possible to employ a more specialized transport to leverage the enterprise LAN (as opposed to WAN) environment in selected cases. Polyglot persistence (programming language incl.) and delivery reliability may benefit from introducing additional, purpose built [communication protocols](https://kafka.apache.org/protocol.html#protocol_philosophy)
 
 # Annexes
 
