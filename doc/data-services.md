@@ -1,6 +1,45 @@
-# Essential Communication Services
+# Data Services and Data Consistency in FluidFramework
 
-The conceptual umbrella for the Fluid data communication is the [IDocumentService](https://github.com/microsoft/FluidFramework/blob/05620a70827bedf6038ddb3a51697d58e92fd854/common/lib/driver-definitions/src/storage.ts#L261) exposing handles for downstream services such:
+# Container Runtime
+
+_(Mentioned here for better overview, out of the declared scope)_
+
+The conceptual Fluid entry point is the [container loader](https://github.com/microsoft/FluidFramework/tree/main/packages/loader/container-loader) which makes up the minimal kernel of the Fluid runtime. 
+
+This kernel is responsible for:
+- Provide access to the Fluid storage 
+- Ensure consensus over a quorum of clients. 
+
+Storage includes snapshots as well as the live and persisted operation stream. The consensus system allows clients within the collaboration window to agree on container's properties. One example of this is the npm package that should be loaded to process operations applied to the container.
+
+
+# Quorum and Proposal
+
+_(Mentioned here for better overview, out of the declared scope)_
+
+A shared protocol is used to establish value consensus across clients associated with a given Fluid session. The starting transport layer is `HTTP/REST` and upgraded to `TCP/WS` (HTTP 101).
+
+A [Quorum](https://github.com/microsoft/FluidFramework/blob/c7c985443a1c25df9d68f06390a32981a8c3c508/server/routerlicious/packages/protocol-base/src/quorum.ts#L346) represents all clients currently within the collaboration window. As well as the values they have agreed upon and any pending proposals.
+
+The QuorumProposals [class](https://github.com/microsoft/FluidFramework/blob/c7c985443a1c25df9d68f06390a32981a8c3c508/server/routerlicious/packages/protocol-base/src/quorum.ts#L137) holds a key/value store.  Proposed values become finalized in the store once all connected clients have agreed on the proposal.
+
+A quorum proposal transitions between four possible states: propose, accept, reject, and commit.
+
+A proposal begins in the propose state. The proposal is sent to the server and receives a sequence number which is
+used to uniquely identify it. Clients within the collaboration window accept the proposal by allowing their
+reference sequence number to go above the sequence number for the proposal. They reject it by submitting a reject
+message prior to sending a reference sequence number above the proposal number. Once the minimum sequence number
+goes above the sequence number for the proposal without any rejections it is considered accepted.
+
+The proposal enters the commit state when the minimum sequence number goes above the sequence number at which it
+became accepted. In the commit state all subsequent messages are guaranteed to have been sent with knowledge of
+the proposal. Between the accept and commit state there may be messages with reference sequence numbers prior to
+the proposal being accepted.
+
+
+# Storage Services
+
+The central component responsible for container data exchange is the [IDocumentService](https://github.com/microsoft/FluidFramework/blob/05620a70827bedf6038ddb3a51697d58e92fd854/common/lib/driver-definitions/src/storage.ts#L261). The document service is providing access to critical downstream services such:
 - __Storage services__ (`IDocumentStorageService`) - responsible to deliver data snapshots on request, 
 - __Delta stream__ (`IDocumentDeltaConnection`) - required to streamline incremental document changes in form of pub/sub interactions
 - __Delta storage services__ (`IDocumentDeltaStorageService`) - which provides on-demand access to the stored deltas for a given shared object, essentially required to patch the communication gaps, such undelivered messages
@@ -26,11 +65,12 @@ export interface IDocumentService {
 }
 ```
 
-As we will uncover later the transport layer is a combination of `HTTP/REST` and `TCP/WS` protocols:
+The transport layer is a combination of `HTTP/REST` and `TCP/WS`, as follows:
 
-- __Storage services__ - Exclusively HTTP/REST
-- __Delta stream__ - TCP/WS or HTTP long-polling (fallback)
-- __Delta storage services__ - Exclusively HTTP/REST
+- __Storage services__ - Exclusively `HTTP/REST`
+- __Delta stream__ - `TCP/WS` or `HTTP long-polling` (fallback)
+- __Delta storage services__ - Exclusively `HTTP/REST`
+
 
 # Initial Loading
 
@@ -83,176 +123,70 @@ The snapshot tree carries many details of the instantiated container, as reveale
 			"type": "tree",
 			"url": ""
 		},
-		{
-			"path": ".channels/rootDOId/.channels",
-			"mode": "40000",
-			"sha": "d60fd6cff468f6d229ecec2fa2d4d7edf77a2565",
-			"size": 0,
-			"type": "tree",
-			"url": ""
-		},
-		{
-			"path": ".channels/rootDOId/.channels/7a683482-4916-465e-931c-b6f16773233a",
-			"mode": "40000",
-			"sha": "db99ed4eb11be079c85f8666ad37a4d1ceafc647",
-			"size": 0,
-			"type": "tree",
-			"url": ""
-		},
-		{
-			"path": ".channels/rootDOId/.channels/7a683482-4916-465e-931c-b6f16773233a/.attributes",
-			"mode": "100644",
-			"sha": "ec0976e83e99c4660f11a0711bc82fa2a47d4cfc",
-			"size": 0,
-			"type": "blob",
-			"url": ""
-		},
-		{
-			"path": ".channels/rootDOId/.channels/7a683482-4916-465e-931c-b6f16773233a/header",
-			"mode": "100644",
-			"sha": "5ab05a8719630b219be3d28ec8cf47b30caa655c",
-			"size": 0,
-			"type": "blob",
-			"url": ""
-		},
-		{
-			"path": ".channels/rootDOId/.channels/root",
-			"mode": "40000",
-			"sha": "be0f6103acf52425c8e24953ade054ebd26ea16f",
-			"size": 0,
-			"type": "tree",
-			"url": ""
-		},
-		{
-			"path": ".channels/rootDOId/.channels/root/.attributes",
-			"mode": "100644",
-			"sha": "b842e94227b824a425d7219cf4bb2c912ba999fc",
-			"size": 0,
-			"type": "blob",
-			"url": ""
-		},
-		{
-			"path": ".channels/rootDOId/.channels/root/header",
-			"mode": "100644",
-			"sha": "5af4c278bb63e8e283086fa698341472aeb2bf0d",
-			"size": 0,
-			"type": "blob",
-			"url": ""
-		},
-		{
-			"path": ".channels/rootDOId/.component",
-			"mode": "100644",
-			"sha": "c35bbe00f9cb9ee99c8af3d4757411abdda3d8f3",
-			"size": 0,
-			"type": "blob",
-			"url": ""
-		},
-		{
-			"path": ".electedSummarizer",
-			"mode": "100644",
-			"sha": "281a05982b6d4d03bc3df509ecdbc22a196cc69a",
-			"size": 0,
-			"type": "blob",
-			"url": ""
-		},
-		{
-			"path": ".logTail",
-			"mode": "40000",
-			"sha": "f8f79f8d92556ac548c4cf345359fe316dd6a80b",
-			"size": 0,
-			"type": "tree",
-			"url": ""
-		},
-		{
-			"path": ".logTail/logTail",
-			"mode": "100644",
-			"sha": "f388df13b6dfda731a94674ca5146083c010f20b",
-			"size": 0,
-			"type": "blob",
-			"url": ""
-		},
-		{
-			"path": ".metadata",
-			"mode": "100644",
-			"sha": "8eaf0ecab838c6f7c1f793a633ad463e8ba855a6",
-			"size": 0,
-			"type": "blob",
-			"url": ""
-		},
-		{
-			"path": ".protocol",
-			"mode": "40000",
-			"sha": "338a3496b594198f6bd7f12ab4e2ec48fadd6c7e",
-			"size": 0,
-			"type": "tree",
-			"url": ""
-		},
-		{
-			"path": ".protocol/attributes",
-			"mode": "100644",
-			"sha": "9f1825d093f8c88322cb1ffc582cc7ea259c589d",
-			"size": 0,
-			"type": "blob",
-			"url": ""
-		},
-		{
-			"path": ".protocol/quorumMembers",
-			"mode": "100644",
-			"sha": "0637a088a01e8ddab3bf3fa98dbe804cbde1a0dc",
-			"size": 0,
-			"type": "blob",
-			"url": ""
-		},
-		{
-			"path": ".protocol/quorumProposals",
-			"mode": "100644",
-			"sha": "0637a088a01e8ddab3bf3fa98dbe804cbde1a0dc",
-			"size": 0,
-			"type": "blob",
-			"url": ""
-		},
-		{
-			"path": ".protocol/quorumValues",
-			"mode": "100644",
-			"sha": "c730f7a6ff8c606cc2b7d083e5a9705bff0d7029",
-			"size": 0,
-			"type": "blob",
-			"url": ""
-		},
-		{
-			"path": ".serviceProtocol",
-			"mode": "40000",
-			"sha": "ad7ff8e1f24b0d4b8ccdd69569b0f3d07619bd0b",
-			"size": 0,
-			"type": "tree",
-			"url": ""
-		},
-		{
-			"path": ".serviceProtocol/deli",
-			"mode": "100644",
-			"sha": "022f55a262299fa7f2549d53f0610a02483db450",
-			"size": 0,
-			"type": "blob",
-			"url": ""
-		},
-		{
-			"path": ".serviceProtocol/scribe",
-			"mode": "100644",
-			"sha": "1b2bf9a365034da2cd3901260f4b5cbc50b5f916",
-			"size": 0,
-			"type": "blob",
-			"url": ""
-		}
+
+		// ... 20 more entries
 	],
 	"url": ""
 }
 ```
 
-The snapshots trees are stored by a Git storage service. Furthermore the API offered by the [IDocumentStorageService](https://Github.com/microsoft/FluidFramework/blob/05620a70827bedf6038ddb3a51697d58e92fd854/common/lib/driver-definitions/src/storage.ts#L111) is organically tied to the Git conceptual domain (that is adopts concepts such commits, trees and blobs building-up faithfully on the [Git terminology](https://git-scm.com/book/en/v2/Git-Internals-Git-Objects)).
+The blobs are carrying many details, for instance one of them is the actual dice value:
+
+```json
+POST http://localhost:7070/repos/tinylicious/git/blobs/2596468d73c95dee0c383702be864355415514d5?token=dGlueWxpY2lvdXM%3D
+
+{
+    "url": "",
+    "sha": "c35bbe00f9cb9ee99c8af3d4757411abdda3d8f3",
+    "size": 70,
+    "content": "eyJwa2ciOiJbXCJyb290RE9cIl0iLCJzdW1tYXJ5Rm9ybWF0VmVyc2lvbiI6MiwiaXNSb290RGF0YVN0b3JlIjp0cnVlfQ==",
+    "encoding": "base64"
+}
+```
+which decoded is:
+
+```json
+{
+    "blobs": [],
+    "content": {
+        "dice-value-key": {
+            "type": "Plain",
+            "value": 1
+        }
+    }
+}
+```
+
+but many other carry useful metadata, eg.:
+
+```json
+POST http://localhost:7070/repos/tinylicious/git/blobs/9f1825d093f8c88322cb1ffc582cc7ea259c589d?token=dGlueWxpY2lvdXM=
+
+{
+    "url": "",
+    "sha": "9f1825d093f8c88322cb1ffc582cc7ea259c589d",
+    "size": 55,
+    "content": "eyJtaW5pbXVtU2VxdWVuY2VOdW1iZXIiOjAsInNlcXVlbmNlTnVtYmVyIjowLCJ0ZXJtIjoxfQ==",
+    "encoding": "base64"
+}
+```
+which decoded points to the actual `minimumSequenceNumber` and `sequenceNumber`:
+
+```json
+{
+    "minimumSequenceNumber": 0,
+    "sequenceNumber": 0,
+    "term": 1
+}
+```
+
+The architectural intention seems to be creating a virtual (and versioned) file system storing in a predictable topology all relevant information associated with a given container and the encapsulated distributed data structures (DDS).
+
+Technically the snapshots trees are stored by a Git service. Furthermore the API offered by the [IDocumentStorageService](https://Github.com/microsoft/FluidFramework/blob/05620a70827bedf6038ddb3a51697d58e92fd854/common/lib/driver-definitions/src/storage.ts#L111) is organically tied to the Git conceptual domain (that is adopts concepts such commits, trees and blobs building-up faithfully on the [Git terminology](https://git-scm.com/book/en/v2/Git-Internals-Git-Objects)).
 
 The usage of the interface is `read-only`.
 
-As revealed by the client-side call stacks, [the gitManager](https://github.com/microsoft/FluidFramework/blob/9e31a7895e6a7531da1ecebc13a8216b9ffe74ab/server/routerlicious/packages/services-client/src/gitManager.ts#L14) respectively [the historian](https://github.com/microsoft/FluidFramework/blob/9e31a7895e6a7531da1ecebc13a8216b9ffe74ab/server/routerlicious/packages/services-client/src/historian.ts#L33) are serving as proxies to the actual data storage backend.
+As above revealed by the client-side call stacks, [the gitManager](https://github.com/microsoft/FluidFramework/blob/9e31a7895e6a7531da1ecebc13a8216b9ffe74ab/server/routerlicious/packages/services-client/src/gitManager.ts#L14) respectively [the historian](https://github.com/microsoft/FluidFramework/blob/9e31a7895e6a7531da1ecebc13a8216b9ffe74ab/server/routerlicious/packages/services-client/src/historian.ts#L33) are serving as proxies to the actual data storage backend.
 
 ```ts
 /**
@@ -309,7 +243,7 @@ export interface IDocumentStorageService extends Partial<IDisposable> {
 
 # Summarizing
 
-A summary represents in Fluid a consolidation of all operations associated with (or a snapshot of) a given distributed data structure at a precise sequence number. They are captured by the infrastructure, however on the client-side. There are two execution flavors of the summarizing functionality: [heuristic-based](https://github.com/microsoft/FluidFramework/blob/89f8a77ca9b6c25c4c1f3067565f72eb616db671/packages/runtime/container-runtime/src/summarizerHeuristics.ts#L52) and [on-demand](https://github.com/microsoft/FluidFramework/blob/89f8a77ca9b6c25c4c1f3067565f72eb616db671/packages/runtime/container-runtime/src/summarizer.ts#L319).
+A summary represents in Fluid a consolidation of all operations associated with (or a snapshot of) a given distributed data structure (DDS) at a precise sequence number. They are captured by the infrastructure, however on the client-side. There are two execution flavors of the summarizing functionality: [heuristic-based](https://github.com/microsoft/FluidFramework/blob/89f8a77ca9b6c25c4c1f3067565f72eb616db671/packages/runtime/container-runtime/src/summarizerHeuristics.ts#L52) and [on-demand](https://github.com/microsoft/FluidFramework/blob/89f8a77ca9b6c25c4c1f3067565f72eb616db671/packages/runtime/container-runtime/src/summarizer.ts#L319).
 
 Similar to [initial loading](#initial-loading), the functionality leverages the [the gitManager](https://github.com/microsoft/FluidFramework/blob/9e31a7895e6a7531da1ecebc13a8216b9ffe74ab/server/routerlicious/packages/services-client/src/gitManager.ts#L14) and [the historian](https://github.com/microsoft/FluidFramework/blob/9e31a7895e6a7531da1ecebc13a8216b9ffe74ab/server/routerlicious/packages/services-client/src/historian.ts#L33) capabilities.
 
@@ -439,29 +373,6 @@ export interface ISnapshotTree {
 
 
 We will investigate in the sections below how it is possible to offer uncompromising reliability when the underlying communication protocol offers no delivery guarantees (i.e. websocket).
-
-
-
-# Quorum and Proposal
-
-A shared protocol is used to establish value consensus across clients associated with a given Fluid session.
-
-A [Quorum](https://github.com/microsoft/FluidFramework/blob/c7c985443a1c25df9d68f06390a32981a8c3c508/server/routerlicious/packages/protocol-base/src/quorum.ts#L346) represents all clients currently within the collaboration window. As well as the values they have agreed upon and any pending proposals.
-
-The QuorumProposals [class](https://github.com/microsoft/FluidFramework/blob/c7c985443a1c25df9d68f06390a32981a8c3c508/server/routerlicious/packages/protocol-base/src/quorum.ts#L137) holds a key/value store.  Proposed values become finalized in the store once all connected clients have agreed on the proposal.
-
-A quorum proposal transitions between four possible states: propose, accept, reject, and commit.
-
-A proposal begins in the propose state. The proposal is sent to the server and receives a sequence number which is
-used to uniquely identify it. Clients within the collaboration window accept the proposal by allowing their
-reference sequence number to go above the sequence number for the proposal. They reject it by submitting a reject
-message prior to sending a reference sequence number above the proposal number. Once the minimum sequence number
-goes above the sequence number for the proposal without any rejections it is considered accepted.
-
-The proposal enters the commit state when the minimum sequence number goes above the sequence number at which it
-became accepted. In the commit state all subsequent messages are guaranteed to have been sent with knowledge of
-the proposal. Between the accept and commit state there may be messages with reference sequence numbers prior to
-the proposal being accepted.
 
 
 # Delta Manager
