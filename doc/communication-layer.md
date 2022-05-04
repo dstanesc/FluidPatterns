@@ -5,10 +5,31 @@ The conceptual umbrella for the Fluid data communication is the [IDocumentServic
 - __Delta stream__ (`IDocumentDeltaConnection`) - required to streamline incremental document changes in form of pub/sub interactions
 - __Delta storage services__ (`IDocumentDeltaStorageService`) - which provides on-demand access to the stored deltas for a given shared object, essentially required to patch the communication gaps, such undelivered messages
 
-Underlying transport:
+
+```ts
+export interface IDocumentService {
+    /**
+     * Access to storage associated with the document...
+     */
+    connectToStorage(): Promise<IDocumentStorageService>;
+
+    /**
+     * Access to delta storage associated with the document
+     */
+    connectToDeltaStorage(): Promise<IDocumentDeltaStorageService>;
+
+    /**
+     * Subscribes to the document delta stream
+     */
+    connectToDeltaStream(client: IClient): Promise<IDocumentDeltaConnection>;
+	//..
+}
+```
+
+As we will uncover later the transport layer is a combination of `HTTP/REST` and `TCP/WS` protocols:
 
 - __Storage services__ - Exclusively HTTP/REST
-- __Delta stream__ - TCP/WS or HTTP long-polling
+- __Delta stream__ - TCP/WS or HTTP long-polling (fallback)
 - __Delta storage services__ - Exclusively HTTP/REST
 
 # Initial Loading
@@ -231,6 +252,8 @@ The snapshots trees are stored by a Git storage service. Furthermore the API off
 
 The usage of the interface is `read-only`.
 
+As revealed by the client-side call stacks, [the gitManager](https://github.com/microsoft/FluidFramework/blob/9e31a7895e6a7531da1ecebc13a8216b9ffe74ab/server/routerlicious/packages/services-client/src/gitManager.ts#L14) respectively [the historian](https://github.com/microsoft/FluidFramework/blob/9e31a7895e6a7531da1ecebc13a8216b9ffe74ab/server/routerlicious/packages/services-client/src/historian.ts#L33) are serving as proxies to the actual data storage backend.
+
 ```ts
 /**
  * Interface to provide access to snapshots saved for a shared object
@@ -288,7 +311,7 @@ export interface IDocumentStorageService extends Partial<IDisposable> {
 
 A summary represents in Fluid a consolidation of all operations associated with (or a snapshot of) a given distributed data structure at a precise sequence number. They are captured by the infrastructure, however on the client-side. There are two execution flavors of the summarizing functionality: [heuristic-based](https://github.com/microsoft/FluidFramework/blob/89f8a77ca9b6c25c4c1f3067565f72eb616db671/packages/runtime/container-runtime/src/summarizerHeuristics.ts#L52) and [on-demand](https://github.com/microsoft/FluidFramework/blob/89f8a77ca9b6c25c4c1f3067565f72eb616db671/packages/runtime/container-runtime/src/summarizer.ts#L319).
 
-Similar to [initial loading](#initial-loading), the functionality leverages the [gitManager](https://github.com/microsoft/FluidFramework/blob/9e31a7895e6a7531da1ecebc13a8216b9ffe74ab/server/routerlicious/packages/services-client/src/gitManager.ts#L14) / [historian](https://github.com/microsoft/FluidFramework/blob/9e31a7895e6a7531da1ecebc13a8216b9ffe74ab/server/routerlicious/packages/services-client/src/historian.ts#L33) capabilities.
+Similar to [initial loading](#initial-loading), the functionality leverages the [the gitManager](https://github.com/microsoft/FluidFramework/blob/9e31a7895e6a7531da1ecebc13a8216b9ffe74ab/server/routerlicious/packages/services-client/src/gitManager.ts#L14) and [the historian](https://github.com/microsoft/FluidFramework/blob/9e31a7895e6a7531da1ecebc13a8216b9ffe74ab/server/routerlicious/packages/services-client/src/historian.ts#L33) capabilities.
 
 Summarizing implementation is distributed data structure (DDS) specific. 
 
