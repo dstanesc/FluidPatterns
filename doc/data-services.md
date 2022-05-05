@@ -122,7 +122,7 @@ load (@fluidframework/container-loader/lib/container.js#828)
 resolve (@fluidframework/container-loader/lib/loader.js#124)
 ```
 
-The snapshot tree carries many details of the instantiated container, as revealed by the below sniffed payload:
+The _snapshot tree_ carries many details of the instantiated container, as revealed by the following sniffed payload:
 
 ```json
 {
@@ -145,17 +145,17 @@ The snapshot tree carries many details of the instantiated container, as reveale
 			"url": ""
 		},
 
-		// ... 20 more entries
+		/* ... 20 more entries */
 	],
 	"url": ""
 }
 ```
 
-The blobs deliver specific information, for instance one of them is the actual dice value:
+The blobs deliver specific information fragments, for instance one of them is the actual dice value:
+
+`POST http://localhost:7070/repos/tinylicious/git/blobs/2596468d73c95dee0c383702be864355415514d5?token=dGlueWxpY2lvdXM%3D`
 
 ```json
-POST http://localhost:7070/repos/tinylicious/git/blobs/2596468d73c95dee0c383702be864355415514d5?token=dGlueWxpY2lvdXM%3D
-
 {
     "url": "",
     "sha": "c35bbe00f9cb9ee99c8af3d4757411abdda3d8f3",
@@ -180,9 +180,9 @@ which decoded is:
 
 but many other carry useful metadata, eg.:
 
-```json
-POST http://localhost:7070/repos/tinylicious/git/blobs/9f1825d093f8c88322cb1ffc582cc7ea259c589d?token=dGlueWxpY2lvdXM=
+`POST http://localhost:7070/repos/tinylicious/git/blobs/9f1825d093f8c88322cb1ffc582cc7ea259c589d?token=dGlueWxpY2lvdXM=`
 
+```json
 {
     "url": "",
     "sha": "9f1825d093f8c88322cb1ffc582cc7ea259c589d",
@@ -191,7 +191,7 @@ POST http://localhost:7070/repos/tinylicious/git/blobs/9f1825d093f8c88322cb1ffc5
     "encoding": "base64"
 }
 ```
-which decoded points to the actual `minimumSequenceNumber` and `sequenceNumber`:
+which decoded reveals to the actual `minimumSequenceNumber` and `sequenceNumber` of the current snapshot, however de-contextualized:
 
 ```json
 {
@@ -207,7 +207,7 @@ Technically the snapshots trees are stored by a Git service. Furthermore the API
 
 The usage of the interface is `read-only`.
 
-As above revealed by the client-side call stacks, [the gitManager](https://github.com/microsoft/FluidFramework/blob/9e31a7895e6a7531da1ecebc13a8216b9ffe74ab/server/routerlicious/packages/services-client/src/gitManager.ts#L14) respectively [the historian](https://github.com/microsoft/FluidFramework/blob/9e31a7895e6a7531da1ecebc13a8216b9ffe74ab/server/routerlicious/packages/services-client/src/historian.ts#L33) are serving as proxies to the actual data storage backend.
+As shown above in the client-side call stacks, [the gitManager](https://github.com/microsoft/FluidFramework/blob/9e31a7895e6a7531da1ecebc13a8216b9ffe74ab/server/routerlicious/packages/services-client/src/gitManager.ts#L14) respectively [the historian](https://github.com/microsoft/FluidFramework/blob/9e31a7895e6a7531da1ecebc13a8216b9ffe74ab/server/routerlicious/packages/services-client/src/historian.ts#L33) are serving as proxies to the actual data storage backend.
 
 ```ts
 /**
@@ -342,7 +342,7 @@ See also the heuristic summarizer [configuration documentation](https://github.c
 
 # Incremental Updates
 
-The [DocumentDeltaConnection](https://github.com/microsoft/FluidFramework/blob/a16019bb71b67deef3924ab47036d1aa534bafa9/packages/drivers/driver-base/src/documentDeltaConnection.ts#L38) represents a connection to a stream of delta updates. The low level communication is ensured by [socket.io library](https://github.com/socketio/socket.io)
+The [DocumentDeltaConnection](https://github.com/microsoft/FluidFramework/blob/a16019bb71b67deef3924ab47036d1aa534bafa9/packages/drivers/driver-base/src/documentDeltaConnection.ts#L38) represents a connection to a stream of delta updates. For low message delivery latency the infrastructure offers [websocket](https://developer.mozilla.org/en-US/docs/Web/API/WebSockets_API) based transport. The implementation is based on the [socket.io library](https://github.com/socketio/socket.io)
 
 In the case of [FluidHelloWorld](https://github.com/microsoft/FluidHelloWorld), which is based on the SharedMap DDS following notification path is observed (reduced for brevity):
 
@@ -366,7 +366,7 @@ Socket.onevent (socket.js:278)
 ws.onmessage (websocket.js:160)
 ```
 
-Is probably worth mentioning our understanding that the `DataStore` in Fluid container runtime terminology represents still a data snapshot, more precisely an [ISnapshotTree](https://github.com/microsoft/FluidFramework/blob/a16019bb71b67deef3924ab47036d1aa534bafa9/common/lib/protocol-definitions/src/storage.ts#L88) instantiation.
+Is probably worth mentioning our understanding that the `DataStore` in the Fluid container runtime terminology represents still a data snapshot, more precisely an [ISnapshotTree](https://github.com/microsoft/FluidFramework/blob/a16019bb71b67deef3924ab47036d1aa534bafa9/common/lib/protocol-definitions/src/storage.ts#L88) instantiation.
 
 ```ts
 export interface ISnapshotTree {
@@ -377,13 +377,11 @@ export interface ISnapshotTree {
 
 ```
 
- Each runtime is associated with multiple [DataStores](https://github.com/microsoft/FluidFramework/blob/05620a70827bedf6038ddb3a51697d58e92fd854/packages/runtime/container-runtime/src/dataStores.ts#L60).
-
- WebSocket based notification is employed for super-low message delivery latencies (aka speed) but the important question from data consistency standpoint is: 
+Each runtime is associated with multiple [DataStores](https://github.com/microsoft/FluidFramework/blob/05620a70827bedf6038ddb3a51697d58e92fd854/packages/runtime/container-runtime/src/dataStores.ts#L60).
  
- __What are Fluid's message delivery guarantees? Is it possible that committed messages are lost when network, service or hardware failures happen?__
+ Important question for data management: __What are Fluid's message delivery guarantees? Is it possible that committed messages are lost when network, service or hardware failures happen?__
 
- Actually FluidFramework elevates the answer in the [published documentation](https://github.com/microsoft/FluidFramework/blob/42e6f0e949b02c055de7d7f06d148bb18c66336f/docs/content/docs/concepts/tob.md#fluid-data-operations-all-the-way-down) to the DDS data consistency level:
+ Actually FluidFramework avoids to answer this question directly and elevates the answer in the [published documentation](https://github.com/microsoft/FluidFramework/blob/42e6f0e949b02c055de7d7f06d148bb18c66336f/docs/content/docs/concepts/tob.md#fluid-data-operations-all-the-way-down) straight to the DDS data consistency level. Citation following:
 
 
 > __Fluid guarantees eventual consistency via total order broadcast.__ That is, when a DDS is changed locally by a client, that change – that is, the operation – is first sent to the Fluid service, which does three things:
@@ -393,12 +391,12 @@ export interface ISnapshotTree {
 > - Stores the operation’s data (see data persistence).
 
 
-We will investigate in the sections below how it is possible to offer uncompromising reliability when the underlying communication protocol offers no delivery guarantees (i.e. websocket).
+We will investigate in the following sections how FluidFramework accomplishes the required reliability when the underlying communication protocol offers weak delivery guarantees.
 
 
 # Delta Manager
 
-The [DeltaManager](https://github.com/microsoft/FluidFramework/blob/02a318ea8ff5ca0fae5fce8f5e3060cee6eedffd/packages/loader/container-loader/src/deltaManager.ts#L76) stays at the core of FluidFramework strategy for the __exactly-once__ message delivery guarantee.
+The [DeltaManager](https://github.com/microsoft/FluidFramework/blob/02a318ea8ff5ca0fae5fce8f5e3060cee6eedffd/packages/loader/container-loader/src/deltaManager.ts#L76) stays in our view at the core of the FluidFramework strategy for the __exactly-once__ message delivery guarantee.
 
 According to the internal documentation the `DeltaManager` manages the flow of both inbound and outbound messages. This class ensures that __shared objects receive delta messages in order regardless of possible network conditions or timings causing out of order delivery__.
 
