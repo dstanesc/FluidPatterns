@@ -74,31 +74,52 @@ The transport layer is a combination of `HTTP/REST` and `TCP/WS`, as follows:
 
 # Initial Loading
 
-To date the loading process represents a series of `REST` calls to fetch the snapshot tree. In the case of [FluidHelloWorld](https://github.com/microsoft/FluidHelloWorld) the loading yields 32 `REST` calls, such:
+To date the loading process represents a series of `REST` calls to fetch the snapshot tree. In the case of [FluidHelloWorld](https://github.com/microsoft/FluidHelloWorld) the loading yields a varying number of `REST` calls. 
 
 ```
-getCommits (webpack:///node_modules/@fluidframework/server-services-client/lib/historian.js#58)
-getCommits (webpack:///node_modules/@fluidframework/server-services-client/lib/gitManager.js#68)
-getVersions (webpack:///node_modules/@fluidframework/routerlicious-driver/lib/shreddedSummaryDocumentStorageService.js#42)
-getVersions (webpack:///node_modules/@fluidframework/routerlicious-driver/lib/shreddedSummaryDocumentStorageService.js#38)
-getVersions (webpack:///node_modules/@fluidframework/container-loader/lib/retriableDocumentStorageService.js#31)
-getVersion (webpack:///node_modules/@fluidframework/container-loader/lib/container.js#782)
-fetchSnapshotTree (webpack:///node_modules/@fluidframework/container-loader/lib/container.js#1286)
-load (webpack:///node_modules/@fluidframework/container-loader/lib/container.js#828)
-resolve (webpack:///node_modules/@fluidframework/container-loader/lib/loader.js#124)
+POST http://localhost:7070/repos/tinylicious/commits?token=dGlueWxpY2lvdXM=&count=1&sha=674cdb0a-32b5-47e9-bdff-6771e474cb5c
+POST http://localhost:7070/repos/tinylicious/git/trees/61f215cc922025a0bfcbd4f3f3f20d18f249b622?token=dGlueWxpY2lvdXM%3D&recursive=1
+POST http://localhost:7070/repos/tinylicious/git/blobs/281a05982b6d4d03bc3df509ecdbc22a196cc69a?token=dGlueWxpY2lvdXM%3D
+// ... many more, in FluidHelloWorld initial loading we counted 32 REST calls
 ```
-for loading the snapshot tree and multiple `getBlob` calls for reading the nested blobs.:
 
+The call stacks (reduced for brevity) invoke alternatively `getCommits`, `getTree`, `getBlob` on the [historian client driver](https://github.com/microsoft/FluidFramework/blob/e590fc4e333dde694913a2902abd3811e5ca3e5b/server/routerlicious/packages/services-client/src/historian.ts#L33).
+
+__Commits__
 ```
-getBlob (webpack:///node_modules/@fluidframework/server-services-client/lib/historian.js#49)
-getBlob (webpack:///node_modules/@fluidframework/server-services-client/lib/gitManager.js#85)
-readBlob (webpack:///node_modules/@fluidframework/routerlicious-driver/lib/shreddedSummaryDocumentStorageService.js#87)
-prefetchTreeCore (webpack:///node_modules/@fluidframework/driver-utils/lib/prefetchDocumentStorageService.js#73)
-prefetchTree (webpack:///node_modules/@fluidframework/driver-utils/lib/prefetchDocumentStorageService.js#61)
-getSnapshotTree (webpack:///node_modules/@fluidframework/driver-utils/lib/prefetchDocumentStorageService.js#30)
-fetchSnapshotTree (webpack:///node_modules/@fluidframework/container-loader/lib/container.js#1292)
-load (webpack:///node_modules/@fluidframework/container-loader/lib/container.js#828)
-resolve (webpack:///node_modules/@fluidframework/container-loader/lib/loader.js#124)
+getCommits (@fluidframework/server-services-client/lib/historian.js#58)
+getCommits (@fluidframework/server-services-client/lib/gitManager.js#68)
+getVersions (@fluidframework/routerlicious-driver/lib/shreddedSummaryDocumentStorageService.js#42)
+getVersions (@fluidframework/routerlicious-driver/lib/shreddedSummaryDocumentStorageService.js#38)
+getVersions (@fluidframework/container-loader/lib/retriableDocumentStorageService.js#31)
+getVersion (@fluidframework/container-loader/lib/container.js#782)
+fetchSnapshotTree (@fluidframework/container-loader/lib/container.js#1286)
+load (@fluidframework/container-loader/lib/container.js#828)
+resolve (@fluidframework/container-loader/lib/loader.js#124)
+```
+__Trees__
+```
+getTree (@fluidframework/server-services-client/lib/historian.js#95)
+getTree (@fluidframework/server-services-client/lib/gitManager.js#78)
+rawTree (@fluidframework/routerlicious-driver/lib/shreddedSummaryDocumentStorageService.js#67)
+getSnapshotTree (@fluidframework/routerlicious-driver/lib/shreddedSummaryDocumentStorageService.js#63)
+getSnapshotTree (@fluidframework/container-loader/lib/retriableDocumentStorageService.js#25)
+fetchSnapshotTree (@fluidframework/container-loader/lib/container.js#1292)
+load (@fluidframework/container-loader/lib/container.js#267)
+resolve (@fluidframework/container-loader/lib/loader.js#124)
+```
+
+__Blobs__
+```
+getBlob (@fluidframework/server-services-client/lib/historian.js#49)
+getBlob (@fluidframework/server-services-client/lib/gitManager.js#85)
+readBlob (@fluidframework/routerlicious-driver/lib/shreddedSummaryDocumentStorageService.js#87)
+prefetchTreeCore (@fluidframework/driver-utils/lib/prefetchDocumentStorageService.js#73)
+prefetchTree (@fluidframework/driver-utils/lib/prefetchDocumentStorageService.js#61)
+getSnapshotTree (@fluidframework/driver-utils/lib/prefetchDocumentStorageService.js#30)
+fetchSnapshotTree (@fluidframework/container-loader/lib/container.js#1292)
+load (@fluidframework/container-loader/lib/container.js#828)
+resolve (@fluidframework/container-loader/lib/loader.js#124)
 ```
 
 The snapshot tree carries many details of the instantiated container, as revealed by the below sniffed payload:
@@ -503,15 +524,28 @@ The actual [implementation](https://github.com/microsoft/FluidFramework/blob/301
 In current routerlicious instantiation, the deltas are stored and retrieved from a MongoDb database. See also [Fluid Relay Topology](#fluid-relay-topology) in the [Annexes](#annexes) section for a visual representation of the delta storage interaction.
 
 
-# Review Notes
+# Discussion Notes
 
 1. Review and monitor data consistency related github issues [eg. is:issue is:open DeltaManager](https://github.com/microsoft/FluidFramework/issues?q=is%3Aissue+is%3Aopen+DeltaManager)
-2. Is the Git file system abstraction a good one-size-fits-all data and metadata storage choice? What are the (simpler) alternatives?
-3. Are the `HTTP/REST` and `TCP/WS` the ideal communication choices? What are the (more efficient) alternatives?
-4. Should agents follow the integration pattern of regular collaboration clients (ie.`HTTP/REST` and `TCP/WS` protocols). One finding in our prior work is that [snapshots are not useful](../apps/assembly-authoring-tracked/) when externalizing data to materialized view agents. Is it possible to employ a more specialized delta transport to leverage the enterprise LAN environment benefits in selected cases. Polyglot persistence (programming language incl.) and delivery reliability may profit from introducing additional, purpose built [communication protocols](https://kafka.apache.org/protocol.html#protocol_philosophy).
+2. The interaction with the Storage Service seems to be quite verbose and chatty (this is hurting I/O efficiency). A particularly important scalability aspect is that the number of requests serving a particular query-case (eg. loading the container) should remain constant and independent of the data and metadata content. Partly because of the Git style this seems not to be the case. Research alternatives to the Git file system abstraction as data and metadata storage with the goal of maintaining a low and predictable I/O.
+3. HTTP is a particularly slow protocol to transfer larger amounts of data (which could be the case of BLOBs especially when related to data management scenario). WebSocket has indeed large browser base support and the state of art today for _low latency_ connections, however still `TCP` based but actually lacking delivery guarantee support. Research more efficient alternatives to the `HTTP/REST` and `TCP/WS` communication. In standard transport space [WebTransport](https://web.dev/webtransport/), [WebRTC](https://developer.mozilla.org/en-US/docs/Web/API/RTCDataChannel), [Quick](https://www.chromium.org/quic/) seem to have the edge today. Also a purpose built alternative to guarantee delivery seems attractive (as a more streamlined solution to the in-flight delta corrections). 
+4. Should agents follow the integration pattern of regular collaboration clients? One important finding of our prior work is that [loading full data snapshots is not appropriate](../apps/assembly-authoring-tracked/) when externalizing data to materialized view agents. The integration explicit need is to remain delta centric. Is it possible to employ a more specialized delta transport to leverage the enterprise LAN environment benefits in selected cases. Polyglot persistence (programming language incl.) and delivery reliability may profit from introducing additional [communication protocols](https://kafka.apache.org/protocol.html#protocol_philosophy) and delta persistence strategies. 
+5. The custom Mongo delta storage exposes similar functionality with traditional [Event Stores]() (which is an established _Event Sourcing_ architectural style component designed explicitly for immutability, scalability and performance). Investigate low maintenance, high performance alternatives.
+
 
 # Annexes
 
 ## Fluid Relay Topology
 
 ![Fluid Relay Topology](./img/Routerlicious-Architecture.svg)
+
+## Disclaimer
+
+This project has adopted the [Microsoft Open Source Code of Conduct](https://opensource.microsoft.com/codeofconduct/).
+For more information see the [Code of Conduct FAQ](https://opensource.microsoft.com/codeofconduct/faq/) or contact
+[opencode@microsoft.com](mailto:opencode@microsoft.com) with any additional questions or comments.
+
+This project may contain Microsoft trademarks or logos for Microsoft projects, products, or services. Use of these
+trademarks or logos must follow Microsoft’s [Trademark & Brand Guidelines](https://www.microsoft.com/trademarks). Use of
+Microsoft trademarks or logos in modified versions of this project must not cause confusion or imply Microsoft
+sponsorship.
