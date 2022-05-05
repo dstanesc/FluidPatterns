@@ -527,17 +527,28 @@ In current routerlicious instantiation, the deltas are stored and retrieved from
 # Discussion Notes
 
 1. Review and monitor data consistency related github issues [eg. is:issue is:open DeltaManager](https://github.com/microsoft/FluidFramework/issues?q=is%3Aissue+is%3Aopen+DeltaManager)
+
 2. The interaction with the Storage Service seems to be quite verbose and chatty (this is hurting I/O efficiency). A particularly important scalability aspect is that the number of requests serving a particular query-case (eg. loading the container) should remain constant and independent of the data and metadata content. Partly because of the Git style this seems not to be the case. Research alternatives to the Git file system abstraction as data and metadata storage with the goal of maintaining a low and predictable I/O.
+
 3. HTTP is a particularly slow protocol to transfer larger amounts of data (which could be the case of BLOBs especially when related to data management scenario). WebSocket has indeed large browser base support and the state of art today for _low latency_ connections, however still `TCP` based but actually lacking delivery guarantee support. Research more efficient alternatives to the `HTTP/REST` and `TCP/WS` communication. In standard transport space [WebTransport](https://web.dev/webtransport/), [WebRTC](https://developer.mozilla.org/en-US/docs/Web/API/RTCDataChannel), [Quick](https://www.chromium.org/quic/) seem to have the edge today. Also a purpose built alternative to guarantee delivery seems attractive (as a more streamlined solution to the in-flight delta corrections). 
-4. Should agents follow the integration pattern of regular collaboration clients? One important finding of our prior work is that [loading full data snapshots is not appropriate](../apps/assembly-authoring-tracked/) when externalizing data to materialized view agents. The integration explicit need is to remain delta centric. Is it possible to employ a more specialized delta transport to leverage the enterprise LAN environment benefits in selected cases. Polyglot persistence (programming language incl.) and delivery reliability may profit from introducing additional [communication protocols](https://kafka.apache.org/protocol.html#protocol_philosophy) and delta persistence strategies. 
+
+4. Should agents follow the integration pattern of regular collaboration clients? One important finding of our prior work is that [loading full data snapshots is not appropriate](../apps/assembly-authoring-tracked/) when externalizing data to materialized view agents. The integration explicit need is to remain delta centric. Is it possible to employ a more specialized delta transport to leverage the enterprise LAN environment benefits in selected cases. Polyglot persistence (programming language incl.) and delivery reliability may profit from introducing additional [communication protocols](https://kafka.apache.org/protocol.html#protocol_philosophy) and delta persistence strategies.
+
 5. The custom Mongo delta storage exposes similar functionality with traditional [Event Stores]() (which is an established _Event Sourcing_ architectural style component designed explicitly for immutability, scalability and performance). Investigate low maintenance, high performance alternatives.
 
+6. Summary and History
+
+![Summary and History](./img/summary-history.png)
+
+Summaries are today employed as storage baselines only and have domain relevance in conjunction with the upstream changes to describe the current / latest collaboration state. Latest state is however insufficient for data (model) management. The applications typically need the entire or recent history of the domain model increments. Domain model revisions are semantically rich transitions from one consistent state to another. One possible evolution is to synchronize summaries with domain model revisions, preserve and link them as materialized history. This shift would allow a better impedance match between the logical and physical persistence model to directly improve the I/O efficiency. Offers low level framework support for history navigation. High level this optimization is trading CPU cycles in favor of disk space which typically provides cost reduction benefits. Compression remains possible as an implementation detail, e.g. btree+ instead of linked list.
+
+![Revised Summary](./img/revised-summary.png)
 
 # Annexes
 
 ## Fluid Relay Topology
 
-![Fluid Relay Topology](./img/Routerlicious-Architecture.svg)
+![Fluid Relay Topology](./img/routerlicious-architecture.svg)
 
 ## Disclaimer
 
