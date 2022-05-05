@@ -532,7 +532,7 @@ In current routerlicious instantiation, the deltas are stored and retrieved from
 
 4. Should agents follow the integration pattern of regular collaboration clients? One important finding of our prior work is that [loading full data snapshots is not appropriate](../apps/assembly-authoring-tracked/) when externalizing data to materialized view agents. The integration explicit need is to remain delta centric. Is it possible to employ a more specialized delta transport to leverage the enterprise LAN environment benefits in selected cases. Polyglot persistence (programming language incl.) and delivery reliability may profit from introducing additional [communication protocols](https://kafka.apache.org/protocol.html#protocol_philosophy) and delta persistence strategies.
 
-5. The custom Mongo delta storage exposes similar functionality with traditional [Event Stores]() (which is an established _Event Sourcing_ architectural style component designed explicitly for immutability, scalability and performance). Investigate low maintenance, high performance alternatives.
+5. The custom Mongo delta storage exposes similar functionality with traditional [Event Stores](https://en.wikipedia.org/wiki/Event_store) (which is an established _Event Sourcing_ architectural style component designed explicitly for immutability, scalability and performance). Investigate low maintenance, high performance alternatives.
 
 6. Summary and History
 
