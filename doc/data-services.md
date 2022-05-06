@@ -4,9 +4,9 @@
 
 The goal of the current document and the related investigation effort is to improve our understanding of [FluidFramework](https://github.com/microsoft/FluidFramework) design with respect to data management. The main interest points revolve around:
 
-1. Consistency: Understanding the risks and analyze the technical solution to eventual data consistency challenge. 
-2. Fitness: Unveiling the data flows and persistence architecture so that we can better assess their fitness to our various engineering use-cases.
-3. Scalability: Design / technology imposed limits to the performance and scalability characteristics
+1. __Consistency:__ Understanding the risks and analyze the technical solution to eventual data consistency challenge. 
+2. __Fitness:__ Unveiling the data flows and persistence architecture so that we can better assess their fitness to our various engineering use-cases.
+3. __Scalability:__ Design / technology imposed limits to the performance and scalability characteristics
 
 and are meant to chart the contribution needs to the the open-source space from the engineering standpoint.  
 
