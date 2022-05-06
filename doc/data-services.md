@@ -1,45 +1,18 @@
 # Data Services and Data Consistency in FluidFramework
 
-# Container Runtime
+# Motivation
 
-_(Mentioned here for better overview, out of the declared scope)_
+The goal of the current document and the related investigation effort is to improve our understanding of [FluidFramework](https://github.com/microsoft/FluidFramework) design with respect to data management. The main interest points revolve around:
 
-The conceptual Fluid entry point is the [container loader](https://github.com/microsoft/FluidFramework/tree/main/packages/loader/container-loader) which makes up the minimal kernel of the Fluid runtime. 
+1. Consistency: Understanding the risks and analyze the technical solution to eventual data consistency challenge. 
+2. Fitness: Unveiling the data flows and persistence architecture so that we can better assess their fitness to our various engineering use-cases.
+3. Scalability: Design / technology imposed limits to the performance and scalability characteristics
 
-This kernel is responsible for:
-- Provide access to the Fluid storage 
-- Ensure consensus over a quorum of clients. 
-
-Storage includes snapshots as well as the live and persisted operation stream. The consensus system allows clients within the collaboration window to agree on container's properties. One example of this is the npm package that should be loaded to process operations applied to the container.
-
-
-# Quorum and Proposal
-
-_(Mentioned here for better overview, out of the declared scope)_
-
-A shared protocol is used to establish value consensus across clients associated with a given Fluid session. The starting transport layer is `HTTP/REST` and upgraded to `TCP/WS` (HTTP 101).
-
-A [Quorum](https://github.com/microsoft/FluidFramework/blob/c7c985443a1c25df9d68f06390a32981a8c3c508/server/routerlicious/packages/protocol-base/src/quorum.ts#L346) represents all clients currently within the collaboration window. As well as the values they have agreed upon and any pending proposals.
-
-The QuorumProposals [class](https://github.com/microsoft/FluidFramework/blob/c7c985443a1c25df9d68f06390a32981a8c3c508/server/routerlicious/packages/protocol-base/src/quorum.ts#L137) holds a key/value store.  Proposed values become finalized in the store once all connected clients have agreed on the proposal.
-
-A quorum proposal transitions between four possible states: propose, accept, reject, and commit.
-
-A proposal begins in the propose state. The proposal is sent to the server and receives a sequence number which is
-used to uniquely identify it. Clients within the collaboration window accept the proposal by allowing their
-reference sequence number to go above the sequence number for the proposal. They reject it by submitting a reject
-message prior to sending a reference sequence number above the proposal number. Once the minimum sequence number
-goes above the sequence number for the proposal without any rejections it is considered accepted.
-
-The proposal enters the commit state when the minimum sequence number goes above the sequence number at which it
-became accepted. In the commit state all subsequent messages are guaranteed to have been sent with knowledge of
-the proposal. Between the accept and commit state there may be messages with reference sequence numbers prior to
-the proposal being accepted.
-
+and are meant to chart the contribution needs to the the open-source space from the engineering standpoint.  
 
 # Storage Services
 
-The central component responsible for container data exchange is the [IDocumentService](https://github.com/microsoft/FluidFramework/blob/05620a70827bedf6038ddb3a51697d58e92fd854/common/lib/driver-definitions/src/storage.ts#L261). The document service is providing access to critical downstream services such:
+The central interface responsible for container data exchange is the [IDocumentService](https://github.com/microsoft/FluidFramework/blob/05620a70827bedf6038ddb3a51697d58e92fd854/common/lib/driver-definitions/src/storage.ts#L261). The document service is providing access to critical downstream services such:
 - __Storage services__ (`IDocumentStorageService`) - responsible to deliver data snapshots on request, 
 - __Delta stream__ (`IDocumentDeltaConnection`) - required to streamline incremental document changes in form of pub/sub interactions
 - __Delta storage services__ (`IDocumentDeltaStorageService`) - which provides on-demand access to the stored deltas for a given shared object, essentially required to patch the communication gaps, such undelivered messages
@@ -71,6 +44,9 @@ The transport layer is a combination of `HTTP/REST` and `TCP/WS`, as follows:
 - __Delta stream__ - `TCP/WS` or `HTTP long-polling` (fallback)
 - __Delta storage services__ - Exclusively `HTTP/REST`
 
+> __Fitness note:__ _The data transport choices are reflecting more or less the status quo for good portability in web environment today. Deserves mentioned that additional protocols are currently emerging. See more details below. Related to this concern, although not plug-and-play yet, the software has the ability to allow additional transport (e.g. `IDocumentDeltaConnection` interface) implementations. In this respect, we find very attractive the configuration patterns used by other open-source libraries such [libp2p](https://github.com/libp2p/js-libp2p/blob/master/doc/CONFIGURATION.md#transport)._
+
+> __Fitness note details:__ _HTTP is a particularly slow protocol to transfer larger amounts of data (which could be the case of BLOBs especially when related to data management scenario). WebSocket has indeed large browser base support and the state of art today for _low latency_ connections, however still `TCP` based whereas actually lacking delivery guarantee support. I believe we would like to research more efficient alternatives to the `HTTP/REST` and `TCP/WS` communication. In standard transport space [WebTransport](https://web.dev/webtransport/), [WebRTC](https://developer.mozilla.org/en-US/docs/Web/API/RTCDataChannel), [Quick](https://www.chromium.org/quic/) seem to have the edge today. Also a purpose built alternative to guarantee delivery seems attractive (as a more streamlined solution to the in-flight delta corrections)._ 
 
 # Initial Loading
 
@@ -260,11 +236,55 @@ export interface IDocumentStorageService extends Partial<IDisposable> {
      */
     downloadSummary(handle: ISummaryHandle): Promise<ISummaryTree>;
 }
+
+/**
+ * A tree entry wraps a path with a type of node
+ */
+export type ITreeEntry = {
+    // Path to the object
+    path: string;
+    // The file mode; one of 100644 for file (blob), 100755 for executable (blob), 040000 for subdirectory (tree),
+    // 160000 for submodule (commit), or 120000 for a blob that specifies the path of a symlink
+    mode: FileMode;
+} & (
+{
+    type: TreeEntry.Blob;
+    value: IBlob;
+} | {
+    type: TreeEntry.Commit;
+    value: string;
+} | {
+    type: TreeEntry.Tree;
+    value: ITree;
+} | {
+    type: TreeEntry.Attachment;
+    value: IAttachment;
+});
+
+
+export interface ITree {
+    entries: ITreeEntry[];
+    // Unique ID representing all entries in the tree. Can be used to optimize snapshotting in the case
+    // it is known that the ITree has already been created and stored
+    id?: string;
+    // Indicates that this tree is unreferenced. If this is not present, the tree is considered referenced.
+    unreferenced?: true;
+}
 ```
+
+> __Scalability note:__ _The interaction with the Document Storage Service seems to work well but still quite verbose and fragmented. In high latency environments (such WAN) this fact alone can substantially hurt I/O. Another important scalability criteria is that the number of requests serving a particular query-case (eg. loading the container) should remain constant and desirably independent from the data and metadata content. Partly because of the Git style this seems not to be the case. We would need to better understand and evaluate alternatives to the Git file system abstraction as interaction model for data and metadata with the goal of minimizing and maintaining predictable I/O._
+
+> __Fitness note:__ _Evolving the Git interaction style may be challenging as morphed already in the current interfaces_
 
 # Summarizing
 
-A summary represents in Fluid a consolidation of all operations associated with (or a snapshot of) a given distributed data structure (DDS) at a precise sequence number. They are captured by the infrastructure, however on the client-side. There are two execution flavors of the summarizing functionality: [heuristic-based](https://github.com/microsoft/FluidFramework/blob/89f8a77ca9b6c25c4c1f3067565f72eb616db671/packages/runtime/container-runtime/src/summarizerHeuristics.ts#L52) and [on-demand](https://github.com/microsoft/FluidFramework/blob/89f8a77ca9b6c25c4c1f3067565f72eb616db671/packages/runtime/container-runtime/src/summarizer.ts#L319).
+A summary represents in Fluid a consolidation of all operations associated with (or a snapshot of) a given distributed data structure (DDS) at a precise sequence number. They are captured by the infrastructure, however on the client-side. 
+
+Summarizing is closely related to [initial loading](#initial-loading) as represents the functionality responsible to create and maintain the snapshot which makes possible the initial loading in first place.
+
+> __Fitness note:__ Should agents follow the integration pattern of regular collaboration clients? One important finding of our prior work is that [loading full data snapshots is not appropriate](../apps/assembly-authoring-tracked/) when externalizing data to materialized view agents. The integration explicit need is to remain delta centric. Is it possible to employ a more specialized delta transport to leverage the enterprise LAN environment benefits in selected cases. Polyglot persistence (programming language incl.) and delivery reliability may profit from introducing additional [communication protocols](https://kafka.apache.org/protocol.html#protocol_philosophy) and delta persistence strategies.
+
+There are two execution flavors of the summarizing functionality: [heuristic-based](https://github.com/microsoft/FluidFramework/blob/89f8a77ca9b6c25c4c1f3067565f72eb616db671/packages/runtime/container-runtime/src/summarizerHeuristics.ts#L52) and [on-demand](https://github.com/microsoft/FluidFramework/blob/89f8a77ca9b6c25c4c1f3067565f72eb616db671/packages/runtime/container-runtime/src/summarizer.ts#L319).
 
 Similar to [initial loading](#initial-loading), the functionality leverages the [the gitManager](https://github.com/microsoft/FluidFramework/blob/9e31a7895e6a7531da1ecebc13a8216b9ffe74ab/server/routerlicious/packages/services-client/src/gitManager.ts#L14) and [the historian](https://github.com/microsoft/FluidFramework/blob/9e31a7895e6a7531da1ecebc13a8216b9ffe74ab/server/routerlicious/packages/services-client/src/historian.ts#L33) capabilities.
 
@@ -316,29 +336,15 @@ export interface ISummaryAttachment {
 }
 ```
 
-For instance the [SharedMap](https://github.com/microsoft/FluidFramework/blob/89f8a77ca9b6c25c4c1f3067565f72eb616db671/packages/dds/map/src/map.ts#L248) uses following algorithm:
-
-```ts
-// If single property exceeds this size, it goes into its own blob
-const MinValueSizeSeparateSnapshotBlob = 8 * 1024;
-
-// Maximum blob size for multiple map properties
-// Should be bigger than MinValueSizeSeparateSnapshotBlob
-const MaxSnapshotBlobSize = 16 * 1024;
-
-// Partitioning algorithm:
-// 1) Split large (over MinValueSizeSeparateSnapshotBlob = 8K) properties into their own blobs.
-//    Naming (across snapshots) of such blob does not have to be stable across snapshots,
-//    As de-duping process (in driver) should not care about paths, only content.
-// 2) Split remaining properties into blobs of MaxSnapshotBlobSize (16K) size.
-//    This process does not produce stable partitioning. This means
-//    modification (including addition / deletion) of property can shift properties across blobs
-//    and result in non-incremental snapshot.
-//    This can be improved in the future, without being format breaking change, as loading sequence
-//    loads all blobs at once and partitioning schema has no impact on that process.
-```
-
 See also the heuristic summarizer [configuration documentation](https://github.com/microsoft/FluidFramework/blob/c71cb13c0c64d779447edffdb834a05739a0bacb/docs/content/docs/concepts/summarizer.md#summarizer)
+
+> __Summary and History note:__ 
+> 
+> ![Summary and History](./img/summary-history.png)
+> 
+> Summaries are today employed as communication baselines and have domain relevance in conjunction with the upstream changes to describe the current / latest collaboration state. Latest state is however insufficient for data (model) management. The applications typically need the entire or at least recent history of the domain model increments. Domain model revisions are semantically rich transitions from one consistent state to another. One possible evolution is to synchronize the summaries with the domain model revisions, preserve and link them as materialized history. This shift would allow a better impedance match between the logical and the physical persistence model to directly improve the I/O efficiency. Furthermore enlists low level framework support for domain meaningful history navigation (i.e. time machine). High level this optimization is trading CPU cycles in favor of disk space which typically adds cost benefits. Compression remains possible as an implementation detail, e.g. btree+ instead of linked list.
+> 
+> ![Revised Summary](./img/revised-summary.png)
 
 # Incremental Updates
 
@@ -366,7 +372,7 @@ Socket.onevent (socket.js:278)
 ws.onmessage (websocket.js:160)
 ```
 
-Is probably worth mentioning our understanding that the `DataStore` in the Fluid container runtime terminology represents still a data snapshot, more precisely an [ISnapshotTree](https://github.com/microsoft/FluidFramework/blob/a16019bb71b67deef3924ab47036d1aa534bafa9/common/lib/protocol-definitions/src/storage.ts#L88) instantiation.
+Is probably worth mentioning our understanding that the `DataStore` in the Fluid container runtime (see [container runtime](#container-runtime)) terminology represents still a data snapshot, more precisely an [ISnapshotTree](https://github.com/microsoft/FluidFramework/blob/a16019bb71b67deef3924ab47036d1aa534bafa9/common/lib/protocol-definitions/src/storage.ts#L88) instantiation.
 
 ```ts
 export interface ISnapshotTree {
@@ -379,9 +385,9 @@ export interface ISnapshotTree {
 
 Each runtime is associated with multiple [DataStores](https://github.com/microsoft/FluidFramework/blob/05620a70827bedf6038ddb3a51697d58e92fd854/packages/runtime/container-runtime/src/dataStores.ts#L60).
  
- Important question for data management: __What are Fluid's message delivery guarantees? Is it possible that committed messages are lost when network, service or hardware failures happen?__
+> __Important question:__ _What are Fluid's message delivery guarantees? Is it possible that committed messages are lost when network, service or hardware failures happen?_
 
- Actually FluidFramework avoids to answer this question directly and elevates the answer in the [published documentation](https://github.com/microsoft/FluidFramework/blob/42e6f0e949b02c055de7d7f06d148bb18c66336f/docs/content/docs/concepts/tob.md#fluid-data-operations-all-the-way-down) straight to the DDS data consistency level. Citation following:
+ Actually FluidFramework avoids the direct answer and elevates the topic in the [published documentation](https://github.com/microsoft/FluidFramework/blob/42e6f0e949b02c055de7d7f06d148bb18c66336f/docs/content/docs/concepts/tob.md#fluid-data-operations-all-the-way-down) straight to the DDS data consistency level. Citation following:
 
 
 > __Fluid guarantees eventual consistency via total order broadcast.__ That is, when a DDS is changed locally by a client, that change – that is, the operation – is first sent to the Fluid service, which does three things:
@@ -392,7 +398,6 @@ Each runtime is associated with multiple [DataStores](https://github.com/microso
 
 
 We will investigate in the following sections how FluidFramework accomplishes the required reliability when the underlying communication protocol offers weak delivery guarantees.
-
 
 # Delta Manager
 
@@ -489,6 +494,8 @@ private fetchMissingDeltas(reason: string, to?: number){
 }
 ```
 
+> __Fitness note:__ _Review and monitor data consistency related github issues [eg. is:issue is:open DeltaManager](https://github.com/microsoft/FluidFramework/issues?q=is%3Aissue+is%3Aopen+DeltaManager)_
+
 The delta queue correction requests are resolved internally by the __Delta Storage Service__. 
 
 # Delta Storage Service
@@ -519,30 +526,51 @@ export interface IDeltaStorageService {
 
 The actual [implementation](https://github.com/microsoft/FluidFramework/blob/3014a37507cf4ae82752b6099ce36eca3578e719/packages/drivers/routerlicious-driver/src/deltaStorageService.ts#L80)  performs a `HTTP/REST` call to Alfred's [getDeltas endpoint](https://github.com/microsoft/FluidFramework/blob/3014a37507cf4ae82752b6099ce36eca3578e719/server/routerlicious/packages/routerlicious-base/src/alfred/routes/api/deltas.ts#L28).
 
-In current routerlicious instantiation, the deltas are stored and retrieved from a MongoDb database. See also [Fluid Relay Topology](#fluid-relay-topology) in the [Annexes](#annexes) section for a visual representation of the delta storage interaction.
+In current routerlicious instantiation, the deltas are stored and retrieved from a MongoDb database. See also [Fluid Relay Topology](#fluid-relay-topology) in the [Addendum](#addendum) section for a visual representation of the delta storage interaction.
 
 
-# Discussion Notes
+> __Fitness note:__ _The custom Mongo delta storage exposes similar functionality with traditional [Event Stores](https://en.wikipedia.org/wiki/Event_store) (which is an established _Event Sourcing_ architectural style component designed explicitly for immutability, scalability and performance). Investigate low maintenance, high performance alternatives._
 
-1. Review and monitor data consistency related github issues [eg. is:issue is:open DeltaManager](https://github.com/microsoft/FluidFramework/issues?q=is%3Aissue+is%3Aopen+DeltaManager)
 
-2. The interaction with the Storage Service seems to be quite verbose and chatty (this is hurting I/O efficiency). A particularly important scalability aspect is that the number of requests serving a particular query-case (eg. loading the container) should remain constant and independent of the data and metadata content. Partly because of the Git style this seems not to be the case. Research alternatives to the Git file system abstraction as data and metadata storage with the goal of maintaining a low and predictable I/O.
 
-3. HTTP is a particularly slow protocol to transfer larger amounts of data (which could be the case of BLOBs especially when related to data management scenario). WebSocket has indeed large browser base support and the state of art today for _low latency_ connections, however still `TCP` based but actually lacking delivery guarantee support. Research more efficient alternatives to the `HTTP/REST` and `TCP/WS` communication. In standard transport space [WebTransport](https://web.dev/webtransport/), [WebRTC](https://developer.mozilla.org/en-US/docs/Web/API/RTCDataChannel), [Quick](https://www.chromium.org/quic/) seem to have the edge today. Also a purpose built alternative to guarantee delivery seems attractive (as a more streamlined solution to the in-flight delta corrections). 
+# Addendum
 
-4. Should agents follow the integration pattern of regular collaboration clients? One important finding of our prior work is that [loading full data snapshots is not appropriate](../apps/assembly-authoring-tracked/) when externalizing data to materialized view agents. The integration explicit need is to remain delta centric. Is it possible to employ a more specialized delta transport to leverage the enterprise LAN environment benefits in selected cases. Polyglot persistence (programming language incl.) and delivery reliability may profit from introducing additional [communication protocols](https://kafka.apache.org/protocol.html#protocol_philosophy) and delta persistence strategies.
+## Container Runtime
 
-5. The custom Mongo delta storage exposes similar functionality with traditional [Event Stores](https://en.wikipedia.org/wiki/Event_store) (which is an established _Event Sourcing_ architectural style component designed explicitly for immutability, scalability and performance). Investigate low maintenance, high performance alternatives.
+_(Mentioned in the addendum for better overview, out of the declared scope)_
 
-6. Summary and History
+The conceptual Fluid entry point is the [container loader](https://github.com/microsoft/FluidFramework/tree/main/packages/loader/container-loader) which makes up the minimal kernel of the Fluid runtime. 
 
-![Summary and History](./img/summary-history.png)
+This kernel is responsible to:
+- Provide access to the Fluid storage 
+- Ensure consensus over a quorum of clients. 
 
-Summaries are today employed as communication baselines and have domain relevance in conjunction with the upstream changes to describe the current / latest collaboration state. Latest state is however insufficient for data (model) management. The applications typically need the entire or at least recent history of the domain model increments. Domain model revisions are semantically rich transitions from one consistent state to another. One possible evolution is to synchronize the summaries with the domain model revisions, preserve and link them as materialized history. This shift would allow a better impedance match between the logical and the physical persistence model to directly improve the I/O efficiency. Furthermore enlists low level framework support for domain meaningful history navigation (i.e. time machine). High level this optimization is trading CPU cycles in favor of disk space which typically adds cost benefits. Compression remains possible as an implementation detail, e.g. btree+ instead of linked list.
+Storage includes snapshots as well as the live and persisted operation stream. The consensus system allows clients within the collaboration window to agree on container's properties. One example of this is the npm package that should be loaded to process operations applied to the container.
 
-![Revised Summary](./img/revised-summary.png)
 
-# Annexes
+## Quorum and Proposal
+
+_(Mentioned in the addendum for better overview, out of the declared scope)_
+
+A shared protocol is used to establish value consensus across clients associated with a given Fluid session. The starting transport layer is `HTTP/REST` and upgraded to `TCP/WS` (HTTP 101).
+
+A [Quorum](https://github.com/microsoft/FluidFramework/blob/c7c985443a1c25df9d68f06390a32981a8c3c508/server/routerlicious/packages/protocol-base/src/quorum.ts#L346) represents all clients currently within the collaboration window. As well as the values they have agreed upon and any pending proposals.
+
+The QuorumProposals [class](https://github.com/microsoft/FluidFramework/blob/c7c985443a1c25df9d68f06390a32981a8c3c508/server/routerlicious/packages/protocol-base/src/quorum.ts#L137) holds a key/value store.  Proposed values become finalized in the store once all connected clients have agreed on the proposal.
+
+A quorum proposal transitions between four possible states: propose, accept, reject, and commit.
+
+A proposal begins in the propose state. The proposal is sent to the server and receives a sequence number which is
+used to uniquely identify it. Clients within the collaboration window accept the proposal by allowing their
+reference sequence number to go above the sequence number for the proposal. They reject it by submitting a reject
+message prior to sending a reference sequence number above the proposal number. Once the minimum sequence number
+goes above the sequence number for the proposal without any rejections it is considered accepted.
+
+The proposal enters the commit state when the minimum sequence number goes above the sequence number at which it
+became accepted. In the commit state all subsequent messages are guaranteed to have been sent with knowledge of
+the proposal. Between the accept and commit state there may be messages with reference sequence numbers prior to
+the proposal being accepted.
+
 
 ## Fluid Relay Topology
 
