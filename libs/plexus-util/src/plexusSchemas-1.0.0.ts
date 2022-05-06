@@ -42,6 +42,14 @@ export const int32ArraySchema =  {
     ],
 };
 
+export const int32MapSchema =  {
+    typeid: "hex:int32Map-1.0.0",
+    inherits: "NamedNodeProperty",
+    properties: [
+        { id: "data", typeid: "Int32", context: "map" },
+    ],
+};
+
 export const queryMapSchema =  {
     typeid: "hex:queryMap-1.0.0",
     inherits: "NamedNodeProperty",

@@ -29,6 +29,7 @@ import {
   queryResultMapSchema,
   queryResultSchema,
   querySchema,
+  int32MapSchema,
   Topics,
   appendQueryProperty,
   configureBinding as configurePlexusBinding,
@@ -37,54 +38,52 @@ import {
   PlexusListenerResult
 } from "@dstanesc/plexus-util";
 
-import { commentSchema } from "@dstanesc/comment-util";
-
-import { commentThreadSchema } from "@dstanesc/comment-util";
-
-import {
-  retrieveArrayProperty as retrieveCommentArrayProperty,
-  retrieveCommentTextProperty,
-  createCommentProperty,
-  initPropertyTree,
-  configureBinding as configureCommentBinding
-} from "@dstanesc/comment-util";
-
-import { UserComment } from '@dstanesc/comment-util';
-import { QueryResult } from '@dstanesc/plexus-util/dist/plexusApi';
-import { Link } from 'react-router-dom';
-
+import { AssemblyQueryResult } from '@dstanesc/assembly-util';
+import { parse, SearchParserResult, SearchParserOptions, SearchParserOffset, ISearchParserDictionary } from 'search-query-parser';
 
 const plexusServiceName: string = "local-plexus-service"
 
 
-
-// QueryResult {
-//   index: number;
-//   score: number;
-//   containerId: string;
-//   commentId: string;
-//   sequenceNumber: number;
-//   commentText: string
-// }
-
 function Result(props: any) {
 
   const goAuthor = () => {
-    const authoringLink = `http://localhost:3003/#${props.queryResult.containerId}`;
+    const authoringLink = `http://localhost:3003/?highlight=${props.queryResult.id}#${props.queryResult.containerId}`;
     window.open(authoringLink)
   };
-  
+
+  const imgDivStyle = {
+    width: props.queryResult.width + 'px',
+    height: props.queryResult.height + 'px',
+    // border: '4px solid',
+    background: props.queryResult.fill,
+    borderRadius: "10px",
+    cursor: "pointer",
+    boxShadow: "10px 10px 10px"
+  }
+
+  const dataDivStyle = {
+    paddingLeft: "30px"
+  }
+
   return (
-    <div className="anno">
-      <span>ContainerId: <Button onClick={goAuthor} className="anno">{props.queryResult.containerId}</Button></span><br />
-      <span>CommentId: {props.queryResult.commentId}</span><br />
-      <span>Index: {props.queryResult.index}</span><br />
-      <span>SequentialNo:{props.queryResult.sequenceNumber}</span><br />
-      <span>Score: {props.queryResult.score}</span><br />
-      <button className="comment">
-        {props.queryResult.commentText}
-      </button>
-    </div>
+    <table className="anno">
+      <tbody>
+        <tr><td colSpan={2}><b>ContainerId:</b> <Button onClick={goAuthor} className="anno">{props.queryResult.containerId}</Button></td></tr>
+        <tr><td><div style={imgDivStyle} onClick={goAuthor}></div></td>
+          <td><div style={dataDivStyle}>
+            <span><b>ComponentId:</b> {props.queryResult.id}</span><br />
+            <span><b>Index:</b> {props.queryResult.index}</span><br />
+            <span><b>SequentialNo:</b>{props.queryResult.sequenceNumber}</span><br />
+            <span><b>Score:</b> {props.queryResult.score}</span><br />
+            <span><b>Annotation:</b> {props.queryResult.annotation}</span><br />
+            <span><b>Fill:</b> {props.queryResult.fill}</span><br />
+            <span><b>x:</b> {props.queryResult.x}</span><br />
+            <span><b>y:</b> {props.queryResult.y}</span><br />
+            <span><b>width:</b> {props.queryResult.width}</span><br />
+            <span><b>height:</b> {props.queryResult.height}</span><br />
+          </div></td></tr>
+      </tbody>
+    </table>
   );
 }
 
@@ -124,7 +123,7 @@ export default function App() {
   }, []); // [] to be executed only once
 
   async function initPlexusWorkspace() {
-
+    registerSchema(int32MapSchema);
     registerSchema(containerSchema);
     registerSchema(containerMapSchema);
     registerSchema(queryMapSchema);
@@ -162,7 +161,7 @@ export default function App() {
       .filter(result => result.id === queryId.current)
       .map(result => {
         console.log(`Received query result \n${result.text}`);
-        const queryResult: QueryResult = JSON.parse(result.text);
+        const queryResult: AssemblyQueryResult = JSON.parse(result.text);
         return queryResult;
       });
 
@@ -173,8 +172,12 @@ export default function App() {
 
   const sendQuery = (queryText: string) => {
     setSearchShow(false);
+    const languageSpec = { keywords: ["id", "fill"], ranges: ['x', 'y', 'width', 'height'], "offsets": false, "tokenize": false, "alwaysArray": false }
+    const parsedQuery = parse(queryText, languageSpec);
+    const parsedQueryString = JSON.stringify(parsedQuery, null, 2);
+    console.log(`Parsed query:\n${parsedQueryString}`);
     const queryLog: MapProperty = retrieveMapProperty(plexusWorkspace.current, Topics.QUERY_LOG);
-    queryId.current = appendQueryProperty(queryText, queryLog);
+    queryId.current = appendQueryProperty(parsedQueryString, queryLog);
     queryResults.current = [];
     plexusWorkspace.current.commit();
   }
@@ -182,6 +185,12 @@ export default function App() {
   const handleSendQuery = () => {
     console.log(`Sending query ${searchText}`);
     sendQuery(searchText);
+  };
+
+  const handleEnterKey = (event) => {
+    if (event.key === 'Enter') {
+      handleSendQuery();
+    }
   };
 
   function showResults() {
@@ -196,21 +205,24 @@ export default function App() {
   return (
     <div>
       <br /><br /><br />
-      <div className="center">
+      <div className="left">
         <TextField
           autoFocus
           margin="normal"
           id="text"
-          label="Enter your search here"
+          label="Assembly Component Search"
           type="text"
           variant="outlined"
           value={searchText}
-          color="success"
+          color="primary"
           onChange={e => setSearchText(e.target.value)}
-        /> <br/>
-        <Button variant="contained" size="large" color="success" onClick={handleSendQuery}>
+          onKeyUp={handleEnterKey}
+          InputProps={{ style: { fontSize: 32 } }}
+          InputLabelProps={{ style: { fontSize: 18 } }}
+        />
+        {/* <Button variant="contained" size="large" color="success" onClick={handleSendQuery}>
           Search
-        </Button>
+        </Button> */}
       </div>
       <br /><br /><br />
       {showResults()}

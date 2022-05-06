@@ -59,6 +59,19 @@ export const initialData = [
     }
 ];
 
+export interface AssemblyQueryResult {
+    index: number;
+    score: number;
+    containerId: string;
+    sequenceNumber: number;
+    id: string;
+    x: number;
+    y: number;
+    width: number;
+    height: number;
+    fill: string;
+    annotation: string
+}
 
 export interface AssemblyComponent {
 

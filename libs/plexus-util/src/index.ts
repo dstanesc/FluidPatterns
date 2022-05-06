@@ -19,7 +19,9 @@ import {
     retrieveMappedTextProperty,
     retrieveMappedIdProperty,
     checkPlexusNameservice,
-    updatePlexusNameservice
+    updatePlexusNameservice,
+    getOffset,
+    setOffset
 } from "./plexusApi";
 
 import { PlexusBinding } from "./plexusBinding";
@@ -44,7 +46,8 @@ import {
     queryResultSchema, 
     querySchema, 
     stringArraySchema,
-    int32ArraySchema
+    int32ArraySchema,
+    int32MapSchema
 } from "./plexusSchemas-1.0.0";
 
 export {
@@ -85,6 +88,9 @@ export {
     containerSchema,
     stringArraySchema,
     int32ArraySchema,
+    int32MapSchema,
     checkPlexusNameservice,
-    updatePlexusNameservice
+    updatePlexusNameservice,
+    getOffset,
+    setOffset
 }

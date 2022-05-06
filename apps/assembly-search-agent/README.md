@@ -1,33 +1,6 @@
-# Plexus Agent 
+# Assembly Indexing and Search Agent 
 
-A Plexus agent is an autonomous, PropertyDDS based collaborator. It provides several consolidation functions across multiple containers associated with a given domain application, such container registry, operation log, query & query result log. 
-
-
-# Getting Started
-
-Needed dependencies
-```
-$ node --version
-v16.13.1
-
-$ npm --version
-8.1.2
-```
-
-Using NVM for node version management
-```sh
-nvm use v16.13.1
-```
-## Build
-
-```sh
-cd FluidPatterns
-npm run clean
-npm install --legacy-peer-deps
-npm run build
-```
-
-
+See [main documentation page](../assembly-authoring-tracked/) for the complete scope.
 
 ## Disclaimer
 

@@ -1,6 +1,7 @@
 import { assemblyComponentSchema } from "./assemblyComponent-1.0.0";
 import { assemblySchema } from "./assembly-1.0.0";
 import {
+    AssemblyQueryResult,
     AssemblyComponent,
     configureAssemblyBinding,
     initPropertyTree,
@@ -23,6 +24,7 @@ import {
 export {
     assemblyComponentSchema,
     assemblySchema,
+    AssemblyQueryResult,
     AssemblyComponent,
     configureAssemblyBinding,
     initPropertyTree,
