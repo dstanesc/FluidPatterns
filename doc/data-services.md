@@ -494,9 +494,10 @@ private fetchMissingDeltas(reason: string, to?: number){
 }
 ```
 
+The delta queue correction requests are resolved internally by the __Delta Storage Service__. 
+
 > __Fitness note:__ _Review and monitor data consistency related github issues [eg. is:issue is:open DeltaManager](https://github.com/microsoft/FluidFramework/issues?q=is%3Aissue+is%3Aopen+DeltaManager)_
 
-The delta queue correction requests are resolved internally by the __Delta Storage Service__. 
 
 # Delta Storage Service
 
