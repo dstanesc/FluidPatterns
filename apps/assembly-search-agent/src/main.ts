@@ -458,7 +458,7 @@ const initAgent = async () => {
 
   console.log(`TrackerWorkspace created for ${trackerWorkspace.containerId}`);
 
-  tracker = trackerWorkspace.tree;
+  tracker = trackerWorkspace.tracker;
 
   if (!trackerContainerId) {
 

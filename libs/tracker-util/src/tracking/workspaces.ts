@@ -35,12 +35,16 @@ export interface SimpleWorkspace {
 
 
 export interface TrackerWorkspace extends SimpleWorkspace{
-    tree: Tracker;
+    tracker: Tracker;
 }
 
 export interface TrackedWorkspace extends SimpleWorkspace{
     tree: TrackedPropertyTree;
-    trackerInfo: string | undefined;
+    trackerInfo: string[] | undefined;
+}
+
+export interface DualWorkspace extends TrackedWorkspace{
+    tracker: Tracker;
 }
 
 export class ReadyLogger implements ITelemetryBaseLogger {
@@ -50,27 +54,40 @@ export class ReadyLogger implements ITelemetryBaseLogger {
     }
 }
 
+/*
 export async function createOneToOneTracking(containerId: string | undefined, 
     logger: ITelemetryBaseLogger| undefined = undefined){
         const tracked = createTrackedWorkspace(containerId,logger);
         const trackerInfo = (await tracked).trackerInfo;
-        const tracker = createTrackerWorkspace(trackerInfo,logger);
-        if(!trackerInfo){
-            saveTracking((await tracked),(await tracker));            
+        let tracker = undefined;
+        if(trackerInfo){
+            if(trackerInfo.length>0){
+                tracker = createTrackerWorkspace(trackerInfo[0],logger);
+            }
+        }
+        if(!tracker){
+            tracker = createTrackerWorkspace(undefined,logger);
+            saveTracking((await tracked),(await tracker));      
         }
         track((await tracked),(await tracker));
         return {"tracked":tracked, "tracker":tracker};
     }
+*/
 
+export async function createOneToOneTracking(containerId: string | undefined, 
+    logger: ITelemetryBaseLogger| undefined = undefined){
+    const dual = await createDualWorkspace(containerId,logger);
+    return {"tracked": dual, "tracker":dual};
+}
 
 export async function createTrackedWorkspace(containerId: string | undefined, 
     logger: ITelemetryBaseLogger| undefined = undefined): Promise<TrackedWorkspace> {
     const containerSchema = {
         initialObjects: { tree: TrackedPropertyTree }
     };
-    const tracked = createSimpleWorkspace(containerSchema,containerId,logger) as Promise<TrackedWorkspace>;
-    const trackerInfo = (await tracked).tree.getTrackerInfo();
-    (await tracked).trackerInfo = trackerInfo;
+    const tracked = await (createSimpleWorkspace(containerSchema,containerId,logger) as Promise<TrackedWorkspace>);
+    const trackerInfo = tracked.tree.getTrackerInfo();
+    tracked.trackerInfo = trackerInfo;
     return tracked;
 }
 
@@ -78,18 +95,34 @@ export async function createTrackedWorkspace(containerId: string | undefined,
 export async function createTrackerWorkspace(containerId: string | undefined, 
     logger: ITelemetryBaseLogger| undefined = undefined): Promise<TrackerWorkspace> {
         const containerSchema = {
-            initialObjects: { tree: SquashedHistory }
+            initialObjects: { tracker: SquashedHistory }
         };
     const tracker = createSimpleWorkspace(containerSchema,containerId,logger) as Promise<TrackerWorkspace>;
     return tracker;
 }
 
+export async function createDualWorkspace(containerId: string | undefined, 
+    logger: ITelemetryBaseLogger| undefined = undefined): Promise<DualWorkspace> {
+        const containerSchema = {
+            initialObjects: { tree: TrackedPropertyTree, tracker: SquashedHistory }
+        };
+    const dual = await (createSimpleWorkspace(containerSchema,containerId,logger) as Promise<DualWorkspace>);
+    if(!containerId){
+        dual.tree.saveTracking( dual.containerId,dual.containerId);
+    }
+    TrackedPropertyTree.registerTrackerMethod(dual.containerId,dual.tracker);    
+    const trackerInfo = dual.tree.getTrackerInfo();
+    dual.trackerInfo = trackerInfo;
+    return dual;
+}
+
+
 export function saveTracking(tracked: TrackedWorkspace, tracker: TrackerWorkspace){
-    tracked.tree.init(tracker.containerId,tracked.containerId);
+    tracked.tree.saveTracking(tracker.containerId,tracked.containerId);
 }
 
 export function track(tracked: TrackedWorkspace, tracker: TrackerWorkspace){
-    TrackedPropertyTree.registerTrackerMethod(tracked.containerId,tracker.tree);
+    TrackedPropertyTree.registerTrackerMethod(tracked.containerId,tracker.tracker);
 }
 
 async function createSimpleWorkspace(containerSchema, containerId: string | undefined, 
@@ -121,11 +154,13 @@ async function createSimpleWorkspace(containerSchema, containerId: string | unde
 
     const sharedTree = containerAndServices.container.initialObjects.tree as SharedPropertyTree;
 
+    const tracker = containerAndServices.container.initialObjects.tracker as SharedPropertyTree;
+
     const dataBinder = new DataBinder();
 
     dataBinder.attachTo(sharedTree);
 
-    return { "containerId": containerId, "tree": sharedTree, "dataBinder": dataBinder
+    return { "containerId": containerId, "tracker": tracker, "tree": sharedTree, "dataBinder": dataBinder
     , "rootProperty": sharedTree.root, "commit": () => { sharedTree.commit() } } as SimpleWorkspace;
 }
 
