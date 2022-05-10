@@ -1,4 +1,4 @@
-# Data Services and Data Consistency in FluidFramework
+# Notes on Data Services and Data Consistency in FluidFramework
 
 # Motivation
 
