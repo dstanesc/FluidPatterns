@@ -577,6 +577,39 @@ the proposal being accepted.
 
 ![Fluid Relay Topology](./img/routerlicious-architecture.svg)
 
+
+## Class Diagrams
+
+### Client Storage
+
+![Client Storage](./img/client-storage.png)
+
+### Service Storage
+
+![Service Storage](./img/service-storage.png)
+
+### Delta Queue
+
+![Delta Queue](./img/delta-queue.png)
+
+### Delta Manager
+
+![Delta Manager](./img/delta-manager.png)
+
+### Communication Protocol Definitions
+
+![Communication Protocol Definitions](./img/protocol-protocol-definitions.png)
+
+### Storage Protocol Definitions
+
+![Storage Protocol Definitions](./img/storage-protocol-definitions.png)
+
+### Summary Protocol Definitions
+
+![Summary Protocol Definitions](./img/summary-protocol-definitions.png)
+
+
+
 ## Disclaimer
 
 This project has adopted the [Microsoft Open Source Code of Conduct](https://opensource.microsoft.com/codeofconduct/).
