@@ -45,7 +45,7 @@ npm run build
 
 - [Schema Evolution](./apps/schema-evolution/)
 
-## Random Documents
+# Random Documents
 
 - [Notes on Data Services in FluidFramework](./doc/data-services.md)
  
