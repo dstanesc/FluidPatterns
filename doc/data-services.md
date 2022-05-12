@@ -389,6 +389,8 @@ The [ShreddedSummaryDocumentStorageService](https://github.com/microsoft/FluidFr
 The [RouterliciousDocumentServiceFactory](https://github.com/microsoft/FluidFramework/blob/98b54f954c4cfc0faf313b6dd88869a553a02650/packages/drivers/routerlicious-driver/src/documentServiceFactory.ts#L49) controls the lifecycle of the blobCache ([InMemoryCache](https://github.com/microsoft/FluidFramework/blob/98b54f954c4cfc0faf313b6dd88869a553a02650/packages/drivers/routerlicious-driver/src/cache.ts#L11)).
 
 
+> __Fitness note:__ Replicating the [Git](https://git-scm.com/docs/hash-function-transition/) hashing algorithm on the client side is not necessarily a solution which scales easily to other document storage implementations. From that standpoint a FluidFramework controlled hashing algorithm seems more favorable.
+
 # Incremental Updates
 
 The [DocumentDeltaConnection](https://github.com/microsoft/FluidFramework/blob/a16019bb71b67deef3924ab47036d1aa534bafa9/packages/drivers/driver-base/src/documentDeltaConnection.ts#L38) represents a connection to a stream of delta updates. For low message delivery latency the infrastructure offers [websocket](https://developer.mozilla.org/en-US/docs/Web/API/WebSockets_API) based transport. The implementation is based on the [socket.io library](https://github.com/socketio/socket.io)
