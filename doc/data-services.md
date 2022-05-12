@@ -346,6 +346,49 @@ See also the heuristic summarizer [configuration documentation](https://github.c
 > 
 > ![Revised Summary](./img/revised-summary.png)
 
+# Incremental Summary
+
+The infrastructure has the ability to upload the _Summary_ incrementally. This component responsible to decide what summary partitions need uploaded is the [SummaryTreeUploadManager](https://github.com/microsoft/FluidFramework/blob/c78794f0462043bf77b8b270c4e17c8561be858e/server/routerlicious/packages/services-client/src/summaryTreeUploadManager.ts#L21) initialized at [container load request](https://github.com/microsoft/FluidFramework/blob/c78794f0462043bf77b8b270c4e17c8561be858e/packages/loader/container-loader/src/container.ts#L1124) at [start summarization procedure](https://github.com/microsoft/FluidFramework/blob/98b54f954c4cfc0faf313b6dd88869a553a02650/packages/runtime/container-runtime/src/summaryManager.ts#L190) .
+
+The initializing call stack, reduced for brevity:
+
+```
+constructor (@fluidframework/server-services-client/lib/summaryTreeUploadManager.js#13)
+constructor (@fluidframework/routerlicious-driver/lib/shreddedSummaryDocumentStorageService.js#27)
+loadInternalDocumentStorageService (@fluidframework/routerlicious-driver/lib/documentStorageService.js#22)
+constructor (@fluidframework/routerlicious-driver/lib/documentStorageService.js#11)
+connectToStorage (@fluidframework/routerlicious-driver/lib/documentService.js#56)
+connectStorageService (@fluidframework/container-loader/lib/container.js#948)
+load (@fluidframework/container-loader/lib/container.js#825)
+startSummarization (@fluidframework/container-runtime/lib/summaryManager.js#140)
+refreshSummarizer (@fluidframework/container-runtime/lib/summaryManager.js#54)
+SummarizerClientElection (@fluidframework/container-runtime/lib/summarizerClientElection.js#92)
+```
+
+The important abstraction enabling the incremental updates is a `Blob` lookup table keyed on its `hash` value. The hashing utility follows the git `hash` specification (_to return the same hash as returned by the server as blob.sha_ - as the .ts doc mentions):
+
+```ts
+/**
+ * Create a github hash (Github hashes the string with blob and size)
+ * Must be called under secure context for browsers
+ *
+ * @param file - The contents of the file in a buffer
+ * @returns The sha1 hash of the content of the buffer with the `blob` prefix and size
+ */
+export async function gitHashFile(file: IsoBuffer): Promise<string> {
+    const size = file.byteLength;
+    const filePrefix = `blob ${size.toString()}${String.fromCharCode(0)}`;
+    const engine = new sha1();
+    return engine.update(filePrefix)
+        .update(file)
+        .digest("hex") as string;
+}
+```
+The [ShreddedSummaryDocumentStorageService](https://github.com/microsoft/FluidFramework/blob/5104ee448534cbc1735e4003a0e45a86fd5be2e7/packages/drivers/routerlicious-driver/src/shreddedSummaryDocumentStorageService.ts#L92) will download and [index](https://github.com/microsoft/FluidFramework/blob/c78794f0462043bf77b8b270c4e17c8561be858e/server/routerlicious/packages/protocol-base/src/blobs.ts#L89) any additional summary increments at the summarization start so that the [SummaryTreeUploadManager](https://github.com/microsoft/FluidFramework/blob/c78794f0462043bf77b8b270c4e17c8561be858e/server/routerlicious/packages/services-client/src/summaryTreeUploadManager.ts#L93) skip at upload time.
+
+The [RouterliciousDocumentServiceFactory](https://github.com/microsoft/FluidFramework/blob/98b54f954c4cfc0faf313b6dd88869a553a02650/packages/drivers/routerlicious-driver/src/documentServiceFactory.ts#L49) controls the lifecycle of the blobCache ([InMemoryCache](https://github.com/microsoft/FluidFramework/blob/98b54f954c4cfc0faf313b6dd88869a553a02650/packages/drivers/routerlicious-driver/src/cache.ts#L11)).
+
+
 # Incremental Updates
 
 The [DocumentDeltaConnection](https://github.com/microsoft/FluidFramework/blob/a16019bb71b67deef3924ab47036d1aa534bafa9/packages/drivers/driver-base/src/documentDeltaConnection.ts#L38) represents a connection to a stream of delta updates. For low message delivery latency the infrastructure offers [websocket](https://developer.mozilla.org/en-US/docs/Web/API/WebSockets_API) based transport. The implementation is based on the [socket.io library](https://github.com/socketio/socket.io)
