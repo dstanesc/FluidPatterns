@@ -391,6 +391,15 @@ The [RouterliciousDocumentServiceFactory](https://github.com/microsoft/FluidFram
 
 > __Fitness note:__ Replicating the [Git](https://git-scm.com/docs/hash-function-transition/) hashing algorithm on the client side is not necessarily a solution which scales easily to other document storage implementations. From that standpoint a FluidFramework controlled hashing algorithm seems more favorable.
 
+The data structure and partitioning requirements relative to the `Summary` incremental upload are briefly described in our [communication thread](https://github.com/microsoft/FluidFramework/issues/10201#issuecomment-1125397142):
+
+1. Employ a stable Blob partitioning algorithm. Newer summaries can use the existing blobs uploaded by previous summaries as long as they remain unchanged. The functionality happens in the communication drivers as described in the above paragraphs. This would lead, amortized over time, to uploading of a single blob.
+
+2. The preferred alternative is that the DDS itself is capable not to generate the blobs that are the same from previous summary, but simply reference them.
+
+3. Have an additional layer (such a driver adapter) to detect blobs and de-duplicate them. This strategy has the ability to perform cross-instance de-duplication.
+
+
 # Incremental Updates
 
 The [DocumentDeltaConnection](https://github.com/microsoft/FluidFramework/blob/a16019bb71b67deef3924ab47036d1aa534bafa9/packages/drivers/driver-base/src/documentDeltaConnection.ts#L38) represents a connection to a stream of delta updates. For low message delivery latency the infrastructure offers [websocket](https://developer.mozilla.org/en-US/docs/Web/API/WebSockets_API) based transport. The implementation is based on the [socket.io library](https://github.com/socketio/socket.io)
