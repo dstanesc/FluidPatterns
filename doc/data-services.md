@@ -587,6 +587,21 @@ In current routerlicious instantiation, the deltas are stored and retrieved from
 > __Fitness note:__ _The custom Mongo delta storage exposes similar functionality with traditional [Event Stores](https://en.wikipedia.org/wiki/Event_store) (which is an established _Event Sourcing_ architectural style component designed explicitly for immutability, scalability and performance). Investigate low maintenance, high performance alternatives._
 
 
+# Summary Data Structures
+
+The [Incremental Summary](#incremental-summary) needs are especially magnified by the scalability requirements in simulation data management (data tree sizes > 150MB). This implies a careful choice of the Summary backing data structures which has to to be optimized for persistence partitions reuse across versions:
+
+> In computing, a persistent data structure or not ephemeral data structure is a data structure that always preserves the previous version of itself when it is modified. _Such data structures are effectively immutable_, as their operations do not (visibly) update the structure in-place, but instead always yield a new updated structure. 
+> 
+> A data structure is partially persistent if all versions can be accessed but only the newest version can be modified. The data structure is fully persistent if every version can be both accessed and modified.
+> Wikipedia, [Persistent data structure](https://en.wikipedia.org/wiki/Persistent_data_structure)
+
+Content addressable data structures (and particularly [Merkle DAG](https://docs.ipfs.io/concepts/merkle-dag/) inspired) are one instantiation actively researched in the public domain (for instance under the umbrella of [IPLD](https://ipld.io/) and [DOLT](https://www.dolthub.com/blog/2020-04-01-how-dolt-stores-table-data/) projects). Few contributions stand out for our review:
+
+- [Immutable Asynchronous Vector](https://github.com/rvagg/iavector)
+- [Immutable Asynchronous Map](https://github.com/rvagg/iamap)
+- [Prolly Trees](https://github.com/mikeal/prolly-trees)
+- [IPLD HashMap](https://github.com/rvagg/js-ipld-hashmap)
 
 # Addendum
 
