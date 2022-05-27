@@ -53,10 +53,7 @@ export enum HistoryArea  {
  };
 
 
-export interface HistoryWorkspace {
-    currentOffset(): number;
-    currentAreaOffset(): number;
-    currentArea(): HistoryArea;
+interface HistoryWorkspace {
     getTracked(): SharedPropertyTree;       
     move(step: number);
     reset();
@@ -75,29 +72,158 @@ class HistoryWorkspaceImpl implements HistoryWorkspace{
     private _currentAreaOffset;
     private _currentArea;
 
-    public currentOffset(){
-        return this._currentOffset;
-    }
 
-    public currentAreaOffset(){
-        return this._currentOffset;
-    }
-
-    public currentArea(){
-        return this._currentArea;
+    public getTracked() {
+        return this._dual.tree;
     }
 
     public move(step: number){
         if(step>0){
-            this.moveFwd(step);
+            this.moveUp(step);
         }
         else if(step<0){
-            this.moveBack(step);
+            this.moveDown(step);
         }
     }
 
-    private countCurrentArea(){
-        switch(this._currentArea){
+    public reset() {
+        
+    }
+
+    public commit() {
+        return this._dual.commit();
+    }
+
+
+    private offsetUp(): boolean{
+        let areaCnt = this.countArea(this._currentArea);        
+        let isMove: boolean = false;
+        let isTop: boolean = false;
+        let myCurrentArea = this._currentArea;
+        let myCurrentAreaOffset = this._currentAreaOffset;
+        while((myCurrentAreaOffset>=areaCnt)){
+            isTop=true;
+            if(((myCurrentArea+1)!== HistoryArea.END_UNDEF)){                
+                myCurrentArea=myCurrentArea+1;
+                myCurrentAreaOffset=0;
+                areaCnt = this.countArea(myCurrentArea); 
+                if(myCurrentAreaOffset<areaCnt){
+                    isMove = true;   
+                    isTop=false;
+                    break;
+                }        
+            }
+            else {
+                  break;                       
+            }
+        }
+        if(!isTop){
+            myCurrentAreaOffset++;
+            isMove=true;
+        }
+        if(isMove){
+            this._currentArea=myCurrentArea;
+            this._currentAreaOffset=myCurrentAreaOffset;
+            this._currentOffset++;    
+        }          
+        return isMove;              
+    }
+
+    private offsetDown(): boolean {
+        let isMove: boolean = false;
+        let isBottom: boolean = false;
+        let myCurrentArea = this._currentArea;
+        let myCurrentAreaOffset = this._currentAreaOffset;
+        while((myCurrentAreaOffset===0)){
+            isBottom=true;
+            if(((myCurrentArea)!== HistoryArea.BEGIN_UNDEF)){  
+                myCurrentArea=myCurrentArea-1;
+                const areaCnt = this.countArea(myCurrentArea); 
+                myCurrentAreaOffset=areaCnt;
+                if(myCurrentAreaOffset>0){
+                    myCurrentAreaOffset--;
+                    isBottom=false;
+                    isMove = true;  
+                    break;
+                }
+            }
+            else {
+                break;
+            }
+        }
+        if(!isBottom){
+            myCurrentAreaOffset--;
+            isMove=true;
+        }
+        if(isMove){
+            this._currentArea=myCurrentArea;
+            this._currentAreaOffset=myCurrentAreaOffset;
+            this._currentOffset--;    
+        }          
+        return isMove;              
+    }
+
+
+    private moveUp(step: number) {
+        if(this._currentArea){
+            let fullChange: ChangeSet = undefined;
+            for(let i=0;i<step;i++){
+                const startingCurrentArea = this._currentArea;
+                const startingAreaOffset = this._currentAreaOffset;
+                const isMove=this.offsetUp();
+                if(isMove){
+                    const currentChange = this.getChangeFromArea(startingCurrentArea,startingAreaOffset);
+                    if(!fullChange){
+                        fullChange = currentChange;
+                    }
+                    else{
+                        fullChange.applyChangeSet(currentChange);
+                    }
+                }
+                else {
+                    break;
+                }
+            }
+            if(fullChange){
+                this._dual.tree.root.applyChangeSet(fullChange);
+            }
+        }
+    }
+
+    private moveDown(step: number) {
+        if(!this._currentArea){
+            if(this.countAll()<1){
+                return;
+            }
+            else {
+                this._currentArea=HistoryArea.LOCAL;
+                this._currentAreaOffset=this.countArea(HistoryArea.LOCAL)-1;
+                this._currentOffset = this.countAll()-1;    
+            }
+        }
+        let fullChange: ChangeSet = undefined;
+        for(let i=0;i<step;i--){            
+            const isMove:boolean = this.offsetDown();
+            if(isMove){
+                const currentChange = this.getChangeFromArea(this._currentArea,this._currentAreaOffset);
+                currentChange.toInverseChangeSet();
+                if(!fullChange){                    
+                    fullChange = currentChange;
+                }
+                else{
+                    fullChange.applyChangeSet(currentChange);
+                }
+            }
+        }
+        if(fullChange){
+            this._dual.tree.root.applyChangeSet(fullChange);
+        }
+    }
+
+
+
+    private countArea(currentArea: HistoryArea){
+        switch(currentArea){
             case HistoryArea.LOCAL: {
                 return this.countLocal();
             }
@@ -111,40 +237,22 @@ class HistoryWorkspaceImpl implements HistoryWorkspace{
         }
     }
 
-    private readChangeFromArea(area: HistoryArea, offset: number){
-
-    }
-
-    private moveFwd(step: number) {
-        if(this._currentArea){
-            let areaCnt = this.countCurrentArea();
-            let isMove = false;
-            for(let i=0;i<step;i++){
-                const startingCurrentArea = this._currentArea;
-                const startingAreaOffset = this._currentAreaOffset;
-                if((this._currentAreaOffset + i)>=areaCnt){
-                    if((this._currentArea+1)!== HistoryArea.END_UNDEF){
-                        this._currentArea=this._currentArea+1;
-                        this._currentAreaOffset=0;     
-                        this._currentOffset++;     
-                        isMove = true;              
-                    }                                        
-                }
-                else {
-                    this._currentAreaOffset++;
-                    this._currentOffset++;  
-                    isMove = true;                  
-                }
-                if(isMove){
-                    
-                }
+    private getChangeFromArea(area: HistoryArea, offset: number): ChangeSet{
+        switch(this._currentArea){
+            case HistoryArea.LOCAL: {
+                return this.getLocalChangeAt(offset);
             }
+            case HistoryArea.REMOTE: {
+                return this.getRemoteChangeAt(offset);
+            }
+            case HistoryArea.SQUASHED: {
+                return this.getSquashedChangeAt(offset);
+            }
+            default: return undefined;
         }
     }
 
-    private moveBack(step: number) {
 
-    }
 
     private countAll(): number {
         return this.countSquashed() + this.countRemote() + this.countLocal();
@@ -162,31 +270,27 @@ class HistoryWorkspaceImpl implements HistoryWorkspace{
     }
 
 
-    private listRemote(): ChangeSet[]{
-        const { tracker, trackedId, tracked, bufferedLastSeq } = this.readVars();
-        const remote = tracker.listBuffered(trackedId);
-        remote.push(...tracked.remoteChanges.map((c)=>c as IRemotePropertyTreeMessage)
-            .filter((c)=>c.sequenceNumber>bufferedLastSeq).map((c)=>c.changeSet));
-        return remote;
-    }
-
-    private getRemoteChangeAt(offset: number): ChangeSet[]{
-        const { tracker, trackedId, tracked, bufferedLastSeq } = this.readVars();
+    private getRemoteChangeAt(offset: number): ChangeSet{
+        const { tracker, trackedId, tracked} = this.readVars();
         const bufferedCount = tracker.countBuffered(trackedId);
-        let remote: ChangeSet;
         if(offset>=bufferedCount){
-    
+            return tracked.remoteChanges[offset-bufferedCount].changeSet;
         }
         else {
-
+            return tracker.getBufferedAt(trackedId,offset).changeset;
         }
-
     }
 
-    private listLocal(): ChangeSet[]{
-        const tracked = this._dual.tree;        
-        return tracked.localChanges.map((c)=>c.changeSet);
+    private getSquashedChangeAt(offset: number): ChangeSet{
+        const { tracker} = this.readVars();
+        return tracker.getChangeAt(offset).changeset;
     }
+
+    private getLocalChangeAt(offset: number): ChangeSet{
+        const { tracked} = this.readVars();
+        return tracked.localChanges[offset].changeSet;
+    }
+
 
 
     private readVars() {

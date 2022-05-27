@@ -21,9 +21,9 @@ export interface Tracker {
     getBufferedAt(trackedId: string, offset: number): ChangeEntry;
     getSeqAt(offset: number): number
     length(): number;
-    list(): ChangeSet[];  
+    list(): ChangeEntry[];  
     count(): number; 
-    listBuffered(trackedId: string): ChangeSet[]; 
+    listBuffered(trackedId: string): ChangeEntry[]; 
     countBuffered(trackedId: string); 
     setAutoPersist(isAutopersist: boolean): void;
 // poll(consumerGroup);
