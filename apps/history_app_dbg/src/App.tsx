@@ -11,7 +11,7 @@ import { EvolvableRenderer } from './evolvableRenderer';
 import { Evolvable } from './evolvable';
 import { EvolvableBinding } from './evolvableBinding';
 import {  NodeProperty, PropertyFactory, StringProperty, ValueProperty } from '@fluid-experimental/property-properties';
-import { createOneToOneTracking, TrackerWorkspace, TrackedWorkspace } from "@dstanesc/tracker-util";
+import { createOneToOneTracking, TrackerWorkspace, TrackedWorkspace } from "./interfaces";
 import { ChangeSet } from '@fluid-experimental/property-changeset';
 import { IRemotePropertyTreeMessage } from '@fluid-experimental/property-dds';
 
@@ -48,6 +48,8 @@ export default function App() {
       const trackedTracker = await createOneToOneTracking(containerId);
       const tracked = await trackedTracker.tracked;
       const tracker = await trackedTracker.tracker;
+
+      tracker.tracker.setAutoPersist(false);
 
       // Update location
       if (tracked.containerId)
@@ -221,10 +223,16 @@ export default function App() {
 
 <button onClick={() => {   
       clearInterval(intervalId);
-      workspace.tree.persistPoint();
       workspace.tree.commit();
       }      
       }>{"Stop"}</button>
+
+
+<button onClick={() => {   
+      workspace.tree.persistPoint();
+      workspace.tree.commit();
+      }      
+      }>{"Persist"}</button>
 
       <button onClick={() => {    
         const rootProp: NodeProperty = log.rootProperty;

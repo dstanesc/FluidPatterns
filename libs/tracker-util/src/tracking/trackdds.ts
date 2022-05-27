@@ -30,7 +30,8 @@ export class TrackedPropertyTree extends SharedPropertyTree {
     
     private static _trackers: Map<string,Tracker[]>=new Map<string,Tracker[]>();
     
-    public static readonly TRACKER_INFO_PROP_PATH = "Tracker_DDS"    
+    public static readonly TRACKER_INFO_PROP_PATH = "Tracker_DDS"   
+    public static readonly PERSIST_POINT_PROP_PATH = "Persist_Point"  
     public static readonly MY_ID_PROP_PATH = "MyId"
 
 
@@ -137,6 +138,23 @@ export class TrackedPropertyTree extends SharedPropertyTree {
 		this.remoteChanges = remoteChanges;
 		this.unrebasedRemoteChanges = unrebasedRemoteChanges;
 	}
+
+    public persistPoint(): void{
+        let persistPointProp: Int32Property = this.root.resolvePath(TrackedPropertyTree.PERSIST_POINT_PROP_PATH);
+        if(!persistPointProp){
+            persistPointProp =  PropertyFactory.create("Int32","single") as Int32Property;
+            persistPointProp.setValue(1);
+          this.root.insert(TrackedPropertyTree.PERSIST_POINT_PROP_PATH,persistPointProp);
+        }
+        else {
+            let val = persistPointProp.getValue();
+            val = val==1?2:1;
+            persistPointProp.setValue(val);
+        }
+        this.commit();        
+    }
+
+
 }
 
 
@@ -158,6 +176,7 @@ export class SquashedHistory extends SharedPropertyTree implements Tracker{
     public static readonly BUFFER_PROPERTY = "Buffer"
     public static readonly LOG_PROPERTY = "Log"
     public static readonly LAST_SEQUENCE_NR_PROPERTY = "LastSequenceNumber";
+    public static readonly BUFFERED_CHANGES_PROPERTY = "BufferedChanges";
     public static readonly TRACKED_ID_PROPERTY = "TrackedId"
     public static readonly SQUASHED_END_SEQ_PROPERTY = "SquashedEndSeq"
     public static readonly LOGGED_CHANGE_PROPERTY = "LoggedChange"
@@ -193,19 +212,11 @@ export class SquashedHistory extends SharedPropertyTree implements Tracker{
         return prop;
     }
  
+    private hasPersistFlag(msg:IRemotePropertyTreeMessage ): boolean {
+        return false;
+    }
 
-    public processChanges(trackedTree: TrackedPropertyTree, prunedChanges: IPropertyTreeMessage[]){
-        console.log("miso 1 processChanges start");
-        //const trackedRemoteChanges = trackedTree.remoteChanges.slice(0,trackedTree.remoteChanges.length - prunedChanges.length);
-        const trackedRemoteChanges = trackedTree.remoteChanges;
-
-
-        trackedRemoteChanges.forEach((msg)=>console.log(JSON.stringify(msg)));     
-        
-        const trackedId = trackedTree.myId;
-        const buffer: MapProperty = 
-            this.findOrCreateProp(this.root,SquashedHistory.BUFFER_PROPERTY,"BaseProperty","map") as MapProperty;
-        const entry: MapProperty = this.findOrCreateProp(buffer,trackedId,"BaseProperty","map") as MapProperty;
+    private findOrCreateLastSeqProp(entry: MapProperty) : Int32Property{
         let lastSeqProp = (entry.get(SquashedHistory.LAST_SEQUENCE_NR_PROPERTY) as Int32Property);
         let lastSeq;
         if(lastSeqProp){            
@@ -214,12 +225,70 @@ export class SquashedHistory extends SharedPropertyTree implements Tracker{
         else {
             lastSeqProp=this.findOrCreateProp(entry,SquashedHistory.LAST_SEQUENCE_NR_PROPERTY,"Int32","single") as Int32Property;
             lastSeq=-1;
-        }        
+        }
+        return lastSeqProp;
+    }
+
+    private isPersistPoint(strChangeSet: string): boolean{
+        const changeSet: ChangeSet = JSON.parse(strChangeSet);
+        return false;
+    }
+
+    private persistPoints(trackedId): void {
+        const buffer: MapProperty = 
+            this.findOrCreateProp(this.root,SquashedHistory.BUFFER_PROPERTY,"BaseProperty","map") as MapProperty;
+        const entry: MapProperty = this.findOrCreateProp(buffer,trackedId,"BaseProperty","map") as MapProperty;
+        const bufferedChanges: StringArrayProperty = 
+            this.findOrCreateProp(entry,SquashedHistory.BUFFERED_CHANGES_PROPERTY,"String","array") as StringArrayProperty; 
+        const bufferedChangesArray: string[] = bufferedChanges.getValues();
+        let changesToSquash: string[] = [];
+        for(let i=0;i<bufferedChangesArray.length;i++){
+            const bufferedChange = bufferedChangesArray[i];
+            if(this.isPersistPoint(bufferedChange)){
+                const chageSets: ChangeSet[] = changesToSquash.map((strChange) => JSON.parse(strChange));
+
+                changesToSquash=[];
+            }
+            else {
+                changesToSquash.push(bufferedChange);
+            }
+        }
+        if(changesToSquash.length<bufferedChanges.length){
+
+        }
+
+    }
+
+    public processChanges(trackedTree: TrackedPropertyTree, prunedChanges: IPropertyTreeMessage[]){
+
+        //const trackedRemoteChanges = trackedTree.remoteChanges.slice(0,trackedTree.remoteChanges.length - prunedChanges.length);
+        const trackedRemoteChanges = trackedTree.remoteChanges;
+        trackedRemoteChanges.forEach((msg)=>console.log(JSON.stringify(msg)));     
+        
+        const trackedId = trackedTree.myId;
+        const buffer: MapProperty = 
+            this.findOrCreateProp(this.root,SquashedHistory.BUFFER_PROPERTY,"BaseProperty","map") as MapProperty;
+        const entry: MapProperty = this.findOrCreateProp(buffer,trackedId,"BaseProperty","map") as MapProperty;
+        const bufferedChanges: StringArrayProperty = 
+            this.findOrCreateProp(entry,SquashedHistory.BUFFERED_CHANGES_PROPERTY,"String","array") as StringArrayProperty; 
+
+        let lastSeqProp = this.findOrCreateLastSeqProp(entry);
+        const lastSeq = lastSeqProp.value;
         const newRemoteChanges: IRemotePropertyTreeMessage[] = trackedRemoteChanges
             .map((msg) => (msg as IRemotePropertyTreeMessage))
-            .filter((msg) => lastSeq<msg.sequenceNumber);       
+            .filter((msg) => lastSeq<msg.sequenceNumber);   
+            
         if(newRemoteChanges.length>0) {
             const newChangeSets: ChangeSet[] = newRemoteChanges.map((change)=>change.changeSet);
+            newChangeSets.forEach((changeSet)=>{this.isPersistPoint(JSON.stringify(changeSet));});
+            newChangeSets.forEach((changeSet)=>{
+                const strChangeSet = JSON.stringify(changeSet.getSerializedChangeSet());  
+                bufferedChanges.push(strChangeSet);
+            });
+
+
+
+/*
             const squashedChangeSet = this.squashChanges(newChangeSets);
             const strChangeSet = JSON.stringify(squashedChangeSet.getSerializedChangeSet());            
             const logProperty: ArrayProperty=
@@ -228,12 +297,18 @@ export class SquashedHistory extends SharedPropertyTree implements Tracker{
             logProperty.push(logEntry);            
             const squashedEndSeqProp = this.findOrCreateProp(logEntry,SquashedHistory.SQUASHED_END_SEQ_PROPERTY,"Int32","single");
             squashedEndSeqProp.value = newRemoteChanges[newRemoteChanges.length-1].sequenceNumber;
+ */           
+            
+/*            
             const trackedIdProp = this.findOrCreateProp(logEntry,SquashedHistory.TRACKED_ID_PROPERTY,"String","single");
             trackedIdProp.value = trackedId;
             const loggedChangeProp = this.findOrCreateProp(logEntry,SquashedHistory.LOGGED_CHANGE_PROPERTY,"String","single");
             loggedChangeProp.value=strChangeSet;
             let newLastSeq = newRemoteChanges[newRemoteChanges.length-1].sequenceNumber;
             lastSeqProp.value=newLastSeq;
+*/
+
+
             this.commit();                
         }     
         console.log("miso 1 processChanges end");  
