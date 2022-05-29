@@ -53,8 +53,10 @@ export enum HistoryArea  {
  };
 
 
-interface HistoryWorkspace {
-    getTracked(): SharedPropertyTree;       
+export interface HistoryWorkspace {
+    getTracked(): TrackedWorkspace;    
+    setAutoPersist(isAutoPersist: boolean);   
+    persistPoint();
     move(step: number);
     reset();
     commit();
@@ -74,7 +76,7 @@ class HistoryWorkspaceImpl implements HistoryWorkspace{
 
 
     public getTracked() {
-        return this._dual.tree;
+        return this._dual;
     }
 
     public move(step: number){
@@ -92,6 +94,14 @@ class HistoryWorkspaceImpl implements HistoryWorkspace{
 
     public commit() {
         return this._dual.commit();
+    }
+
+    public setAutoPersist(isAutoPersist: boolean){
+        this._dual.tracker.setAutoPersist(isAutoPersist);
+    }
+
+    public persistPoint(){
+        this._dual.tree.persistPoint();
     }
 
 
@@ -134,14 +144,13 @@ class HistoryWorkspaceImpl implements HistoryWorkspace{
         let isBottom: boolean = false;
         let myCurrentArea = this._currentArea;
         let myCurrentAreaOffset = this._currentAreaOffset;
-        while((myCurrentAreaOffset===0)){
+        while((myCurrentAreaOffset<=0)){
             isBottom=true;
             if(((myCurrentArea)!== HistoryArea.BEGIN_UNDEF)){  
                 myCurrentArea=myCurrentArea-1;
                 const areaCnt = this.countArea(myCurrentArea); 
                 myCurrentAreaOffset=areaCnt;
                 if(myCurrentAreaOffset>0){
-                    myCurrentAreaOffset--;
                     isBottom=false;
                     isMove = true;  
                     break;
@@ -185,7 +194,7 @@ class HistoryWorkspaceImpl implements HistoryWorkspace{
                 }
             }
             if(fullChange){
-                this._dual.tree.root.applyChangeSet(fullChange);
+                this._dual.tree.root.applyChangeSet(fullChange._changes);
             }
         }
     }
@@ -202,7 +211,7 @@ class HistoryWorkspaceImpl implements HistoryWorkspace{
             }
         }
         let fullChange: ChangeSet = undefined;
-        for(let i=0;i<step;i--){            
+        for(let i=0;i>step;i--){            
             const isMove:boolean = this.offsetDown();
             if(isMove){
                 const currentChange = this.getChangeFromArea(this._currentArea,this._currentAreaOffset);
@@ -216,7 +225,7 @@ class HistoryWorkspaceImpl implements HistoryWorkspace{
             }
         }
         if(fullChange){
-            this._dual.tree.root.applyChangeSet(fullChange);
+            this._dual.tree.root.applyChangeSet(fullChange._changes);
         }
     }
 
@@ -274,10 +283,10 @@ class HistoryWorkspaceImpl implements HistoryWorkspace{
         const { tracker, trackedId, tracked} = this.readVars();
         const bufferedCount = tracker.countBuffered(trackedId);
         if(offset>=bufferedCount){
-            return tracked.remoteChanges[offset-bufferedCount].changeSet;
+            return tracked.remoteChanges[offset-bufferedCount]?.changeSet;
         }
         else {
-            return tracker.getBufferedAt(trackedId,offset).changeset;
+            return tracker.getBufferedAt(trackedId,offset)?.changeset;
         }
     }
 
@@ -288,7 +297,9 @@ class HistoryWorkspaceImpl implements HistoryWorkspace{
 
     private getLocalChangeAt(offset: number): ChangeSet{
         const { tracked} = this.readVars();
-        return tracked.localChanges[offset].changeSet;
+        const myLocalChanges = tracked.localChanges[offset];
+        const myChangeset = myLocalChanges?.changeSet;        
+        return myChangeset;
     }
 
 
@@ -298,7 +309,8 @@ class HistoryWorkspaceImpl implements HistoryWorkspace{
         const tracked = this._dual.tree;
         const trackedId = this._dual.containerId;
         const bufferedCount = this._dual.tracker.countBuffered(trackedId);
-        const bufferedLastSeq = tracker.getBufferedAt(trackedId, bufferedCount - 1).lastSeq;
+
+        const bufferedLastSeq = bufferedCount>0?tracker.getBufferedAt(trackedId, bufferedCount - 1).lastSeq : undefined;
         return { tracker, trackedId, tracked, bufferedLastSeq, bufferedCount };
     }
 
@@ -325,6 +337,12 @@ export class ReadyLogger implements ITelemetryBaseLogger {
     }
 }
 
+
+export async function createHistoryWorkspace(containerId: string | undefined, 
+    logger: ITelemetryBaseLogger| undefined = undefined): Promise<HistoryWorkspace>{
+    const dual = await createDualWorkspace(containerId,logger);
+    return new HistoryWorkspaceImpl(dual);
+}
 
 export async function createOneToOneTracking(containerId: string | undefined, 
     logger: ITelemetryBaseLogger| undefined = undefined){

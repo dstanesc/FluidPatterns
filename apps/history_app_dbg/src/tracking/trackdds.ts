@@ -295,12 +295,22 @@ export class SquashedHistory extends SharedPropertyTree implements Tracker{
 
     public countBuffered(trackedId: any) {
         const {bufferedChanges}: { bufferedChanges: StringArrayProperty;}  = this.findOrCreateBufferProps(trackedId);
-        return bufferedChanges.length();
+        return bufferedChanges.getLength();
     }
 
     public listBuffered(trackedId: any) {
-        const {bufferedChanges}: { bufferedChanges: StringArrayProperty;}  = this.findOrCreateBufferProps(trackedId);
-        return bufferedChanges.getValues().map((v)=>new ChangeSet(JSON.parse(v)));
+        const { bufferedChanges, bufferedChangesSeq }: 
+            { bufferedChanges: StringArrayProperty; bufferedChangesSeq: Int32ArrayProperty;} =
+        this.findOrCreateBufferProps(trackedId);
+        let index: number = 0;
+        return bufferedChanges.getValues().map((v)=>{
+            const changeset = new ChangeSet(JSON.parse(v));
+            const changeEntry: ChangeEntry = { "trackedContainerId": trackedId, 
+            "changeset": changeset, 
+            "lastSeq": bufferedChangesSeq.get(index) };
+            index++;
+            return changeEntry;
+        });
     }
 
     private static cloneChangeset(changeSet): ChangeSet {

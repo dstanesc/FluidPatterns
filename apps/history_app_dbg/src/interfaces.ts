@@ -1,9 +1,11 @@
 import {
     TrackerWorkspace,
     TrackedWorkspace,
+    HistoryWorkspace,
     createOneToOneTracking,
     createTrackedWorkspace,
     createTrackerWorkspace,
+    createHistoryWorkspace,
     saveTracking,
     track,
 } from "./tracking/workspaces";
@@ -20,6 +22,7 @@ export {
     createOneToOneTracking,
     createTrackedWorkspace,
     createTrackerWorkspace,
+    createHistoryWorkspace,
     saveTracking,
     track, TrackedPropertyTree
 };    
@@ -27,6 +30,6 @@ export {
 export type {
         TrackerWorkspace,
         TrackedWorkspace, ChangeEntry,
-        Tracker
+        Tracker, HistoryWorkspace
     };
 
