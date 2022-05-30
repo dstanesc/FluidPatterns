@@ -158,7 +158,7 @@ export default function App() {
 
   return (
     <div className="App">
-      <h1>Squashing Example</h1>
+      <h1>History Example</h1>
       <br></br>
       <button onClick={() => {
         workspace.move(-1);

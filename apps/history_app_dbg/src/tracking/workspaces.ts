@@ -135,6 +135,7 @@ class HistoryWorkspaceImpl implements HistoryWorkspace {
             this._currentArea = myCurrentArea;
             this._currentAreaOffset = myCurrentAreaOffset;
             this._currentOffset++;
+
         }
         return isMove;
     }
@@ -198,6 +199,13 @@ class HistoryWorkspaceImpl implements HistoryWorkspace {
             }
             if (fullChange) {
                 this._dual.tree.root.applyChangeSet(fullChange._changes);
+            }
+            const allCnt = this.countAll();
+            
+            if(this._currentOffset===allCnt-1){
+                this._currentArea = undefined;
+                this._currentAreaOffset = undefined;
+                this._currentOffset = undefined;
             }
         }
     }
