@@ -4,5 +4,7 @@ export default  {
     inherits: "NamedProperty",
     properties: [
         { id: "numA", typeid: "Int32" },
+        { id: "numB", typeid: "Int32" },
+        { id: "numC", typeid: "Int32" },
     ],
 };

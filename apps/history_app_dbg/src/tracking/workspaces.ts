@@ -1,4 +1,4 @@
-import { PropertyFactory, NodeProperty } from "@fluid-experimental/property-properties";
+import { PropertyFactory, NodeProperty, BaseProperty } from "@fluid-experimental/property-properties";
 
 
 import { DataBinder } from "@fluid-experimental/property-binder";
@@ -62,8 +62,13 @@ export interface HistoryWorkspace {
     commit();
 }
 
+function cloneChange(changeSet: ChangeSet): ChangeSet {
+    return new ChangeSet(JSON.parse(JSON.stringify(changeSet._changes)));
+  }
 
 class HistoryWorkspaceImpl implements HistoryWorkspace{
+
+    
     
     constructor (private _dual: DualWorkspace){
         this._currentOffset = -1;
@@ -73,6 +78,7 @@ class HistoryWorkspaceImpl implements HistoryWorkspace{
     private _currentOffset;
     private _currentAreaOffset;
     private _currentArea;
+    private _localChanges: ChangeSet = undefined;
 
 
     public getTracked() {
@@ -178,15 +184,18 @@ class HistoryWorkspaceImpl implements HistoryWorkspace{
             let fullChange: ChangeSet = undefined;
             for(let i=0;i<step;i++){
                 const startingCurrentArea = this._currentArea;
-                const startingAreaOffset = this._currentAreaOffset;
+                let startingAreaOffset = this._currentAreaOffset;
                 const isMove=this.offsetUp();
+                if(startingCurrentArea!==this._currentArea){
+                    startingAreaOffset = 0;
+                }
                 if(isMove){
-                    const currentChange = this.getChangeFromArea(startingCurrentArea,startingAreaOffset);
+                    const currentChange: ChangeSet = cloneChange(this.getChangeFromArea(this._currentArea,startingAreaOffset));
                     if(!fullChange){
                         fullChange = currentChange;
                     }
                     else{
-                        fullChange.applyChangeSet(currentChange);
+                        fullChange.applyChangeSet(currentChange._changes);
                     }
                 }
                 else {
@@ -199,28 +208,34 @@ class HistoryWorkspaceImpl implements HistoryWorkspace{
         }
     }
 
+
     private moveDown(step: number) {
+        let isFromLocal = false;
         if(!this._currentArea){
             if(this.countAll()<1){
                 return;
             }
             else {
                 this._currentArea=HistoryArea.LOCAL;
-                this._currentAreaOffset=this.countArea(HistoryArea.LOCAL)-1;
-                this._currentOffset = this.countAll()-1;    
+                this._currentAreaOffset=this.countArea(HistoryArea.LOCAL);
+                this._currentOffset = this.countAll();    
+                isFromLocal = true;
             }
         }
         let fullChange: ChangeSet = undefined;
         for(let i=0;i>step;i--){            
             const isMove:boolean = this.offsetDown();
             if(isMove){
-                const currentChange = this.getChangeFromArea(this._currentArea,this._currentAreaOffset);
+                const currentChange: ChangeSet = cloneChange(this.getChangeFromArea(this._currentArea,this._currentAreaOffset));
+                if(isFromLocal){
+                    this._localChanges=cloneChange(currentChange);
+                }
                 currentChange.toInverseChangeSet();
                 if(!fullChange){                    
                     fullChange = currentChange;
                 }
                 else{
-                    fullChange.applyChangeSet(currentChange);
+                    fullChange.applyChangeSet(currentChange._changes);
                 }
             }
         }
@@ -283,7 +298,7 @@ class HistoryWorkspaceImpl implements HistoryWorkspace{
         const { tracker, trackedId, tracked} = this.readVars();
         const bufferedCount = tracker.countBuffered(trackedId);
         if(offset>=bufferedCount){
-            return tracked.remoteChanges[offset-bufferedCount]?.changeSet;
+            return new ChangeSet(JSON.parse(tracked.remoteChanges[offset-bufferedCount]?.changeSet));
         }
         else {
             return tracker.getBufferedAt(trackedId,offset)?.changeset;
@@ -296,10 +311,13 @@ class HistoryWorkspaceImpl implements HistoryWorkspace{
     }
 
     private getLocalChangeAt(offset: number): ChangeSet{
-        const { tracked} = this.readVars();
-        const myLocalChanges = tracked.localChanges[offset];
-        const myChangeset = myLocalChanges?.changeSet;        
-        return myChangeset;
+        if(this._localChanges){
+            return this._localChanges;
+        }
+        const changes = this._dual.tree._root._serialize(true, false, BaseProperty.MODIFIED_STATE_FLAGS.PENDING_CHANGE);
+        const changeset = new ChangeSet(changes);
+        changeset._toReversibleChangeSet(this._dual.tree.tipView);
+        return changeset;
     }
 
 
@@ -315,7 +333,10 @@ class HistoryWorkspaceImpl implements HistoryWorkspace{
     }
 
     private countLocal(): number{
-        return this._dual.tree.localChanges.length;
+        const cnt = this._dual.tree._root.hasPendingChanges()?1:0;
+        return cnt;
+        //const changes = this._dual.tree._root._serialize(true, false, BaseProperty.MODIFIED_STATE_FLAGS.PENDING_CHANGE);
+        //return changes.length;
     }
 
 

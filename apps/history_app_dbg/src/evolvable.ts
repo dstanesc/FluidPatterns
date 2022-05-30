@@ -19,34 +19,13 @@ export class Evolvable {
         this.render();
     }
 
-    public updateB(strB: string){
-        this.myMap.set("strB", strB);
+    public updateB(numB: number){
+        this.myMap.set("numB", numB);
         this.render();
     }
 
-    public updateC(strC: string){
-        this.myMap.set("strC", strC);
-        this.render();
-    }
-
-
-    public updateD(strD: string){
-        this.myMap.set("strD", strD);
-        this.render();
-    }
-
-    public updateE(strE: string){
-        this.myMap.set("strE", strE);
-        this.render();
-    }
-
-    public updateF(strF: string){
-        this.myMap.set("strF", strF);
-        this.render();
-    }
-
-    public updateG(strG: string){
-        this.myMap.set("strG", strG);
+    public updateC(numC: number){
+        this.myMap.set("numC", numC);
         this.render();
     }
 

@@ -20,8 +20,100 @@ function cloneChange(changeSet): ChangeSet {
   return new ChangeSet(JSON.parse(JSON.stringify(changeSet)));
 }
 
-export default function App() {
 
+const roll = (isCommit: boolean, myVar: string, workspace: HistoryWorkspace) => {
+  const map = new Map<string, any>();
+  const numA: number = parseInt(workspace.getTracked().tree.root.resolvePath("evolvable."+myVar).value);
+  if(numA>=999999){
+    map.set(myVar,"0");
+  }
+  else {
+    map.set(myVar,(numA + 1).toString());
+  }    
+  updateProperty(workspace,map);
+  if(isCommit) {
+    workspace.commit();
+  }
+}
+
+
+const updateProperty = (workspace: HistoryWorkspace, value: Map<string,any>) => {
+  if (workspace) {
+    value.forEach((value,key) => {
+      const prop = workspace.getTracked().rootProperty.resolvePath("evolvable." +  key);
+      if(prop !== undefined){
+        if(prop instanceof ValueProperty || prop instanceof StringProperty){
+          prop.value = value; 
+        }
+      }
+    });
+  }
+}
+
+
+function renderOne(myVar: string, mymap: Map<string,any>, workspace: HistoryWorkspace, intervalId, setIntervalId){
+  const reactElem: any[] = [];  
+  const numA=mymap.get(myVar);
+  const a0 = numA%10;
+  const a1 = (Math.floor(numA/10))%10;
+  const a2 = (Math.floor(numA/100))%10;
+  const a3 = (Math.floor(numA/1000))%10;
+  const a4 = (Math.floor(numA/10000))%10;
+  const a5 = (Math.floor(numA/100000))%10;
+  reactElem.push(
+    <table className="evotable">
+      <tr>
+          <td className="typecell">{a5}</td>
+          <td className="typecell">{a4}</td>
+          <td className="typecell">{a3}</td>
+          <td className="typecell">{a2}</td>
+          <td className="typecell">{a1}</td>
+          <td className="typecell">{a0}</td>
+       </tr>
+      </table>
+    );
+
+    reactElem.push( 
+    <button onClick={() => {   
+      const h=setInterval(()=>roll(true, myVar,workspace),1);
+      setIntervalId(h);
+      }      
+      }>{"Drive"}</button>
+    );    
+    reactElem.push(
+    <button onClick={() => {   
+      clearInterval(intervalId);
+      }      
+      }>{"Stop"}</button>);
+    reactElem.push(
+        <button onClick={() => roll(false, myVar,workspace)}>
+        Roll
+      </button>
+      );
+      return reactElem;         
+}   
+
+function renderLocalMap(mymap: Map<string,any>, workspace: HistoryWorkspace, intervalId, setIntervalId){
+  const reactElem: any[] = [];
+  reactElem.push((  
+  renderOne("numA", mymap, workspace, intervalId, setIntervalId)    
+      ));
+  reactElem.push((<div><br></br><br></br></div>));        
+  reactElem.push((  
+    renderOne("numB", mymap, workspace, intervalId, setIntervalId)    
+    )); 
+  reactElem.push((<div><br></br><br></br></div>));   
+  reactElem.push((  
+      renderOne("numC", mymap, workspace, intervalId, setIntervalId)    
+      ));
+
+  
+  return reactElem;
+}  
+
+
+
+export default function App() {
   const [localMap, setLocalMap] = useState(new Map<string,any>()) ;
 
   const [workspace, setWorkspace] = useState<HistoryWorkspace>();
@@ -60,38 +152,7 @@ export default function App() {
 
   }, []);
 
-
-  const roll = () => {
-    const map = new Map<string, any>();
-    const numA: number = parseInt(workspace.getTracked().tree.root.resolvePath("evolvable.numA").value);
-    if(numA>=999999){
-      map.set("numA","0");
-    }
-    else {
-      map.set("numA",(numA + 1).toString());
-    }    
-    updateProperty(workspace,map);
-  }
-
-
-  const updateProperty = (workspace: HistoryWorkspace, value: Map<string,any>) => {
-    if (workspace) {
-      value.forEach((value,key) => {
-        const prop = workspace.getTracked().rootProperty.resolvePath("evolvable." +  key);
-        if(prop !== undefined){
-          if(prop instanceof ValueProperty || prop instanceof StringProperty){
-            prop.value = value; 
-          }
-        }
-      });
-      workspace.commit();
-    }
-  }
-
   return (
-
-    
-
     <div className="App">
     <h1>Squashing Example</h1>
     <br></br>
@@ -99,27 +160,15 @@ export default function App() {
           workspace.move(-1);
       }      
       }>{"<"}</button>
-
-
-
 <button onClick={() => {
       workspace.move(+1);
       }      
       }>{">"}</button>
 
-
 <button onClick={() => {   
-      const h=setInterval(()=>roll(),1);
-      setIntervalId(h);
+      workspace.commit();
       }      
-      }>{"Drive"}</button>
-
-<button onClick={() => {   
-      clearInterval(intervalId);
-      workspace.getTracked().tree.commit();
-      }      
-      }>{"Stop"}</button>
-
+      }>{"Commit"}</button>
 
 <button onClick={() => {   
       workspace.persistPoint();
@@ -127,85 +176,15 @@ export default function App() {
       }      
       }>{"Persist"}</button>
 
-      <button onClick={() => {    
-        const rootProp: NodeProperty = (workspace as any)._dual.tracker.rootProperty;
-        const hist = (workspace as any)._dual.tracker.tracker.list();
-        for(let i=0;i < hist.length; i++){
-          console.log("--------SQUASHED--------------");
-          console.log("------------------------------------");
-          console.log(hist[i].lastSeq);
-          console.log("------------------------------------");
-          console.log(JSON.stringify(cloneChange(hist[i].changeset).getSerializedChangeSet()));
-          console.log("------------------------------------");
-        }
-        const myRemoteChanges = workspace.getTracked().tree.remoteChanges;
-        for(let i=0;i < myRemoteChanges.length; i++){
-          console.log("---------CURRENT-----------------");
-          console.log((myRemoteChanges[i] as IRemotePropertyTreeMessage).sequenceNumber);
-          console.log("------------------------------------");
-          console.log(JSON.stringify(cloneChange(myRemoteChanges[i].changeSet).getSerializedChangeSet()));
-          console.log("------------------------------------");
-        }
-        
-      }      
-      }>{"Debug"}</button>
-
-
-       <br></br><br></br><br></br>
- 
-      <h2>Odometer</h2>
+       <br></br><br></br><br></br> 
       <div >
-        {renderLocalMap(localMap)}
+        {renderLocalMap(localMap,workspace,intervalId,setIntervalId)}
       </div>
       <br></br><br></br><br></br>
-      <button className="commit" onClick={() => roll()}>
-        Roll
-      </button>
+
     </div>
   );
 }
-
-
-
-
-function renderLocalMap(mymap: Map<string,any>){
-  const reactElem: any[] = [];
-  reactElem.push((
-  <table className="evotable">
-  {renderRoot(mymap)}
-  </table>
-  ));
-  return reactElem;
-}
-
-
-function renderRoot(mymap: Map<string,any>){
-  const reactElem: any[] = [];
-  
-  const numA=mymap.get("numA");
-  const a0 = numA%10;
-  const a1 = (Math.floor(numA/10))%10;
-  const a2 = (Math.floor(numA/100))%10;
-  const a3 = (Math.floor(numA/1000))%10;
-  const a4 = (Math.floor(numA/10000))%10;
-  const a5 = (Math.floor(numA/100000))%10;
-  reactElem.push(
-      <tr>
-          <td className="typecell">{a5}</td>
-          <td className="typecell">{a4}</td>
-          <td className="typecell">{a3}</td>
-          <td className="typecell">{a2}</td>
-          <td className="typecell">{a1}</td>
-          <td className="typecell">{a0}</td>
-       </tr>
-    );
-  return reactElem;
-}
-
-
-
-
-
 
 function initialize100(containerId: string | undefined, rootProp: NodeProperty, workspace: TrackedWorkspace) {
     if(!rootProp.resolvePath("evolvable")){
