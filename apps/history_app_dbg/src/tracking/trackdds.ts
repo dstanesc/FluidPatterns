@@ -1,6 +1,6 @@
 import { ChangeSet, SerializedChangeSet } from '@fluid-experimental/property-changeset';
 
-import { IPropertyTreeMessage, IRemotePropertyTreeMessage, SharedPropertyTree, SharedPropertyTreeOptions } from "@fluid-experimental/property-dds";
+import { IPropertyTreeMessage, IRemotePropertyTreeMessage, SharedPropertyTree } from "@fluid-experimental/property-dds";
 import { ArrayProperty, BoolProperty, ContainerProperty, Int32ArrayProperty, Int32Property, MapProperty, NodeProperty, PropertyFactory, StringArrayProperty, StringProperty } from "@fluid-experimental/property-properties";
 import {
     IChannelAttributes,
@@ -15,19 +15,22 @@ export interface ChangeEntry {
     lastSeq: number;
 }
 
-export interface Tracker {
+export interface Tracker extends TrackerContent{
     processChanges(trackedTree: TrackedPropertyTree, prunedChanges: IPropertyTreeMessage[]);
-    getChangeAt(offset: number): ChangeEntry;
-    getBufferedAt(trackedId: string, offset: number): ChangeEntry;
     getSeqAt(offset: number): number
-    length(): number;
     list(): ChangeEntry[];  
-    count(): number; 
     listBuffered(trackedId: string): ChangeEntry[]; 
-    countBuffered(trackedId: string); 
     setAutoPersist(isAutopersist: boolean): void;
 // poll(consumerGroup);
 }
+
+export interface TrackerContent {
+    getChangeAt(offset: number): ChangeEntry;
+    getBufferedAt(trackedId: string, offset: number): ChangeEntry;
+    count(): number; 
+    countBuffered(trackedId: string); 
+}
+
 
 
 export class TrackedPropertyTree extends SharedPropertyTree {
@@ -253,15 +256,7 @@ export class SquashedHistory extends SharedPropertyTree implements Tracker{
 
     }
 
-    public length(): number {
-        const logProperty = this.root.resolvePath(SquashedHistory.LOG_PROPERTY) as ArrayProperty;
-        if(logProperty){
-            return logProperty.length
-        }
-        else {
-            return undefined;
-        }
-    }
+
 
     public list() {
         const logProperty = this.root.resolvePath(SquashedHistory.LOG_PROPERTY) as ArrayProperty;
@@ -434,6 +429,4 @@ export class SquashedHistory extends SharedPropertyTree implements Tracker{
     }
 
 
-
-    
 }

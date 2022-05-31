@@ -1,5 +1,5 @@
 import { PropertyFactory, NodeProperty, BaseProperty } from "@fluid-experimental/property-properties";
-
+import { IPropertyTreeMessage, IRemotePropertyTreeMessage, SharedPropertyTree } from "@fluid-experimental/property-dds";
 
 import { DataBinder } from "@fluid-experimental/property-binder";
 
@@ -10,7 +10,6 @@ import {
     LOCAL_MODE_TENANT_ID,
 } from "@fluidframework/azure-client";
 import { SquashedHistory, TrackedPropertyTree, Tracker } from "./trackdds";
-import { IRemotePropertyTreeMessage } from "@fluid-experimental/property-dds";
 import { ChangeSet } from "@fluid-experimental/property-changeset";
 
 export async function registerSchema(schema: any) {
@@ -58,6 +57,9 @@ export interface HistoryWorkspace {
     commit();
 }
 
+
+
+
 function cloneChange(changeSet: ChangeSet): ChangeSet {
     return new ChangeSet(JSON.parse(JSON.stringify(changeSet._changes)));
 }
@@ -68,8 +70,10 @@ class HistoryWorkspaceImpl implements HistoryWorkspace {
         this._currentOffset = -1;
         this._currentAreaOffset = -1;
         this._currentArea = undefined;
+        this._currentSeq = -1;
     }
     private _currentOffset;
+    private _currentSeq;
     private _currentAreaOffset;
     private _currentArea;
     private _localChanges: ChangeSet = undefined;
@@ -140,7 +144,7 @@ class HistoryWorkspaceImpl implements HistoryWorkspace {
         return isMove;
     }
 
-    private offsetDown(): boolean {
+    private offsetDown(): boolean {        
         let isMove: boolean = false;
         let isBottom: boolean = false;
         let myCurrentArea = this._currentArea;
@@ -175,6 +179,9 @@ class HistoryWorkspaceImpl implements HistoryWorkspace {
 
 
     private moveUp(step: number) {
+        if(this.countAll()<1) return;
+        this.printVars("moveUp 1");
+        this.fixRemoteOffset();
         if (this._currentArea) {
             let fullChange: ChangeSet = undefined;
             for (let i = 0; i < step; i++) {
@@ -208,10 +215,21 @@ class HistoryWorkspaceImpl implements HistoryWorkspace {
                 this._currentOffset = undefined;
             }
         }
+        this.printVars("moveUp 2");
     }
 
 
+    private printVars(pnt: string){
+        console.log(pnt + " : " + this._currentArea + " : " + this._currentAreaOffset + " : " + this._currentOffset);
+        console.log(pnt + " : squashed:" + this.countSquashed() + " remote: " + this.countRemote() + " local: " + this.countLocal());
+    }
+
+
+
     private moveDown(step: number) {
+        if(this.countAll()<1) return;
+        this.printVars("moveDown 1");
+        this.fixRemoteOffset();
         let isFromLocal = false;
         if (!this._currentArea) {
             if (this.countAll() < 1) {
@@ -242,8 +260,10 @@ class HistoryWorkspaceImpl implements HistoryWorkspace {
             }
         }
         if (fullChange) {
+            console.log("Miso 1 moveDown change " + JSON.stringify(fullChange._changes));
             this._dual.tree.root.applyChangeSet(fullChange._changes);
         }
+        this.printVars("moveDown 2");
     }
 
 
@@ -279,7 +299,6 @@ class HistoryWorkspaceImpl implements HistoryWorkspace {
     }
 
 
-
     private countAll(): number {
         return this.countSquashed() + this.countRemote() + this.countLocal();
     }
@@ -304,6 +323,49 @@ class HistoryWorkspaceImpl implements HistoryWorkspace {
         }
         else {
             return tracker.getBufferedAt(trackedId, offset)?.changeset;
+        }
+    }
+
+
+    private fixRemoteOffset(){
+        if(this._currentArea === HistoryArea.REMOTE){
+            const seq = this.getRemoteSeqAt(this._currentAreaOffset);
+            const offset = this.findSquashedOffsetBySeq(seq);
+            if(offset){
+                this._currentArea = HistoryArea.SQUASHED;
+                this._currentAreaOffset = offset;
+            }
+        }
+    }
+
+
+    private findSquashedOffsetBySeq(seq: number): number{
+        const { tracker} = this.readVars();
+        let prevsqseq = undefined;
+        const squashedList = tracker.list();
+        for(let i=0;i<squashedList.length;i++){
+            const c = squashedList[i];
+            const sqseq = c.lastSeq;
+            if(seq<sqseq){
+                return i;
+            }      
+            else if(seq<sqseq){
+                return i-1;
+            }      
+        }
+        return undefined;
+    }
+
+    private getRemoteSeqAt(offset: number): number {
+        const { tracker, trackedId, tracked } = this.readVars();
+        const bufferedCount = tracker.countBuffered(trackedId);
+        if (offset >= bufferedCount) {
+            const msg: IRemotePropertyTreeMessage = 
+                tracked.remoteChanges[offset - bufferedCount] as IRemotePropertyTreeMessage;
+            return msg.sequenceNumber;
+        }
+        else {
+            return tracker.getBufferedAt(trackedId, offset)?.lastSeq;
         }
     }
 
@@ -339,11 +401,6 @@ class HistoryWorkspaceImpl implements HistoryWorkspace {
         return cnt;
         //const changes = this._dual.tree._root._serialize(true, false, BaseProperty.MODIFIED_STATE_FLAGS.PENDING_CHANGE);
         //return changes.length;
-    }
-
-
-    public currentSeq(): number {
-        return this._dual.tracker.getSeqAt(this._currentOffset);
     }
 
 }
