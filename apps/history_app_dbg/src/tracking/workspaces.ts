@@ -30,6 +30,11 @@ export interface SimpleWorkspace {
 
 
 
+export async function moveAsync(hist: HistoryWorkspace,step: number){
+    await null; 
+    hist.move(step);
+}
+
 export interface TrackerWorkspace extends SimpleWorkspace {
     tracker: Tracker;
 }
@@ -70,12 +75,12 @@ class HistoryWorkspaceImpl implements HistoryWorkspace {
         this._currentOffset = -1;
         this._currentAreaOffset = -1;
         this._currentArea = undefined;
-        this._currentSeq = -1;
+        this._isInHistory = false;
     }
     private _currentOffset;
-    private _currentSeq;
     private _currentAreaOffset;
     private _currentArea;
+    private _isInHistory;
     private _localChanges: ChangeSet = undefined;
 
 
@@ -84,11 +89,18 @@ class HistoryWorkspaceImpl implements HistoryWorkspace {
     }
 
     public move(step: number) {
-        if (step > 0) {
-            this.moveUp(step);
+        if(this._dual.tree.localChanges.length>0){
+            console.log("Move Resubmited!");
+            moveAsync(this,step);
         }
-        else if (step < 0) {
-            this.moveDown(step);
+        else {
+            console.log("Move Execution!");
+            if (step > 0) {
+                this.moveUp(step);
+            }
+            else if (step < 0) {
+                this.moveDown(step);
+            }
         }
     }
 
@@ -209,7 +221,7 @@ class HistoryWorkspaceImpl implements HistoryWorkspace {
             }
             const allCnt = this.countAll();
             
-            if(this._currentOffset===allCnt-1){
+            if(this._currentOffset===allCnt){
                 this._currentArea = undefined;
                 this._currentAreaOffset = undefined;
                 this._currentOffset = undefined;
@@ -220,8 +232,8 @@ class HistoryWorkspaceImpl implements HistoryWorkspace {
 
 
     private printVars(pnt: string){
-        console.log(pnt + " : " + this._currentArea + " : " + this._currentAreaOffset + " : " + this._currentOffset);
-        console.log(pnt + " : squashed:" + this.countSquashed() + " remote: " + this.countRemote() + " local: " + this.countLocal());
+        console.log(pnt + " : " + this._currentArea + " : " + this._currentAreaOffset + " : " + this._currentOffset + " : " + this._isInHistory);
+        console.log(pnt + " : squashed:" + this.countSquashed() + " remote: " + this.countRemote() + " local: " + this.countLocal() + " all: " + this.countAll());
     }
 
 
@@ -230,24 +242,18 @@ class HistoryWorkspaceImpl implements HistoryWorkspace {
         if(this.countAll()<1) return;
         this.printVars("moveDown 1");
         this.fixRemoteOffset();
-        let isFromLocal = false;
         if (!this._currentArea) {
-            if (this.countAll() < 1) {
-                return;
-            }
-            else {
-                this._currentArea = HistoryArea.LOCAL;
-                this._currentAreaOffset = this.countArea(HistoryArea.LOCAL);
-                this._currentOffset = this.countAll();
-                isFromLocal = true;
-            }
+            this._currentArea = HistoryArea.LOCAL;
+            this._currentAreaOffset = this.countArea(HistoryArea.LOCAL);
+            this._currentOffset = this.countAll();
         }
         let fullChange: ChangeSet = undefined;
         for (let i = 0; i > step; i--) {
             const isMove: boolean = this.offsetDown();
             if (isMove) {
                 const currentChange: ChangeSet = cloneChange(this.getChangeFromArea(this._currentArea, this._currentAreaOffset));
-                if (isFromLocal) {
+                if (!this._isInHistory&&this.countArea(HistoryArea.LOCAL)>0) {
+                    console.log("storing local changes");
                     this._localChanges = cloneChange(currentChange);
                 }
                 currentChange.toInverseChangeSet();
@@ -262,6 +268,7 @@ class HistoryWorkspaceImpl implements HistoryWorkspace {
         if (fullChange) {
             console.log("Miso 1 moveDown change " + JSON.stringify(fullChange._changes));
             this._dual.tree.root.applyChangeSet(fullChange._changes);
+            this._isInHistory=true;
         }
         this.printVars("moveDown 2");
     }
@@ -307,19 +314,39 @@ class HistoryWorkspaceImpl implements HistoryWorkspace {
         return this._dual.tracker.count();
     }
 
+
+    private filterRemoteChanges(){
+        const {tracker, tracked, bufferedLastSeq} = this.readVars();
+        let squashedLastSeq=tracker.getChangeAt(this.countSquashed()-1)?.lastSeq;
+        if(!squashedLastSeq){ squashedLastSeq=-1};
+        console.log("squashed last seq: " + squashedLastSeq);
+        return tracked.remoteChanges.map((c) => c as IRemotePropertyTreeMessage)
+            .filter((c) => {
+                let isBuf = true;
+                if(bufferedLastSeq){
+                    isBuf = c.sequenceNumber > bufferedLastSeq;
+                }
+                return isBuf && c.sequenceNumber > squashedLastSeq;    
+            });
+    }
+
     private countRemote(): number {
-        const { tracked, bufferedLastSeq, bufferedCount } = this.readVars();
-        const remoteCount = bufferedCount + tracked.remoteChanges.map((c) => c as IRemotePropertyTreeMessage)
-            .filter((c) => c.sequenceNumber > bufferedLastSeq).length;
-        return remoteCount;
+       console.log("remore size : " + this.filterRemoteChanges().length);
+       const {bufferedCount } = this.readVars();        
+       return bufferedCount + this.filterRemoteChanges().length;
     }
 
 
+
+
     private getRemoteChangeAt(offset: number): ChangeSet {
-        const { tracker, trackedId, tracked } = this.readVars();
+        const { tracker, trackedId} = this.readVars();
+        const remote=this.filterRemoteChanges();
         const bufferedCount = tracker.countBuffered(trackedId);
         if (offset >= bufferedCount) {
-            return new ChangeSet(JSON.parse(tracked.remoteChanges[offset - bufferedCount]?.changeSet));
+            const myChange = remote[offset - bufferedCount];
+            const changeSet = myChange?.changeSet;
+            return new ChangeSet(changeSet);
         }
         else {
             return tracker.getBufferedAt(trackedId, offset)?.changeset;
@@ -341,17 +368,18 @@ class HistoryWorkspaceImpl implements HistoryWorkspace {
 
     private findSquashedOffsetBySeq(seq: number): number{
         const { tracker} = this.readVars();
-        let prevsqseq = undefined;
         const squashedList = tracker.list();
-        for(let i=0;i<squashedList.length;i++){
-            const c = squashedList[i];
-            const sqseq = c.lastSeq;
-            if(seq<sqseq){
-                return i;
-            }      
-            else if(seq<sqseq){
-                return i-1;
-            }      
+        if(squashedList){
+            for(let i=0;i<squashedList.length;i++){
+                const c = squashedList[i];
+                const sqseq = c.lastSeq;
+                if(seq<sqseq){
+                    return i;
+                }      
+                else if(seq<sqseq){
+                    return i-1;
+                }      
+            }    
         }
         return undefined;
     }
@@ -397,8 +425,13 @@ class HistoryWorkspaceImpl implements HistoryWorkspace {
     }
 
     private countLocal(): number {
-        const cnt = this._dual.tree._root.hasPendingChanges() ? 1 : 0;
-        return cnt;
+
+        if(this._isInHistory){
+            return this._localChanges?1:0;
+        }         
+        else {
+            return this._dual.tree._root.hasPendingChanges() ? 1 : 0;
+        }
         //const changes = this._dual.tree._root._serialize(true, false, BaseProperty.MODIFIED_STATE_FLAGS.PENDING_CHANGE);
         //return changes.length;
     }

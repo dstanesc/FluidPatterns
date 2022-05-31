@@ -162,6 +162,7 @@ export default function App() {
       <br></br>
       <button onClick={() => {
         workspace.move(-1);
+        console.count("move down button end ");
       }
       }>{"<"}</button>
       <button onClick={() => {

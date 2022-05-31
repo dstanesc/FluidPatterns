@@ -275,7 +275,7 @@ export class SquashedHistory extends SharedPropertyTree implements Tracker{
 
     public count() {
         const logProperty = this.root.resolvePath(SquashedHistory.LOG_PROPERTY) as ArrayProperty;
-        if(!logProperty) return undefined;
+        if(!logProperty) return 0;
         return logProperty.length;
     }
 
