@@ -93,7 +93,7 @@ class HistoryWorkspaceImpl implements HistoryWorkspace {
         else {
             console.log("Move Execution!");
             this._changes=this.readChanges();     
-            this._changes.forEach((c)=>console.log("Miso Changes List : "+JSON.stringify(c.changeset)+" : " + c.lastSeq));
+            //this._changes.forEach((c)=>console.log("Miso Changes List : "+JSON.stringify(c.changeset)+" : " + c.lastSeq));
             if (step > 0) {
                 this.moveUp(step);
             }
@@ -184,6 +184,7 @@ class HistoryWorkspaceImpl implements HistoryWorkspace {
             this._dual.tree.root.applyChangeSet(fullChange._changes);
             this._isInHistory=true;      
             this._currentSeq=currentSeq;
+            this._dual.tree.allowRemoteReceive(false);
         }
         
     }

@@ -6,6 +6,7 @@ import {
     IChannelAttributes,
     IFluidDataStoreRuntime,
 } from "@fluidframework/datastore-definitions";
+import { ISequencedDocumentMessage } from '@fluidframework/protocol-definitions';
 import { SquashedHistoryFactory, TrackedPropertyTreeFactory } from "./propFactory";
 
 
@@ -41,6 +42,18 @@ export class TrackedPropertyTree extends SharedPropertyTree {
     public static readonly TRACKER_INFO_PROP_PATH = "Tracker_DDS"   
     public static readonly PERSIST_POINT_PROP_PATH = "Persist_Point"  
     public static readonly MY_ID_PROP_PATH = "MyId"
+
+    private _disableRemoteReceive: boolean;
+
+    public allowRemoteReceive(isReceiving: boolean) {
+        this._disableRemoteReceive = !isReceiving;
+    }
+
+    protected override processCore(message: ISequencedDocumentMessage, local: boolean, localOpMetadata: unknown) {
+        if(!this._disableRemoteReceive){
+            super.processCore(message, local, localOpMetadata);
+        }
+    }
 
 
 	public constructor(
