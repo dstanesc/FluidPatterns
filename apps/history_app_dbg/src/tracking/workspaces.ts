@@ -108,7 +108,11 @@ class HistoryWorkspaceImpl implements HistoryWorkspace {
     }
 
     public commit() {
-        return this._dual.commit();
+        this._localChanges=undefined;
+        this._isInHistory = false;
+        this._currentSeq = undefined;
+        this._changes = undefined; 
+        this._dual.tree.commit();
     }
 
     public setAutoPersist(isAutoPersist: boolean) {
