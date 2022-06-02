@@ -9,7 +9,7 @@ import {
     AzureClient,
     LOCAL_MODE_TENANT_ID,
 } from "@fluidframework/azure-client";
-import { SquashedHistory, TrackedPropertyTree, Tracker } from "./trackdds";
+import { ChangeEntry, SquashedHistory, TrackedPropertyTree, Tracker } from "./trackdds";
 import { ChangeSet } from "@fluid-experimental/property-changeset";
 
 export async function registerSchema(schema: any) {
@@ -71,18 +71,15 @@ function cloneChange(changeSet: ChangeSet): ChangeSet {
 
 class HistoryWorkspaceImpl implements HistoryWorkspace {
 
-    constructor(private _dual: DualWorkspace) {
-        this._currentOffset = -1;
-        this._currentAreaOffset = -1;
-        this._currentArea = undefined;
-        this._isInHistory = false;
-    }
-    private _currentOffset;
-    private _currentAreaOffset;
-    private _currentArea;
-    private _isInHistory;
-    private _localChanges: ChangeSet = undefined;
+    private _isInHistory = false;
+    private _currentSeq: number = undefined;
+    private _localChanges: ChangeEntry = undefined;
+    private _changes: ChangeEntry[] = undefined; 
+    private _bufferedCache:  ChangeEntry[] = []; 
+    private static readonly LOCAL_SEQ_START = Number.MAX_SAFE_INTEGER-1024*1024;
 
+    constructor(private _dual: DualWorkspace) {
+    }
 
     public getTracked() {
         return this._dual;
@@ -95,6 +92,8 @@ class HistoryWorkspaceImpl implements HistoryWorkspace {
         }
         else {
             console.log("Move Execution!");
+            this._changes=this.readChanges();     
+            this._changes.forEach((c)=>console.log("Miso Changes List : "+JSON.stringify(c.changeset)+" : " + c.lastSeq));
             if (step > 0) {
                 this.moveUp(step);
             }
@@ -121,319 +120,180 @@ class HistoryWorkspaceImpl implements HistoryWorkspace {
     }
 
 
-    private offsetUp(): boolean {
-        let areaCnt = this.countArea(this._currentArea);
-        let isMove: boolean = false;
-        let isTop: boolean = false;
-        let myCurrentArea = this._currentArea;
-        let myCurrentAreaOffset = this._currentAreaOffset;
-        while ((myCurrentAreaOffset >= areaCnt)) {
-            isTop = true;
-            if (((myCurrentArea + 1) !== HistoryArea.END_UNDEF)) {
-                myCurrentArea = myCurrentArea + 1;
-                myCurrentAreaOffset = 0;
-                areaCnt = this.countArea(myCurrentArea);
-                if (myCurrentAreaOffset < areaCnt) {
-                    isMove = true;
-                    isTop = false;
-                    break;
-                }
-            }
-            else {
-                break;
-            }
-        }
-        if (!isTop) {
-            myCurrentAreaOffset++;
-            isMove = true;
-        }
-        if (isMove) {
-            this._currentArea = myCurrentArea;
-            this._currentAreaOffset = myCurrentAreaOffset;
-            this._currentOffset++;
-
-        }
-        return isMove;
-    }
-
-    private offsetDown(): boolean {        
-        let isMove: boolean = false;
-        let isBottom: boolean = false;
-        let myCurrentArea = this._currentArea;
-        let myCurrentAreaOffset = this._currentAreaOffset;
-        while ((myCurrentAreaOffset <= 0)) {
-            isBottom = true;
-            if (((myCurrentArea) !== HistoryArea.BEGIN_UNDEF)) {
-                myCurrentArea = myCurrentArea - 1;
-                const areaCnt = this.countArea(myCurrentArea);
-                myCurrentAreaOffset = areaCnt;
-                if (myCurrentAreaOffset > 0) {
-                    isBottom = false;
-                    isMove = true;
-                    break;
-                }
-            }
-            else {
-                break;
-            }
-        }
-        if (!isBottom) {
-            myCurrentAreaOffset--;
-            isMove = true;
-        }
-        if (isMove) {
-            this._currentArea = myCurrentArea;
-            this._currentAreaOffset = myCurrentAreaOffset;
-            this._currentOffset--;
-        }
-        return isMove;
-    }
-
-
     private moveUp(step: number) {
-        if(this.countAll()<1) return;
-        this.printVars("moveUp 1");
-        this.fixRemoteOffset();
-        if (this._currentArea) {
-            let fullChange: ChangeSet = undefined;
-            for (let i = 0; i < step; i++) {
-                const startingCurrentArea = this._currentArea;
-                let startingAreaOffset = this._currentAreaOffset;
-                const isMove = this.offsetUp();
-                if (startingCurrentArea !== this._currentArea) {
-                    startingAreaOffset = 0;
-                }
-                if (isMove) {
-                    const currentChange: ChangeSet = cloneChange(this.getChangeFromArea(this._currentArea, startingAreaOffset));
-                    if (!fullChange) {
-                        fullChange = currentChange;
-                    }
-                    else {
-                        fullChange.applyChangeSet(currentChange._changes);
-                    }
-                }
-                else {
-                    break;
-                }
-            }
-            if (fullChange) {
-                this._dual.tree.root.applyChangeSet(fullChange._changes);
-            }
-            const allCnt = this.countAll();
-            
-            if(this._currentOffset===allCnt){
-                this._currentArea = undefined;
-                this._currentAreaOffset = undefined;
-                this._currentOffset = undefined;
-            }
-        }
-        this.printVars("moveUp 2");
-    }
-
-
-    private printVars(pnt: string){
-        console.log(pnt + " : " + this._currentArea + " : " + this._currentAreaOffset + " : " + this._currentOffset + " : " + this._isInHistory);
-        console.log(pnt + " : squashed:" + this.countSquashed() + " remote: " + this.countRemote() + " local: " + this.countLocal() + " all: " + this.countAll());
-    }
-
-
-
-    private moveDown(step: number) {
-        if(this.countAll()<1) return;
-        this.printVars("moveDown 1");
-        this.fixRemoteOffset();
-        if (!this._currentArea) {
-            this._currentArea = HistoryArea.LOCAL;
-            this._currentAreaOffset = this.countArea(HistoryArea.LOCAL);
-            this._currentOffset = this.countAll();
-        }
+        if(this._changes.length<1) return;
+        if(!this._currentSeq) return;
+        if(this._currentSeq===this._changes[this._changes.length-1].lastSeq) return;
+        const posInChanges=this.findChangePos(this._currentSeq+1,this._changes);
         let fullChange: ChangeSet = undefined;
-        for (let i = 0; i > step; i--) {
-            const isMove: boolean = this.offsetDown();
-            if (isMove) {
-                const currentChange: ChangeSet = cloneChange(this.getChangeFromArea(this._currentArea, this._currentAreaOffset));
-                if (!this._isInHistory&&this.countArea(HistoryArea.LOCAL)>0) {
-                    console.log("storing local changes");
-                    this._localChanges = cloneChange(currentChange);
-                }
-                currentChange.toInverseChangeSet();
-                if (!fullChange) {
-                    fullChange = currentChange;
-                }
-                else {
-                    fullChange.applyChangeSet(currentChange._changes);
-                }
+        let currentSeq: number = this._currentSeq;
+        for(let i=0; i<step; i++){
+            const currentPosInChanges = posInChanges + i;
+            if(currentPosInChanges>=this._changes.length) break;
+            const changeEntry: ChangeEntry = this._changes[currentPosInChanges];
+            const change = cloneChange(changeEntry.changeset);
+            if (!fullChange) {
+                fullChange = change;
             }
+            else {
+                fullChange.applyChangeSet(change._changes);
+            }
+            currentSeq = changeEntry.lastSeq;
         }
         if (fullChange) {
-            console.log("Miso 1 moveDown change " + JSON.stringify(fullChange._changes));
+            console.log("MISO1 Apply" + JSON.stringify(fullChange._changes) );
             this._dual.tree.root.applyChangeSet(fullChange._changes);
-            this._isInHistory=true;
-        }
-        this.printVars("moveDown 2");
-    }
-
-
-
-    private countArea(currentArea: HistoryArea) {
-        switch (currentArea) {
-            case HistoryArea.LOCAL: {
-                return this.countLocal();
-            }
-            case HistoryArea.REMOTE: {
-                return this.countRemote();
-            }
-            case HistoryArea.SQUASHED: {
-                return this.countSquashed();
-            }
-            default: return undefined;
+            this._isInHistory=true;      
+            this._currentSeq=currentSeq;
         }
     }
 
-    private getChangeFromArea(area: HistoryArea, offset: number): ChangeSet {
-        switch (this._currentArea) {
-            case HistoryArea.LOCAL: {
-                return this.getLocalChangeAt(offset);
+    private moveDown(step: number) {
+        if(this._changes.length<1) return;
+        if(!this._currentSeq) this._currentSeq = this._changes[this._changes.length-1].lastSeq;               
+        if(this._currentSeq<0) return;  
+        const posInChanges=this.findChangePos(this._currentSeq,this._changes);
+        let fullChange: ChangeSet = undefined;
+        let currentSeq: number = this._currentSeq;
+        for(let i=0; i>step; i--){
+            const currentPosInChanges = posInChanges + i;
+            if(currentPosInChanges<0) break;
+            const changeEntry: ChangeEntry = this._changes[currentPosInChanges];
+            if(!this._isInHistory){
+                if(changeEntry.lastSeq===HistoryWorkspaceImpl.LOCAL_SEQ_START){
+                    this._localChanges = changeEntry;
+                }          
             }
-            case HistoryArea.REMOTE: {
-                return this.getRemoteChangeAt(offset);
+            const change = cloneChange(changeEntry.changeset);
+            change.toInverseChangeSet();
+            if (!fullChange) {
+                fullChange = change;
             }
-            case HistoryArea.SQUASHED: {
-                return this.getSquashedChangeAt(offset);
+            else {
+                fullChange.applyChangeSet(change._changes);
             }
-            default: return undefined;
+            currentSeq = currentPosInChanges>0 ? this._changes[currentPosInChanges-1].lastSeq : -1;
+            
         }
+        if (fullChange) {
+            console.log("MISO1 Apply" + JSON.stringify(fullChange._changes));
+            this._dual.tree.root.applyChangeSet(fullChange._changes);
+            this._isInHistory=true;      
+            this._currentSeq=currentSeq;
+        }
+        
     }
 
-
-    private countAll(): number {
-        return this.countSquashed() + this.countRemote() + this.countLocal();
+    private readAndCacheBuffered() : ChangeEntry[]{
+        const tracker: Tracker = this._dual.tracker;
+        const trackedId = this._dual.containerId;
+        let bufferedCacheSeq = -1;
+        if(this._bufferedCache.length>0){
+            bufferedCacheSeq = this._bufferedCache[this._bufferedCache.length-1].lastSeq;
+        }        
+        let allBuffered: ChangeEntry[] = tracker.listBuffered(trackedId);
+        allBuffered = allBuffered?allBuffered:[];
+        this._bufferedCache = this._bufferedCache.concat(allBuffered.filter((b)=>b.lastSeq>bufferedCacheSeq));
+        return this._bufferedCache;
     }
 
-    private countSquashed(): number {
-        return this._dual.tracker.count();
-    }
-
-
-    private filterRemoteChanges(){
-        const {tracker, tracked, bufferedLastSeq} = this.readVars();
-        let squashedLastSeq=tracker.getChangeAt(this.countSquashed()-1)?.lastSeq;
-        if(!squashedLastSeq){ squashedLastSeq=-1};
-        console.log("squashed last seq: " + squashedLastSeq);
-        return tracked.remoteChanges.map((c) => c as IRemotePropertyTreeMessage)
-            .filter((c) => {
-                let isBuf = true;
-                if(bufferedLastSeq){
-                    isBuf = c.sequenceNumber > bufferedLastSeq;
+    private mergeRemoteAndBuffered(remote: ChangeEntry[],buffered: ChangeEntry[]):ChangeEntry[]  {
+        let remoteInd = 0;
+        let bufferedInd = 0;
+        let result: ChangeEntry[] = [];
+        while(true){
+            if(remoteInd>remote.length-1){
+                for(let i=bufferedInd;i<buffered.length;i++){
+                    result.push(buffered[i])
                 }
-                return isBuf && c.sequenceNumber > squashedLastSeq;    
-            });
-    }
-
-    private countRemote(): number {
-       console.log("remore size : " + this.filterRemoteChanges().length);
-       const {bufferedCount } = this.readVars();        
-       return bufferedCount + this.filterRemoteChanges().length;
-    }
-
-
-
-
-    private getRemoteChangeAt(offset: number): ChangeSet {
-        const { tracker, trackedId} = this.readVars();
-        const remote=this.filterRemoteChanges();
-        const bufferedCount = tracker.countBuffered(trackedId);
-        if (offset >= bufferedCount) {
-            const myChange = remote[offset - bufferedCount];
-            const changeSet = myChange?.changeSet;
-            return new ChangeSet(changeSet);
-        }
-        else {
-            return tracker.getBufferedAt(trackedId, offset)?.changeset;
-        }
-    }
-
-
-    private fixRemoteOffset(){
-        if(this._currentArea === HistoryArea.REMOTE){
-            const seq = this.getRemoteSeqAt(this._currentAreaOffset);
-            const offset = this.findSquashedOffsetBySeq(seq);
-            if(offset){
-                this._currentArea = HistoryArea.SQUASHED;
-                this._currentAreaOffset = offset;
+                break;
+            }
+            else if(bufferedInd>buffered.length-1) {
+                for(let i=remoteInd;i<remote.length;i++){
+                    result.push(remote[i])
+                }
+                break;
+            }
+            else if(remote[remoteInd].lastSeq<buffered[bufferedInd].lastSeq){
+                result.push(remote[remoteInd]);
+                remoteInd++;
+            }
+            else if (remote[remoteInd].lastSeq>buffered[bufferedInd].lastSeq){
+                result.push(buffered[remoteInd]);
+                bufferedInd++;
+            }
+            else {
+                result.push(remote[remoteInd]);
+                remoteInd++;
+                bufferedInd++;
             }
         }
+        return result;
     }
 
+    private alignLiveWithSquashed(live: ChangeEntry[],squashed: ChangeEntry[]):ChangeEntry[]  {
+        if(!squashed) return live;
+        if(squashed.length===0) return live;
+        let firstLiveSeq = live.length>0 ? live[0].lastSeq: Number.MAX_SAFE_INTEGER; 
+        let index = 0
+        for(;index<squashed.length;index++){
+            if(squashed[index].lastSeq > firstLiveSeq){
+                break;
+            }
+        }   
+        let result: ChangeEntry[] = [];  
+        for(let i=0;i<index;i++){
+            result.push(squashed[i]);
+        }
+        let lastSquashedIndex = index>0?squashed[index-1].lastSeq:-1;
+        live.filter((c)=>c.lastSeq>lastSquashedIndex).forEach((c)=>result.push(c));
+        return result;
+    }
 
-    private findSquashedOffsetBySeq(seq: number): number{
-        const { tracker} = this.readVars();
-        const squashedList = tracker.list();
-        if(squashedList){
-            for(let i=0;i<squashedList.length;i++){
-                const c = squashedList[i];
-                const sqseq = c.lastSeq;
-                if(seq<sqseq){
-                    return i;
-                }      
-                else if(seq<sqseq){
-                    return i-1;
-                }      
-            }    
+    private readChanges(): ChangeEntry[]{
+        const tracker: Tracker = this._dual.tracker;
+        const tracked: TrackedPropertyTree = this._dual.tree;
+        const trackedId = this._dual.containerId;
+        let allBuffered: ChangeEntry[] = this.readAndCacheBuffered();
+        const allRemoteMsgs = tracked.remoteChanges.map((msg) => (msg as IRemotePropertyTreeMessage));
+        const allRemote: ChangeEntry[] = allRemoteMsgs.map((remoteMsg)=>{
+            return {
+                "trackedContainerId": trackedId,
+                "changeset": new ChangeSet(remoteMsg.changeSet), 
+                "lastSeq": remoteMsg.sequenceNumber}
+        });
+        let live = this.mergeRemoteAndBuffered(allRemote,allBuffered);     
+        const allSquashed: ChangeEntry[] = tracker.list();
+        return this.alignLiveWithSquashed(live,allSquashed).concat(this.getLocalChanges());   
+    }
+
+    private findChangePos(seq: number, changes: ChangeEntry[]): number | undefined {
+        for(let i=0;i<changes.length;i++){
+            if(changes[i].lastSeq>=seq){
+                return i;
+            }
         }
         return undefined;
     }
 
-    private getRemoteSeqAt(offset: number): number {
-        const { tracker, trackedId, tracked } = this.readVars();
-        const bufferedCount = tracker.countBuffered(trackedId);
-        if (offset >= bufferedCount) {
-            const msg: IRemotePropertyTreeMessage = 
-                tracked.remoteChanges[offset - bufferedCount] as IRemotePropertyTreeMessage;
-            return msg.sequenceNumber;
-        }
-        else {
-            return tracker.getBufferedAt(trackedId, offset)?.lastSeq;
-        }
-    }
-
-    private getSquashedChangeAt(offset: number): ChangeSet {
-        const { tracker } = this.readVars();
-        return tracker.getChangeAt(offset).changeset;
-    }
-
-    private getLocalChangeAt(offset: number): ChangeSet {
-        if (this._localChanges) {
-            return this._localChanges;
-        }
-        const changes = this._dual.tree._root._serialize(true, false, BaseProperty.MODIFIED_STATE_FLAGS.PENDING_CHANGE);
-        const changeset = new ChangeSet(changes);
-        changeset._toReversibleChangeSet(this._dual.tree.tipView);
-        return changeset;
-    }
-
-
-
-    private readVars() {
-        const tracker = this._dual.tracker;
-        const tracked = this._dual.tree;
+    private getLocalChanges(): ChangeEntry[] {
         const trackedId = this._dual.containerId;
-        const bufferedCount = this._dual.tracker.countBuffered(trackedId);
-
-        const bufferedLastSeq = bufferedCount > 0 ? tracker.getBufferedAt(trackedId, bufferedCount - 1).lastSeq : undefined;
-        return { tracker, trackedId, tracked, bufferedLastSeq, bufferedCount };
-    }
-
-    private countLocal(): number {
-
-        if(this._isInHistory){
-            return this._localChanges?1:0;
-        }         
-        else {
-            return this._dual.tree._root.hasPendingChanges() ? 1 : 0;
+        if (this._localChanges) {
+            return [this._localChanges];
         }
-        //const changes = this._dual.tree._root._serialize(true, false, BaseProperty.MODIFIED_STATE_FLAGS.PENDING_CHANGE);
-        //return changes.length;
+        else if (this._dual.tree._root.hasPendingChanges()){
+            const changes = this._dual.tree._root._serialize(true, false, BaseProperty.MODIFIED_STATE_FLAGS.PENDING_CHANGE);
+            const changeset = new ChangeSet(changes);
+            changeset._toReversibleChangeSet(this._dual.tree.tipView);
+            return [{
+                "trackedContainerId": trackedId,
+                "changeset": new ChangeSet(changeset), 
+                "lastSeq": HistoryWorkspaceImpl.LOCAL_SEQ_START
+            }];
+        }
+        else {
+            return [];
+        }
     }
 
 }
