@@ -85,26 +85,23 @@ class HistoryWorkspaceImpl implements HistoryWorkspace {
         return this._dual;
     }
 
-    public move(step: number) {
+    public move(step: number): boolean {
         if(this._dual.tree.localChanges.length>0){
-            console.log("Move Resubmited!");
-            moveAsync(this,step);
+            console.warn("Local Changes Submitted but not Received. Move not executed.");
+            return false;
         }
-        else {
-            console.log("Move Execution!");
-            this._changes=this.readChanges();     
-            //this._changes.forEach((c)=>console.log("Miso Changes List : "+JSON.stringify(c.changeset)+" : " + c.lastSeq));
-            if (step > 0) {
-                this.moveUp(step);
-            }
-            else if (step < 0) {
-                this.moveDown(step);
-            }
+        this._changes=this.readChanges();     
+        if (step > 0) {
+            this.moveUp(step);
         }
+        else if (step < 0) {
+            this.moveDown(step);
+        }
+        return true;
     }
 
     public reset() {
-
+        
     }
 
     public commit() {
