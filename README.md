@@ -44,6 +44,10 @@ npm run build
 ## Schema Patterns
 
 - [Schema Evolution](./apps/schema-evolution/)
+
+# Random Documents
+
+- [Notes on Data Services in FluidFramework](./doc/data-services.md)
  
 ## Disclaimer
 
