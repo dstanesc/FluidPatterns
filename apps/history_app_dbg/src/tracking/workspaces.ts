@@ -17,40 +17,6 @@ export async function registerSchema(schema: any) {
     PropertyFactory.register(Object.values([schema]));
 }
 
-export interface SimpleWorkspace {
-
-    containerId: string;
-
-    dataBinder: DataBinder;
-
-    rootProperty: NodeProperty;
-
-    commit(): void;
-}
-
-
-
-export async function moveAsync(hist: HistoryWorkspace,step: number){
-    await null; 
-    hist.move(step);
-}
-
-export interface TrackerWorkspace extends SimpleWorkspace {
-    tracker: Tracker;
-}
-
-export interface TrackedWorkspace extends SimpleWorkspace {
-    tree: TrackedPropertyTree;
-    trackerInfo: string[] | undefined;
-}
-
-export enum HistoryArea {
-    BEGIN_UNDEF = 1,
-    SQUASHED = 2,
-    REMOTE = 3,
-    LOCAL = 4,
-    END_UNDEF = 5,
-};
 
 
 export interface HistoryWorkspace {
@@ -65,6 +31,34 @@ export interface HistoryWorkspace {
 
 
 
+export interface SimpleWorkspace {
+    containerId: string;
+    dataBinder: DataBinder;
+    rootProperty: NodeProperty;
+    commit(): void;
+}
+
+
+
+export async function moveAsync(hist: HistoryWorkspace, step: number) {
+    await null;
+    hist.move(step);
+}
+
+export interface TrackerWorkspace extends SimpleWorkspace {
+    tracker: Tracker;
+}
+
+export interface TrackedWorkspace extends SimpleWorkspace {
+    tree: TrackedPropertyTree;
+    trackerInfo: string[] | undefined;
+}
+
+
+
+
+
+
 function cloneChange(changeSet: ChangeSet): ChangeSet {
     return new ChangeSet(JSON.parse(JSON.stringify(changeSet._changes)));
 }
@@ -74,9 +68,9 @@ class HistoryWorkspaceImpl implements HistoryWorkspace {
     private _isInHistory = false;
     private _currentSeq: number = undefined;
     private _localChanges: ChangeEntry = undefined;
-    private _changes: ChangeEntry[] = undefined; 
-    private _bufferedCache:  ChangeEntry[] = []; 
-    private static readonly LOCAL_SEQ_START = Number.MAX_SAFE_INTEGER-1024*1024;
+    private _changes: ChangeEntry[] = undefined;
+    private _bufferedCache: ChangeEntry[] = [];
+    private static readonly LOCAL_SEQ_START = Number.MAX_SAFE_INTEGER - 1024 * 1024;
 
     constructor(private _dual: DualWorkspace) {
     }
@@ -86,11 +80,11 @@ class HistoryWorkspaceImpl implements HistoryWorkspace {
     }
 
     public move(step: number): boolean {
-        if(this._dual.tree.localChanges.length>0){
+        if (this._dual.tree.localChanges.length > 0) {
             console.warn("Local Changes Submitted but not Received. Move not executed.");
             return false;
         }
-        this._changes=this.readChanges();     
+        this._changes = this.readChanges();
         if (step > 0) {
             this.moveUp(step);
         }
@@ -101,14 +95,13 @@ class HistoryWorkspaceImpl implements HistoryWorkspace {
     }
 
     public reset() {
-        
     }
 
     public commit() {
-        this._localChanges=undefined;
+        this._localChanges = undefined;
         this._isInHistory = false;
         this._currentSeq = undefined;
-        this._changes = undefined; 
+        this._changes = undefined;
         this._dual.tree.commit();
     }
 
@@ -122,15 +115,15 @@ class HistoryWorkspaceImpl implements HistoryWorkspace {
 
 
     private moveUp(step: number) {
-        if(this._changes.length<1) return;
-        if(!this._currentSeq) return;
-        if(this._currentSeq===this._changes[this._changes.length-1].lastSeq) return;
-        const posInChanges=this.findChangePos(this._currentSeq+1,this._changes);
+        if (this._changes.length < 1) return;
+        if (!this._currentSeq) return;
+        if (this._currentSeq === this._changes[this._changes.length - 1].lastSeq) return;
+        const posInChanges = this.findChangePos(this._currentSeq + 1, this._changes);
         let fullChange: ChangeSet = undefined;
         let currentSeq: number = this._currentSeq;
-        for(let i=0; i<step; i++){
+        for (let i = 0; i < step; i++) {
             const currentPosInChanges = posInChanges + i;
-            if(currentPosInChanges>=this._changes.length) break;
+            if (currentPosInChanges >= this._changes.length) break;
             const changeEntry: ChangeEntry = this._changes[currentPosInChanges];
             const change = cloneChange(changeEntry.changeset);
             if (!fullChange) {
@@ -142,28 +135,28 @@ class HistoryWorkspaceImpl implements HistoryWorkspace {
             currentSeq = changeEntry.lastSeq;
         }
         if (fullChange) {
-            console.log("MISO1 Apply" + JSON.stringify(fullChange._changes) );
+            console.log("MISO1 Apply" + JSON.stringify(fullChange._changes));
             this._dual.tree.root.applyChangeSet(fullChange._changes);
-            this._isInHistory=true;      
-            this._currentSeq=currentSeq;
+            this._isInHistory = true;
+            this._currentSeq = currentSeq;
         }
     }
 
     private moveDown(step: number) {
-        if(this._changes.length<1) return;
-        if(!this._currentSeq) this._currentSeq = this._changes[this._changes.length-1].lastSeq;               
-        if(this._currentSeq<0) return;  
-        const posInChanges=this.findChangePos(this._currentSeq,this._changes);
+        if (this._changes.length < 1) return;
+        if (!this._currentSeq) this._currentSeq = this._changes[this._changes.length - 1].lastSeq;
+        if (this._currentSeq < 0) return;
+        const posInChanges = this.findChangePos(this._currentSeq, this._changes);
         let fullChange: ChangeSet = undefined;
         let currentSeq: number = this._currentSeq;
-        for(let i=0; i>step; i--){
+        for (let i = 0; i > step; i--) {
             const currentPosInChanges = posInChanges + i;
-            if(currentPosInChanges<0) break;
+            if (currentPosInChanges < 0) break;
             const changeEntry: ChangeEntry = this._changes[currentPosInChanges];
-            if(!this._isInHistory){
-                if(changeEntry.lastSeq===HistoryWorkspaceImpl.LOCAL_SEQ_START){
+            if (!this._isInHistory) {
+                if (changeEntry.lastSeq === HistoryWorkspaceImpl.LOCAL_SEQ_START) {
                     this._localChanges = changeEntry;
-                }          
+                }
             }
             const change = cloneChange(changeEntry.changeset);
             change.toInverseChangeSet();
@@ -173,54 +166,54 @@ class HistoryWorkspaceImpl implements HistoryWorkspace {
             else {
                 fullChange.applyChangeSet(change._changes);
             }
-            currentSeq = currentPosInChanges>0 ? this._changes[currentPosInChanges-1].lastSeq : -1;
-            
+            currentSeq = currentPosInChanges > 0 ? this._changes[currentPosInChanges - 1].lastSeq : -1;
+
         }
         if (fullChange) {
             console.log("MISO1 Apply" + JSON.stringify(fullChange._changes));
             this._dual.tree.root.applyChangeSet(fullChange._changes);
-            this._isInHistory=true;      
-            this._currentSeq=currentSeq;
+            this._isInHistory = true;
+            this._currentSeq = currentSeq;
             this._dual.tree.allowRemoteReceive(false);
         }
-        
+
     }
 
-    private readAndCacheBuffered() : ChangeEntry[]{
+    private readAndCacheBuffered(): ChangeEntry[] {
         const tracker: Tracker = this._dual.tracker;
         const trackedId = this._dual.containerId;
         let bufferedCacheSeq = -1;
-        if(this._bufferedCache.length>0){
-            bufferedCacheSeq = this._bufferedCache[this._bufferedCache.length-1].lastSeq;
-        }        
+        if (this._bufferedCache.length > 0) {
+            bufferedCacheSeq = this._bufferedCache[this._bufferedCache.length - 1].lastSeq;
+        }
         let allBuffered: ChangeEntry[] = tracker.listBuffered(trackedId);
-        allBuffered = allBuffered?allBuffered:[];
-        this._bufferedCache = this._bufferedCache.concat(allBuffered.filter((b)=>b.lastSeq>bufferedCacheSeq));
+        allBuffered = allBuffered ? allBuffered : [];
+        this._bufferedCache = this._bufferedCache.concat(allBuffered.filter((b) => b.lastSeq > bufferedCacheSeq));
         return this._bufferedCache;
     }
 
-    private mergeRemoteAndBuffered(remote: ChangeEntry[],buffered: ChangeEntry[]):ChangeEntry[]  {
+    private mergeRemoteAndBuffered(remote: ChangeEntry[], buffered: ChangeEntry[]): ChangeEntry[] {
         let remoteInd = 0;
         let bufferedInd = 0;
         let result: ChangeEntry[] = [];
-        while(true){
-            if(remoteInd>remote.length-1){
-                for(let i=bufferedInd;i<buffered.length;i++){
+        while (true) {
+            if (remoteInd > remote.length - 1) {
+                for (let i = bufferedInd; i < buffered.length; i++) {
                     result.push(buffered[i])
                 }
                 break;
             }
-            else if(bufferedInd>buffered.length-1) {
-                for(let i=remoteInd;i<remote.length;i++){
+            else if (bufferedInd > buffered.length - 1) {
+                for (let i = remoteInd; i < remote.length; i++) {
                     result.push(remote[i])
                 }
                 break;
             }
-            else if(remote[remoteInd].lastSeq<buffered[bufferedInd].lastSeq){
+            else if (remote[remoteInd].lastSeq < buffered[bufferedInd].lastSeq) {
                 result.push(remote[remoteInd]);
                 remoteInd++;
             }
-            else if (remote[remoteInd].lastSeq>buffered[bufferedInd].lastSeq){
+            else if (remote[remoteInd].lastSeq > buffered[bufferedInd].lastSeq) {
                 result.push(buffered[remoteInd]);
                 bufferedInd++;
             }
@@ -233,45 +226,46 @@ class HistoryWorkspaceImpl implements HistoryWorkspace {
         return result;
     }
 
-    private alignLiveWithSquashed(live: ChangeEntry[],squashed: ChangeEntry[]):ChangeEntry[]  {
-        if(!squashed) return live;
-        if(squashed.length===0) return live;
-        let firstLiveSeq = live.length>0 ? live[0].lastSeq: Number.MAX_SAFE_INTEGER; 
+    private alignLiveWithSquashed(live: ChangeEntry[], squashed: ChangeEntry[]): ChangeEntry[] {
+        if (!squashed) return live;
+        if (squashed.length === 0) return live;
+        let firstLiveSeq = live.length > 0 ? live[0].lastSeq : Number.MAX_SAFE_INTEGER;
         let index = 0
-        for(;index<squashed.length;index++){
-            if(squashed[index].lastSeq > firstLiveSeq){
+        for (; index < squashed.length; index++) {
+            if (squashed[index].lastSeq > firstLiveSeq) {
                 break;
             }
-        }   
-        let result: ChangeEntry[] = [];  
-        for(let i=0;i<index;i++){
+        }
+        let result: ChangeEntry[] = [];
+        for (let i = 0; i < index; i++) {
             result.push(squashed[i]);
         }
-        let lastSquashedIndex = index>0?squashed[index-1].lastSeq:-1;
-        live.filter((c)=>c.lastSeq>lastSquashedIndex).forEach((c)=>result.push(c));
+        let lastSquashedIndex = index > 0 ? squashed[index - 1].lastSeq : -1;
+        live.filter((c) => c.lastSeq > lastSquashedIndex).forEach((c) => result.push(c));
         return result;
     }
 
-    private readChanges(): ChangeEntry[]{
+    private readChanges(): ChangeEntry[] {
         const tracker: Tracker = this._dual.tracker;
         const tracked: TrackedPropertyTree = this._dual.tree;
         const trackedId = this._dual.containerId;
         let allBuffered: ChangeEntry[] = this.readAndCacheBuffered();
         const allRemoteMsgs = tracked.remoteChanges.map((msg) => (msg as IRemotePropertyTreeMessage));
-        const allRemote: ChangeEntry[] = allRemoteMsgs.map((remoteMsg)=>{
+        const allRemote: ChangeEntry[] = allRemoteMsgs.map((remoteMsg) => {
             return {
                 "trackedContainerId": trackedId,
-                "changeset": new ChangeSet(remoteMsg.changeSet), 
-                "lastSeq": remoteMsg.sequenceNumber}
+                "changeset": new ChangeSet(remoteMsg.changeSet),
+                "lastSeq": remoteMsg.sequenceNumber
+            }
         });
-        let live = this.mergeRemoteAndBuffered(allRemote,allBuffered);     
+        let live = this.mergeRemoteAndBuffered(allRemote, allBuffered);
         const allSquashed: ChangeEntry[] = tracker.list();
-        return this.alignLiveWithSquashed(live,allSquashed).concat(this.getLocalChanges());   
+        return this.alignLiveWithSquashed(live, allSquashed).concat(this.getLocalChanges());
     }
 
     private findChangePos(seq: number, changes: ChangeEntry[]): number | undefined {
-        for(let i=0;i<changes.length;i++){
-            if(changes[i].lastSeq>=seq){
+        for (let i = 0; i < changes.length; i++) {
+            if (changes[i].lastSeq >= seq) {
                 return i;
             }
         }
@@ -283,13 +277,13 @@ class HistoryWorkspaceImpl implements HistoryWorkspace {
         if (this._localChanges) {
             return [this._localChanges];
         }
-        else if (this._dual.tree._root.hasPendingChanges()){
+        else if (this._dual.tree._root.hasPendingChanges()) {
             const changes = this._dual.tree._root._serialize(true, false, BaseProperty.MODIFIED_STATE_FLAGS.PENDING_CHANGE);
             const changeset = new ChangeSet(changes);
             changeset._toReversibleChangeSet(this._dual.tree.tipView);
             return [{
                 "trackedContainerId": trackedId,
-                "changeset": new ChangeSet(changeset), 
+                "changeset": new ChangeSet(changeset),
                 "lastSeq": HistoryWorkspaceImpl.LOCAL_SEQ_START
             }];
         }
@@ -395,7 +389,6 @@ async function createSimpleWorkspace(containerSchema, containerId: string | unde
     } else {
         containerAndServices = await client.getContainer(containerId, containerSchema);
     }
-
     const sharedTree = containerAndServices.container.initialObjects.tree;
 
     const tracker = containerAndServices.container.initialObjects.tracker;

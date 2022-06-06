@@ -102,7 +102,7 @@ function renderLocalMap(mymap: Map<string, any>, workspace: HistoryWorkspace, in
 
 function initialize100(containerId: string | undefined, rootProp: NodeProperty, workspace: TrackedWorkspace) {
   if (!rootProp.resolvePath("evolvable")) {
-    rootProp.insert("evolvable", PropertyFactory.create("hex:evolvable-1.0.0", undefined, { "numA": 0 }));
+    rootProp.insert("evolvable", PropertyFactory.create("hex:evolvable-1.0.0", undefined, { "numA": 0 ,"numB": 0,"numC": 0}));
     workspace.commit();
   }
 }
