@@ -1,11 +1,12 @@
-import { ChangeSet } from '@fluid-experimental/property-changeset';
+import { ChangeSet, SerializedChangeSet } from '@fluid-experimental/property-changeset';
 
-import { IPropertyTreeMessage, IRemotePropertyTreeMessage, SharedPropertyTree, SharedPropertyTreeOptions } from "@fluid-experimental/property-dds";
-import { ArrayProperty, ContainerProperty, Int32Property, MapProperty, NodeProperty, PropertyFactory, StringArrayProperty, StringProperty } from "@fluid-experimental/property-properties";
+import { IPropertyTreeMessage, IRemotePropertyTreeMessage, SharedPropertyTree } from "@fluid-experimental/property-dds";
+import { ArrayProperty, BoolProperty, ContainerProperty, Int32ArrayProperty, Int32Property, MapProperty, NodeProperty, PropertyFactory, StringArrayProperty, StringProperty } from "@fluid-experimental/property-properties";
 import {
     IChannelAttributes,
     IFluidDataStoreRuntime,
 } from "@fluidframework/datastore-definitions";
+import { ISequencedDocumentMessage } from '@fluidframework/protocol-definitions';
 import { SquashedHistoryFactory, TrackedPropertyTreeFactory } from "./propFactory";
 
 
@@ -15,14 +16,23 @@ export interface ChangeEntry {
     lastSeq: number;
 }
 
-export interface Tracker {
+export interface Tracker extends TrackerContent{
     processChanges(trackedTree: TrackedPropertyTree, prunedChanges: IPropertyTreeMessage[]);
-    getChangeAt(offset: number): ChangeEntry;
     getSeqAt(offset: number): number
-    length(): number;
-    list();    
+    list(): ChangeEntry[];  
+    listBuffered(trackedId: string): ChangeEntry[]; 
+    setAutoPersist(isAutopersist: boolean): void;
 // poll(consumerGroup);
 }
+
+export interface TrackerContent {
+    getChangeAt(offset: number): ChangeEntry;
+    getBufferedAt(trackedId: string, offset: number): ChangeEntry;
+    count(): number; 
+    length(): number; 
+    countBuffered(trackedId: string); 
+}
+
 
 
 export class TrackedPropertyTree extends SharedPropertyTree {
@@ -33,6 +43,18 @@ export class TrackedPropertyTree extends SharedPropertyTree {
     public static readonly TRACKER_INFO_PROP_PATH = "Tracker_DDS"   
     public static readonly PERSIST_POINT_PROP_PATH = "Persist_Point"  
     public static readonly MY_ID_PROP_PATH = "MyId"
+
+    private _disableRemoteReceive: boolean;
+
+    public allowRemoteReceive(isReceiving: boolean) {
+        this._disableRemoteReceive = !isReceiving;
+    }
+
+    protected override processCore(message: ISequencedDocumentMessage, local: boolean, localOpMetadata: unknown) {
+        if(!this._disableRemoteReceive){
+            super.processCore(message, local, localOpMetadata);
+        }
+    }
 
 
 	public constructor(
@@ -148,7 +170,7 @@ export class TrackedPropertyTree extends SharedPropertyTree {
         }
         else {
             let val = persistPointProp.getValue();
-            val = val==1?2:1;
+            val = val===1?2:1;
             persistPointProp.setValue(val);
         }
         this.commit();        
@@ -160,6 +182,16 @@ export class TrackedPropertyTree extends SharedPropertyTree {
 
 export class SquashedHistory extends SharedPropertyTree implements Tracker{
 
+    public static readonly BUFFER_PROPERTY = "Buffer"
+    public static readonly LOG_PROPERTY = "Log"
+    public static readonly LAST_SEQUENCE_NR_PROPERTY = "LastSequenceNumber";
+    public static readonly BUFFERED_CHANGES_PROPERTY = "BufferedChanges";
+    public static readonly BUFFERED_CHANGES_SEQ_PROPERTY = "BufferedChangesSeq";    
+    public static readonly TRACKED_ID_PROPERTY = "TrackedId"
+    public static readonly SQUASHED_END_SEQ_PROPERTY = "SquashedEndSeq"
+    public static readonly LOGGED_CHANGE_PROPERTY = "LoggedChange"
+    public static readonly AUTO_PERSIST_PROPERTY = "AutoPersist"
+
     public constructor(
 		id: string,
 		runtime: IFluidDataStoreRuntime,
@@ -169,19 +201,139 @@ export class SquashedHistory extends SharedPropertyTree implements Tracker{
 	}
 
 
+    public setAutoPersist(isAutopersist: boolean): void {
+        
+        const autoPersistProp = this.findOrCreateProp
+            (this.root,SquashedHistory.AUTO_PERSIST_PROPERTY,"Bool","single") as BoolProperty;
+        autoPersistProp.value=isAutopersist;
+        this.commit();
+    }
+
+    public isAutoPersist(): boolean {
+        let prop = this.root.resolvePath(SquashedHistory.AUTO_PERSIST_PROPERTY);
+        if(!prop) return true;
+        const autoPersistProp = this.findOrCreateProp
+            (this.root,SquashedHistory.AUTO_PERSIST_PROPERTY,"Bool","single") as BoolProperty;
+        return autoPersistProp.value;
+
+    }
+
+
     public static override getFactory(): SquashedHistoryFactory {
 		return new SquashedHistoryFactory();
 	}
 
-    public static readonly BUFFER_PROPERTY = "Buffer"
-    public static readonly LOG_PROPERTY = "Log"
-    public static readonly LAST_SEQUENCE_NR_PROPERTY = "LastSequenceNumber";
-    public static readonly BUFFERED_CHANGES_PROPERTY = "BufferedChanges";
-    public static readonly TRACKED_ID_PROPERTY = "TrackedId"
-    public static readonly SQUASHED_END_SEQ_PROPERTY = "SquashedEndSeq"
-    public static readonly LOGGED_CHANGE_PROPERTY = "LoggedChange"
+
+    public processChanges(trackedTree: TrackedPropertyTree, prunedChanges: IPropertyTreeMessage[]){
+        const trackedRemoteChanges = trackedTree.remoteChanges;
+        trackedRemoteChanges.forEach((msg)=>console.log(JSON.stringify(msg)));             
+        const trackedId = trackedTree.myId;
+        const { bufferedChanges, bufferedChangesSeq, lastSeqProp}: 
+            { bufferedChanges: StringArrayProperty; bufferedChangesSeq: Int32ArrayProperty; lastSeqProp: Int32Property} 
+            = this.findOrCreateBufferProps(trackedId);
+        const lastSeq = lastSeqProp.value;
+        const newRemoteChanges: IRemotePropertyTreeMessage[] = trackedRemoteChanges
+            .map((msg) => (msg as IRemotePropertyTreeMessage))
+            .filter((msg) => lastSeq<msg.sequenceNumber);               
+        if(newRemoteChanges.length>0) {
+            newRemoteChanges.forEach((remoteChange)=>{
+                const strChangeSet = JSON.stringify(remoteChange.changeSet);  
+                bufferedChanges.push(strChangeSet);
+                bufferedChangesSeq.push(remoteChange.sequenceNumber);
+            });            
+            let newLastSeq = newRemoteChanges[newRemoteChanges.length-1].sequenceNumber;
+            lastSeqProp.value=newLastSeq;
+            this.persistPoints(trackedId);
+            this.commit();                
+        }     
+    }
+
+    public getChangeAt(offset: number): ChangeEntry {
+        const logEntry = this.readLogEntry(offset);
+        if(!logEntry){
+            return undefined;
+        }
+        const trackedId: string = logEntry.get(SquashedHistory.TRACKED_ID_PROPERTY).value;
+        const serializedChange = logEntry.get(SquashedHistory.LOGGED_CHANGE_PROPERTY).value;
+        const changeset = new ChangeSet(JSON.parse(serializedChange));
+        const lastSeq: number = logEntry.get(SquashedHistory.SQUASHED_END_SEQ_PROPERTY).value;
+        return {"trackedContainerId": trackedId,"changeset": changeset, "lastSeq": lastSeq};
+    }
+    
+
+    public getSeqAt(offset: number): number {
+        const logEntry = this.readLogEntry(offset);
+        if(!logEntry){
+            return undefined;
+        }
+        return logEntry.get(SquashedHistory.SQUASHED_END_SEQ_PROPERTY).value;
+
+    }
 
 
+
+    public list() {
+        const logProperty = this.root.resolvePath(SquashedHistory.LOG_PROPERTY) as ArrayProperty;
+        if(!logProperty) return undefined;
+        const ret = [];
+        for (let i=0;i<logProperty.length;i++){
+            const logEntry =logProperty.get(i) as MapProperty;
+            const trackedId: string = logEntry.get(SquashedHistory.TRACKED_ID_PROPERTY).value;
+            const serializedChange = logEntry.get(SquashedHistory.LOGGED_CHANGE_PROPERTY).value;
+            const lastSeq: number = logEntry.get(SquashedHistory.SQUASHED_END_SEQ_PROPERTY).value;
+            const changeset = new ChangeSet(JSON.parse(serializedChange));
+            ret.push({"trackedContainerId": trackedId,"changeset": changeset, "lastSeq": lastSeq});
+        }
+        return ret;
+    }
+
+    public count() {
+        const logProperty = this.root.resolvePath(SquashedHistory.LOG_PROPERTY) as ArrayProperty;
+        if(!logProperty) return 0;
+        return logProperty.length;
+    }
+
+    /**
+     * LEGACY Method
+     */
+    public length(): number {
+        const logProperty = this.root.resolvePath(SquashedHistory.LOG_PROPERTY) as ArrayProperty;
+        if(logProperty){
+            return logProperty.length
+        }
+        else {
+            return undefined;
+        }
+    }
+
+    public getBufferedAt(trackedId: any, offset: number): ChangeEntry {
+        const { bufferedChanges, bufferedChangesSeq }: 
+            { bufferedChanges: StringArrayProperty; bufferedChangesSeq: Int32ArrayProperty;} =
+        this.findOrCreateBufferProps(trackedId);
+        const changeset = new ChangeSet(JSON.parse(bufferedChanges.get(offset)));
+        const seq = bufferedChangesSeq.get(offset);
+        return {"trackedContainerId": trackedId,"changeset": changeset, "lastSeq": seq};
+    } 
+
+    public countBuffered(trackedId: any) {
+        const {bufferedChanges}: { bufferedChanges: StringArrayProperty;}  = this.findOrCreateBufferProps(trackedId);
+        return bufferedChanges.getLength();
+    }
+
+    public listBuffered(trackedId: any) {
+        const { bufferedChanges, bufferedChangesSeq }: 
+            { bufferedChanges: StringArrayProperty; bufferedChangesSeq: Int32ArrayProperty;} =
+        this.findOrCreateBufferProps(trackedId);
+        let index: number = 0;
+        return bufferedChanges.getValues().map((v)=>{
+            const changeset = new ChangeSet(JSON.parse(v));
+            const changeEntry: ChangeEntry = { "trackedContainerId": trackedId, 
+            "changeset": changeset, 
+            "lastSeq": bufferedChangesSeq.get(index) };
+            index++;
+            return changeEntry;
+        });
+    }
 
     private static cloneChangeset(changeSet): ChangeSet {
         return new ChangeSet(JSON.parse(JSON.stringify(changeSet)));
@@ -218,153 +370,90 @@ export class SquashedHistory extends SharedPropertyTree implements Tracker{
 
     private findOrCreateLastSeqProp(entry: MapProperty) : Int32Property{
         let lastSeqProp = (entry.get(SquashedHistory.LAST_SEQUENCE_NR_PROPERTY) as Int32Property);
-        let lastSeq;
-        if(lastSeqProp){            
-            lastSeq=lastSeqProp.value;
-        }
-        else {
+        if(!lastSeqProp){            
             lastSeqProp=this.findOrCreateProp(entry,SquashedHistory.LAST_SEQUENCE_NR_PROPERTY,"Int32","single") as Int32Property;
-            lastSeq=-1;
         }
         return lastSeqProp;
     }
 
-    private isPersistPoint(strChangeSet: string): boolean{
-        const changeSet: ChangeSet = JSON.parse(strChangeSet);
+    private isPersistPoint(strChangeSet: string, isLast: boolean): boolean{
+        const changeSet: SerializedChangeSet = JSON.parse(strChangeSet);
+        let op = changeSet.insert;
+        if(!op){
+            op = changeSet.modify;
+        }
+        if(op){
+            if(op.Int32 && op.Int32[TrackedPropertyTree.PERSIST_POINT_PROP_PATH]){
+                return true;
+            }
+        }
+        if(isLast && this.isAutoPersist()){
+            return true;
+        }
         return false;
     }
 
     private persistPoints(trackedId): void {
-        const buffer: MapProperty = 
-            this.findOrCreateProp(this.root,SquashedHistory.BUFFER_PROPERTY,"BaseProperty","map") as MapProperty;
-        const entry: MapProperty = this.findOrCreateProp(buffer,trackedId,"BaseProperty","map") as MapProperty;
-        const bufferedChanges: StringArrayProperty = 
-            this.findOrCreateProp(entry,SquashedHistory.BUFFERED_CHANGES_PROPERTY,"String","array") as StringArrayProperty; 
-        const bufferedChangesArray: string[] = bufferedChanges.getValues();
+        const { bufferedChanges, bufferedChangesSeq }: 
+            { bufferedChanges: StringArrayProperty; bufferedChangesSeq: Int32ArrayProperty;} 
+            = this.findOrCreateBufferProps(trackedId);
         let changesToSquash: string[] = [];
-        for(let i=0;i<bufferedChangesArray.length;i++){
-            const bufferedChange = bufferedChangesArray[i];
-            if(this.isPersistPoint(bufferedChange)){
+        let seqToSquash : number[] = [];
+        for(let i=0;i<bufferedChanges.length;i++){
+            const bufferedChange = bufferedChanges.get(i);
+            changesToSquash.push(bufferedChange);
+            seqToSquash.push(bufferedChangesSeq.get(i));
+            if(this.isPersistPoint(bufferedChange,i===bufferedChanges.length-1)){
                 const chageSets: ChangeSet[] = changesToSquash.map((strChange) => JSON.parse(strChange));
-
+                const squashedChangeSet: ChangeSet = this.squashChanges(chageSets);
+                const strChangeSet = JSON.stringify(squashedChangeSet.getSerializedChangeSet());            
+                const logProperty: ArrayProperty=
+                    this.findOrCreateProp(this.root,SquashedHistory.LOG_PROPERTY,"BaseProperty","array") as ArrayProperty;               
+                const logEntry = PropertyFactory.create("BaseProperty","map") as MapProperty;
+                logProperty.push(logEntry);            
+                const squashedEndSeqProp = this.findOrCreateProp(logEntry,SquashedHistory.SQUASHED_END_SEQ_PROPERTY,"Int32","single");
+                squashedEndSeqProp.value =bufferedChangesSeq.get(i) ;
+                const trackedIdProp = this.findOrCreateProp(logEntry,SquashedHistory.TRACKED_ID_PROPERTY,"String","single");
+                trackedIdProp.value = trackedId;
+                const loggedChangeProp = this.findOrCreateProp(logEntry,SquashedHistory.LOGGED_CHANGE_PROPERTY,"String","single");
+                loggedChangeProp.value=strChangeSet;
                 changesToSquash=[];
-            }
-            else {
-                changesToSquash.push(bufferedChange);
+                seqToSquash=[];
             }
         }
         if(changesToSquash.length<bufferedChanges.length){
-
+            bufferedChanges.clear();
+            changesToSquash.forEach((change)=>bufferedChanges.push(change));
+            bufferedChangesSeq.clear();
+            seqToSquash.forEach((seq)=>bufferedChangesSeq.push(seq));
         }
 
     }
 
-    public processChanges(trackedTree: TrackedPropertyTree, prunedChanges: IPropertyTreeMessage[]){
-
-        //const trackedRemoteChanges = trackedTree.remoteChanges.slice(0,trackedTree.remoteChanges.length - prunedChanges.length);
-        const trackedRemoteChanges = trackedTree.remoteChanges;
-        trackedRemoteChanges.forEach((msg)=>console.log(JSON.stringify(msg)));     
-        
-        const trackedId = trackedTree.myId;
-        const buffer: MapProperty = 
-            this.findOrCreateProp(this.root,SquashedHistory.BUFFER_PROPERTY,"BaseProperty","map") as MapProperty;
-        const entry: MapProperty = this.findOrCreateProp(buffer,trackedId,"BaseProperty","map") as MapProperty;
-        const bufferedChanges: StringArrayProperty = 
-            this.findOrCreateProp(entry,SquashedHistory.BUFFERED_CHANGES_PROPERTY,"String","array") as StringArrayProperty; 
-
-        let lastSeqProp = this.findOrCreateLastSeqProp(entry);
-        const lastSeq = lastSeqProp.value;
-        const newRemoteChanges: IRemotePropertyTreeMessage[] = trackedRemoteChanges
-            .map((msg) => (msg as IRemotePropertyTreeMessage))
-            .filter((msg) => lastSeq<msg.sequenceNumber);   
-            
-        if(newRemoteChanges.length>0) {
-            const newChangeSets: ChangeSet[] = newRemoteChanges.map((change)=>change.changeSet);
-            newChangeSets.forEach((changeSet)=>{this.isPersistPoint(JSON.stringify(changeSet));});
-            newChangeSets.forEach((changeSet)=>{
-                const strChangeSet = JSON.stringify(changeSet.getSerializedChangeSet());  
-                bufferedChanges.push(strChangeSet);
-            });
-
-
-
-/*
-            const squashedChangeSet = this.squashChanges(newChangeSets);
-            const strChangeSet = JSON.stringify(squashedChangeSet.getSerializedChangeSet());            
-            const logProperty: ArrayProperty=
-                this.findOrCreateProp(this.root,SquashedHistory.LOG_PROPERTY,"BaseProperty","array") as ArrayProperty;               
-            const logEntry = PropertyFactory.create("BaseProperty","map") as MapProperty;
-            logProperty.push(logEntry);            
-            const squashedEndSeqProp = this.findOrCreateProp(logEntry,SquashedHistory.SQUASHED_END_SEQ_PROPERTY,"Int32","single");
-            squashedEndSeqProp.value = newRemoteChanges[newRemoteChanges.length-1].sequenceNumber;
- */           
-            
-/*            
-            const trackedIdProp = this.findOrCreateProp(logEntry,SquashedHistory.TRACKED_ID_PROPERTY,"String","single");
-            trackedIdProp.value = trackedId;
-            const loggedChangeProp = this.findOrCreateProp(logEntry,SquashedHistory.LOGGED_CHANGE_PROPERTY,"String","single");
-            loggedChangeProp.value=strChangeSet;
-            let newLastSeq = newRemoteChanges[newRemoteChanges.length-1].sequenceNumber;
-            lastSeqProp.value=newLastSeq;
-*/
-
-
-            this.commit();                
-        }     
-        console.log("miso 1 processChanges end");  
+    private findOrCreateBufferProps(trackedId: any) {
+        const buffer: MapProperty = this.findOrCreateProp
+            (this.root, SquashedHistory.BUFFER_PROPERTY, "BaseProperty", "map") as MapProperty;
+        const entry: MapProperty = this.findOrCreateProp
+            (buffer, trackedId, "BaseProperty", "map") as MapProperty;
+        const bufferedChanges: StringArrayProperty = this.findOrCreateProp
+            (entry, SquashedHistory.BUFFERED_CHANGES_PROPERTY, "String", "array") as StringArrayProperty;
+        const bufferedChangesSeq: Int32ArrayProperty = this.findOrCreateProp
+            (entry, SquashedHistory.BUFFERED_CHANGES_SEQ_PROPERTY, "Int32", "array") as Int32ArrayProperty;
+        const  lastSeqProp = this.findOrCreateLastSeqProp(entry);
+        return { bufferedChanges, bufferedChangesSeq, lastSeqProp, entry, buffer, };
     }
+
 
     private readLogEntry(offset: number) {
-        const logProperty = this.root.resolvePath(SquashedHistory.LOG_PROPERTY) as ArrayProperty;               
-        const logEntry = logProperty.get(offset); 
-        return logEntry as MapProperty;
-    }
-
-
-    public getChangeAt(offset: number): ChangeEntry {
-        const logEntry = this.readLogEntry(offset);
-        if(!logEntry){
-            return undefined;
-        }
-        const trackedId: string = logEntry.get(SquashedHistory.TRACKED_ID_PROPERTY).value;
-        const serializedChange = logEntry.get(SquashedHistory.LOGGED_CHANGE_PROPERTY).value;
-        const changeset = new ChangeSet(JSON.parse(serializedChange));
-        const lastSeq: number = logEntry.get(SquashedHistory.SQUASHED_END_SEQ_PROPERTY).value;
-        return {"trackedContainerId": trackedId,"changeset": changeset, "lastSeq": lastSeq};
-    }
-    
-
-    public getSeqAt(offset: number): number {
-        const logEntry = this.readLogEntry(offset);
-        if(!logEntry){
-            return undefined;
-        }
-        return logEntry.get(SquashedHistory.SQUASHED_END_SEQ_PROPERTY).value;
-
-    }
-
-    public length(): number {
-        const logProperty = this.root.resolvePath(SquashedHistory.LOG_PROPERTY) as ArrayProperty;
-        if(logProperty){
-            return logProperty.length
-        }
+        const logProperty = this.root.resolvePath(SquashedHistory.LOG_PROPERTY) as ArrayProperty;   
+        if(logProperty)   {
+            const logEntry = logProperty.get(offset); 
+            return logEntry as MapProperty;
+        }   
         else {
             return undefined;
-        }
+        }      
     }
 
-    public list() {
-        const logProperty = this.root.resolvePath(SquashedHistory.LOG_PROPERTY) as ArrayProperty;
-        const ret = [];
-        for (let i=0;i<logProperty.length;i++){
-            const logEntry =logProperty.get(i) as MapProperty;
-            const trackedId: string = logEntry.get(SquashedHistory.TRACKED_ID_PROPERTY).value;
-            const serializedChange = logEntry.get(SquashedHistory.LOGGED_CHANGE_PROPERTY).value;
-            const lastSeq: number = logEntry.get(SquashedHistory.SQUASHED_END_SEQ_PROPERTY).value;
-            const changeset = new ChangeSet(JSON.parse(serializedChange));
-            ret.push({"trackedContainerId": trackedId,"changeset": changeset, "lastSeq": lastSeq});
-        }
-        return ret;
-    }
-    
+
 }

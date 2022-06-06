@@ -7,7 +7,7 @@ import { EvolvableRenderer } from './evolvableRenderer';
 import { Evolvable } from './evolvable';
 import { EvolvableBinding } from './evolvableBinding';
 import { NodeProperty, PropertyFactory, StringProperty, ValueProperty } from '@fluid-experimental/property-properties';
-import { createHistoryWorkspace, HistoryWorkspace, TrackedWorkspace } from "./interfaces";
+import { createHistoryWorkspace, HistoryWorkspace, TrackedWorkspace } from "@dstanesc/tracker-util";
 
 
 const roll = (isCommit: boolean, myVar: string, workspace: HistoryWorkspace) => {
