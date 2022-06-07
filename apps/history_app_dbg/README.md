@@ -1,6 +1,6 @@
 # Schema Evolution 
 
-Investigates schema evolution patterns
+Investigates controlled history patterns
 
 # Getting Started
 
@@ -38,7 +38,7 @@ npx tinylicious
 Terminal 2
 
 ```sh
-cd FluidPatterns/apps/history-app
+cd FluidPatterns/apps/history_app_dbg
 npm start
 ```
 
