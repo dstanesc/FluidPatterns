@@ -70,7 +70,7 @@ HistoryWorkspace interface was developed to simplify history navigation of the P
 - retrieve TrackedWorkspace containing Property DDS ``const tracked = await historyWorkspace.getTracked();``
 - if you want to explicitly decide, when to persist point, switch off AutoPersist : ``historyWorkspace.setAutoPersist(false);``
 - call persistPoint method any time, when you want to squash history to the current point : ``historyWorkspace.persistPoint()``
-- call move method when you want to navigate history, the receiving remote chnages will be stopped : ``historyWorkspace.move(-1)`
+- call move method when you want to navigate history, the receiving remote chnages will be stopped : ``historyWorkspace.move(-1)``
 - calling commit can lead to desynchronization of all other live clients
 
 
