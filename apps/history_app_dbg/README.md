@@ -1,4 +1,4 @@
-# Schema Evolution 
+# Controlled History 
 
 Investigates controlled history patterns
 
