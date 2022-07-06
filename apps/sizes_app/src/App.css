@@ -1,0 +1,122 @@
+
+
+.evolvable {
+    min-height: 50%; 
+    font-size: 16px; 
+    color: red; 
+    text-align: left; 
+    cursor: pointer; 
+}
+
+
+.evotable{
+    min-height: 100%; 
+    min-width: 10%;
+    font-size: 20px; 
+    color: darkblue;     
+    text-align: left; 
+    cursor: pointer; 
+    border-color: black;
+}
+
+.commit {
+    min-height: 50%; 
+    font-size: 50px; 
+    color: darkblue;
+    text-align: left; 
+    cursor: pointer; 
+    border: 1px solid;
+}
+
+th, .propcell, .sizecell {    
+    border: 3px solid;
+    border-color: black;
+    min-width: 40px;
+  }
+
+  .bigcommit {    
+    font-size: 20px; 
+    font-weight: bold;
+    color: black;
+  }  
+
+  .commitsize {    
+    font-size: 20px; 
+    font-weight: bold;
+    color: black;
+  }  
+
+
+  .propcell {
+    color: darkblue;  
+    font-weight: bold; 
+    text-align: left; 
+      
+  }  
+
+  .sizecell {
+    min-width: 40px;
+    font-size: 20px; 
+    font-weight: bold;
+    color: darkslateblue;   
+    text-align: right;       
+  }  
+
+
+  .totalpropcell {
+    border: 6px solid;
+    border-color: black;
+    min-width: 200px;
+    color: red;  
+    font-weight: bold; 
+    text-align: left; 
+      
+  }  
+
+  .totalsizecell {
+    border: 6px solid;
+    border-color: black;
+    min-width: 200px;
+    font-size: 20px; 
+    font-weight: bold;
+    color: red;   
+    text-align: right;       
+  }  
+
+
+
+  th {    
+    color: darkcyan; 
+    text-align: center; 
+  }  
+
+
+  #greencircle {
+    width: 30px;
+    height: 30px;
+    background: green;
+    border-radius: 50%;
+    display: inline-block;
+  }
+
+  #redcircle {
+    width: 30px;
+    height: 30px;
+    background: red;
+    border-radius: 50%;
+    display: inline-block;
+  }
+
+
+ .bigop {    
+    font-size: 40px; 
+    font-weight: bold;
+    color: black;
+  }  
+
+
+  .defSizes {    
+    font-size: 20px; 
+    font-weight: bold;
+    color: black;
+  }  
