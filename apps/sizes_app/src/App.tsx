@@ -154,11 +154,6 @@ export default function App() {
 
     <br></br><br></br>
 
-    <b className="bigop">BIG OPERATIONS: </b>
-    {
-      renderBigEnabled()
-    }
-
     <br></br><br></br><br></br><br></br>
 
     <b style={{ borderWidth: "8px", borderColor: getColor(sumNr.nr), borderStyle: "solid", fontSize: "20px" }}>NUMBER OF SUMMARIZATIONS: {sumNr.nr} </b>
@@ -240,22 +235,6 @@ export default function App() {
 
 const oneMb = 1024*1024;
 
-
-function checkBigEnabled(): boolean{
-  const bigState = window.sessionStorage.getItem("Fluid.ContainerRuntime.MaxOpSizeInBytes");
-  const isBig = bigState === "-1";
-  return isBig;
-}
-
-function renderBigEnabled(){
-  const reactElem: any[] = [];
-  if (checkBigEnabled()){
-    reactElem.push(<div id="greencircle"></div>);
-  } else {
-    reactElem.push(<div id="redcircle"></div>);
-  }
-  return reactElem;
-}
 
 function readCommitSize(workspace){
   if (!workspace) return -1;
@@ -348,9 +327,9 @@ function renderPropSizeTableContent(workspace: SimpleWorkspace){
   if (bigProp){
     const dynamicIds = bigProp.getDynamicIds()
     dynamicIds.forEach((propId) => {
-      const strprop = bigProp.resolvePath(propId);
+      const strprop = bigProp.resolvePath(propId) as StringProperty;
       reactElem.push(
-        <tr><td className="propcell">{propId}</td><td className="sizecell">{strprop.value.length}</td></tr>
+        <tr key={propId}><td className="propcell">{propId}</td><td className="sizecell">{strprop.value.length}</td></tr>
       )
     })
   }
@@ -363,10 +342,11 @@ function renderPropSize(workspace: SimpleWorkspace){
   if (!workspace) return reactElem;
 
   reactElem.push((
-    <table className="evotable">
-    <tr><th>Property</th><th>Size</th></tr>
+    <table key="evotable" className="evotable"><tbody>
+    <tr key="prop_size_key"><th>Property</th><th>Size</th></tr>
     { renderPropSizeTableContent(workspace)}
     <tr><td className="totalpropcell">Total</td><td className="totalsizecell">{computePropSize(workspace)}</td></tr>
+    </tbody>
     </table>
   ));
   return reactElem;
