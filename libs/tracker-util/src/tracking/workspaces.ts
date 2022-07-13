@@ -2,12 +2,13 @@ import { PropertyFactory, NodeProperty, BaseProperty } from "@fluid-experimental
 import { IPropertyTreeMessage, IRemotePropertyTreeMessage, SharedPropertyTree } from "@fluid-experimental/property-dds";
 
 import { DataBinder } from "@fluid-experimental/property-binder";
-
-import { ITelemetryBaseLogger, ITelemetryBaseEvent } from "@fluidframework/common-definitions";
 import { InsecureTokenProvider } from "@fluidframework/test-client-utils";
 import {
     AzureClient,
-    LOCAL_MODE_TENANT_ID,
+    AzureContainerServices,
+    ITelemetryBaseLogger,
+    ITelemetryBaseEvent,
+    AzureRemoteConnectionConfig
 } from "@fluidframework/azure-client";
 import { ChangeEntry, SquashedHistory, TrackedPropertyTree, Tracker } from "./trackdds";
 import { ChangeSet } from "@fluid-experimental/property-changeset";
@@ -371,12 +372,11 @@ async function createSimpleWorkspace(containerSchema, containerId: string | unde
 
     const client = new AzureClient({
         connection: {
-            tenantId: LOCAL_MODE_TENANT_ID,
+            type: 'local',
             tokenProvider: new InsecureTokenProvider("", {
-                id: "root",
+                id: 'root',
             }),
-            orderer: "http://localhost:7070",
-            storage: "http://localhost:7070",
+            endpoint: "http://localhost:7070"
         },
         logger,
     });

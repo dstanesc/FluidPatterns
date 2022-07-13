@@ -10,6 +10,7 @@ import {
     AzureClient,
     ITelemetryBaseEvent,
     ITelemetryBaseLogger,
+    AzureRemoteConnectionConfig
 } from "@fluidframework/azure-client";
 import { IFluidContainer } from "@fluidframework/fluid-static";
 import { InsecureTokenProvider } from "@fluidframework/test-client-utils";
@@ -81,15 +82,18 @@ describe("Benchmark FRS op & summary limits", function () {
     });
 
     beforeEach(async function () {
+        
+        const remoteConnectionConfig: AzureRemoteConnectionConfig = {
+            type: 'remote',
+            tenantId: process.env.FRS_TENANT,
+            tokenProvider: new InsecureTokenProvider(process.env.FRS_KEY, {
+                id: "benchmark",
+            }),
+            endpoint: process.env.FRS_RELAY!
+        };
+
         const client = new AzureClient({
-            connection: {
-                tenantId: process.env.FRS_TENANT,
-                tokenProvider: new InsecureTokenProvider(process.env.FRS_KEY, {
-                    id: "benchmark",
-                }),
-                orderer: process.env.FRS_ORDERER,
-                storage: process.env.FRS_STORAGE,
-            },
+            connection: remoteConnectionConfig,
             logger,
         });
 
